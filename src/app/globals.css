@@ -1,0 +1,552 @@
+@import "tailwindcss";
+
+/* Feature styles live beside this file so each system owns its own CSS. */
+@import "../styles/race.css";
+@import "../styles/hero.css";
+@import "../styles/ask.css";
+@import "../styles/work.css";
+
+/* ------------------------------------------------------------------------------------------
+   Design tokens — the Omjee engineering palette
+
+   Synthesised from the visual principles of motorsport rather than any one team:
+   silver-and-teal precision, navy-and-yellow energy, red intensity. Colour is semantic:
+
+     carbon / graphite / gunmetal / metal   structure — the physical environment
+     navy                                   the deep technical environment (data rooms, night)
+     bone                                   identity and content
+     steel / faint                          supporting information
+     signal  (racing yellow)                the active state: selection, navigation, telemetry
+     data    (technical teal)               intelligence: systems, AI, data, research
+     perf    (performance red)              intensity: performance, major transitions
+     papaya                                 the experimental — used rarely, on purpose
+
+   Colour reaches the page mostly as light (see styles/race.css), not as filled blocks.
+   ------------------------------------------------------------------------------------------ */
+@theme {
+  --color-carbon: #07090b;
+  --color-graphite: #0e1317;
+  --color-graphite-2: #11161a;
+  --color-graphite-3: #171e23;
+  --color-gunmetal: #1c2429;
+  --color-metal: #2a3338;
+  --color-metal-2: #3a4348;
+  --color-metal-3: #4d575d;
+  --color-navy: #0a1826;
+  --color-navy-2: #0f2236;
+  --color-rule: #1a2126;
+  --color-rule-strong: #2c363c;
+  --color-bone: #e9e7e1;
+  --color-steel: #8f989e;
+  --color-faint: #7b858b;
+  --color-signal: #f2c230;
+  --color-signal-bright: #ffd75a;
+  --color-data: #3ccfc0;
+  --color-perf: #d7262f;
+  /* Red at text sizes needs more luminance to hold 4.5:1 on carbon. */
+  --color-perf-bright: #f0525a;
+  --color-papaya: #ff7a1a;
+  --color-warn: #f0525a;
+
+  --font-sans: var(--font-archivo), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, "SFMono-Regular", "Cascadia Mono", Menlo, monospace;
+
+  --breakpoint-xs: 26rem;
+
+  /* Motion curves — each one has a job. Mirrored in src/lib/motion.ts. */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1); /* deceleration: things arriving and settling */
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1); /* things that move and stay */
+  --ease-snap: cubic-bezier(0.2, 0.9, 0.1, 1); /* mechanical: small parts clicking into place */
+  --ease-ramp: cubic-bezier(0.7, 0, 0.2, 1); /* acceleration then settle: lines and masks */
+}
+
+:root {
+  --dur-fast: 160ms;
+  --dur-base: 480ms;
+  --dur-slow: 900ms;
+  --stagger: 70ms;
+
+  --gutter: clamp(1.25rem, 4vw, 4rem);
+  --header-h: 4rem;
+
+  color-scheme: dark;
+}
+
+/* ------------------------------------------------------------------------------------------
+   Base
+   The page itself is transparent: the race environment (a fixed layer behind everything,
+   see components/race) is the background, and sections are windows onto it.
+   ------------------------------------------------------------------------------------------ */
+html {
+  background: var(--color-carbon);
+  scroll-behavior: smooth;
+  scroll-padding-top: calc(var(--header-h) + 1.5rem);
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  background: transparent;
+  color: var(--color-bone);
+  font-family: var(--font-sans);
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  text-rendering: optimizeLegibility;
+  overflow-x: clip;
+}
+
+/* Film grain over everything: breaks up flat gradients and gives surfaces a material feel. */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  pointer-events: none;
+  opacity: 0.07;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.9 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+::selection {
+  background: var(--color-signal);
+  color: var(--color-carbon);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-signal);
+  outline-offset: 3px;
+  border-radius: 1px;
+}
+
+/* ------------------------------------------------------------------------------------------
+   Typography roles
+   ------------------------------------------------------------------------------------------ */
+
+/* Display — expanded width, tight leading. The name and section titles. */
+@utility display {
+  font-family: var(--font-sans);
+  font-stretch: 125%;
+  font-variation-settings: "wdth" 125;
+  font-weight: 640;
+  letter-spacing: -0.02em;
+  line-height: 0.95;
+  text-wrap: balance;
+}
+
+/* Instrumentation — small uppercase mono. Indices, readouts, captions, metadata. */
+@utility label {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+@utility prose-body {
+  font-size: clamp(1.0625rem, 0.6vw + 0.95rem, 1.1875rem);
+  line-height: 1.65;
+  text-wrap: pretty;
+}
+
+@utility shell {
+  width: 100%;
+  max-width: 90rem;
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+/* Timing-board numerals. */
+@utility readout {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+/* ------------------------------------------------------------------------------------------
+   Materials
+   ------------------------------------------------------------------------------------------ */
+
+/* Machined panel: a top-lit gunmetal surface with a metal edge. Opaque, so content on it
+   stays readable whatever the environment behind is doing. */
+@utility panel {
+  position: relative;
+  border: 1px solid var(--color-rule-strong);
+  background:
+    linear-gradient(180deg, rgb(233 231 225 / 0.04), transparent 26%),
+    linear-gradient(180deg, var(--color-graphite-3), var(--color-graphite));
+  box-shadow:
+    inset 0 1px 0 rgb(233 231 225 / 0.07),
+    0 28px 70px -34px rgb(0 0 0 / 0.85);
+}
+
+/* Carbon weave — used on thin strips only (captions, rails), never as a page texture. */
+@utility weave {
+  background-image:
+    repeating-linear-gradient(45deg, rgb(233 231 225 / 0.03) 0 2px, transparent 2px 4px),
+    repeating-linear-gradient(-45deg, rgb(0 0 0 / 0.28) 0 2px, transparent 2px 4px);
+  background-color: var(--color-graphite-2);
+}
+
+/* Engineering scale: a hairline with tick marks. */
+@utility scale-ticks {
+  height: 7px;
+  background-image:
+    linear-gradient(90deg, var(--color-rule-strong) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-metal-3) 1px, transparent 1px);
+  background-size:
+    8px 4px,
+    80px 7px;
+  background-repeat: repeat-x;
+  background-position:
+    0 0,
+    0 0;
+}
+
+/* Kerb: the red-and-white edge of a track, as a short marker. Used very sparingly —
+   it flags the active sector and the finish, never a whole edge. */
+@utility kerb {
+  height: 4px;
+  background-image: repeating-linear-gradient(
+    90deg,
+    var(--color-perf) 0 10px,
+    var(--color-bone) 10px 20px
+  );
+}
+
+/* ------------------------------------------------------------------------------------------
+   Sections — windows onto the race environment. They paint no background of their own;
+   the light behind them changes as the page moves from sector to sector.
+   ------------------------------------------------------------------------------------------ */
+.section {
+  position: relative;
+  z-index: 10;
+  isolation: isolate;
+}
+
+/* Tempo. The same motion grammar plays at a different speed in each part of the lap:
+   discovery is unhurried, engineering is precise, the garage is quick, the finish is calm. */
+#about {
+  --tempo: 1.15;
+}
+
+#capabilities {
+  --tempo: 0.8;
+}
+
+#ask {
+  --tempo: 0.9;
+}
+
+#work {
+  --tempo: 0.85;
+  --stagger: 90ms;
+}
+
+#experience {
+  --tempo: 1.2;
+}
+
+#garage {
+  --tempo: 0.6;
+  --stagger: 35ms;
+}
+
+#contact {
+  --tempo: 1.5;
+}
+
+/* Paper. One section is printed rather than lit: the record of experience reads as a
+   technical document, and it is the one opaque surface on the page — the racing line passes
+   behind it and re-emerges below. Every colour utility resolves through these variables, so
+   the whole palette inverts inside this scope without touching a component. */
+.section[data-surface="paper"] {
+  --color-carbon: #e6e3da;
+  --color-graphite: #dcd9cf;
+  --color-graphite-2: #e0ddd4;
+  --color-graphite-3: #d4d0c6;
+  --color-gunmetal: #cdc9be;
+  --color-metal: #c8c4b9;
+  --color-metal-2: #b8b3a7;
+  --color-metal-3: #a29d91;
+  --color-rule: #cac6bb;
+  --color-rule-strong: #a7a296;
+  --color-bone: #0c1012;
+  --color-steel: #444c51;
+  --color-faint: #5c646a;
+  /* Inks. On paper the accent is performance red; teal and yellow deepen until they hold 4.5:1. */
+  --color-signal: #b3202a;
+  --color-signal-bright: #c9303a;
+  --color-perf: #b3202a;
+  --color-perf-bright: #b3202a;
+  --color-data: #0a7268;
+  --color-papaya: #a84a00;
+  --color-warn: #b3202a;
+  background: var(--color-carbon);
+  color: var(--color-bone);
+  box-shadow:
+    0 -1px 0 rgb(0 0 0 / 0.5),
+    0 40px 80px -40px rgb(0 0 0 / 0.6);
+}
+
+.section[data-surface="paper"]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgb(0 0 0 / 0.07), transparent 5rem);
+}
+
+/* Carbon weave and machined panels are lit-surface materials; on paper they flatten to tints. */
+.section[data-surface="paper"] .weave {
+  background-image: none;
+  background-color: var(--color-graphite);
+}
+
+.section[data-surface="paper"] .panel {
+  background: var(--color-graphite-2);
+  box-shadow: 0 18px 40px -26px rgb(0 0 0 / 0.45);
+}
+
+.section[data-surface="paper"] ::selection {
+  background: #0c1012;
+  color: #e6e3da;
+}
+
+/* The sector line that opens each section: an engineering scale with the line drawn over it. */
+.sector-line {
+  position: relative;
+  height: 7px;
+}
+
+.sector-line > i {
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  background: linear-gradient(90deg, var(--color-signal), var(--color-signal-bright) 30%, transparent 100%);
+}
+
+.sector-line[data-tone="cyan"] > i {
+  background: linear-gradient(90deg, var(--color-data), transparent 100%);
+}
+
+.sector-line[data-tone="red"] > i {
+  background: linear-gradient(90deg, var(--color-perf), var(--color-perf-bright) 30%, transparent 100%);
+}
+
+/* ------------------------------------------------------------------------------------------
+   Motion grammar
+
+   Content is visible by default; `html.js` is set before first paint by an inline script,
+   so nothing here applies without JavaScript. Elements opt in with data-reveal="<behaviour>":
+
+     rise    body copy — soft, slightly blurred, decelerating           (default)
+     mask    large type — clipped from below, accelerates then settles
+     snap    small instrumentation — fast, mechanical, from the left
+     trace   lines — drawn left to right
+     settle  figures and panels — arrive slightly large, settle with inertia
+   ------------------------------------------------------------------------------------------ */
+html.js [data-reveal] {
+  transition-delay: calc(var(--reveal-index, 0) * var(--stagger));
+}
+
+html.js [data-reveal=""],
+html.js [data-reveal="rise"] {
+  opacity: 0;
+  transform: translate3d(0, 22px, 0);
+  filter: blur(6px);
+  transition-property: opacity, transform, filter;
+  transition-duration: calc(700ms * var(--tempo, 1)), calc(900ms * var(--tempo, 1)), calc(700ms * var(--tempo, 1));
+  transition-timing-function: var(--ease-out);
+}
+
+/* The clip sits on an inner .mask wrapper: a fully clipped element has no visible area,
+   so the observer could never see the element it is supposed to reveal. */
+html.js [data-reveal="mask"] > .mask {
+  display: block;
+  clip-path: inset(0 0 100% 0);
+  transform: translate3d(0, 0.35em, 0);
+  transition-property: clip-path, transform;
+  transition-duration: calc(950ms * var(--tempo, 1)), calc(1200ms * var(--tempo, 1));
+  transition-timing-function: var(--ease-ramp), var(--ease-out);
+  transition-delay: calc(var(--reveal-index, 0) * var(--stagger));
+}
+
+html.js [data-reveal="mask"][data-revealed] > .mask {
+  clip-path: inset(-20% -5% -20% -5%);
+  transform: none;
+}
+
+html.js [data-reveal="snap"] {
+  opacity: 0;
+  transform: translate3d(-12px, 0, 0);
+  transition-property: opacity, transform;
+  transition-duration: 140ms, 280ms;
+  transition-timing-function: linear, var(--ease-snap);
+}
+
+html.js [data-reveal="trace"] {
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform calc(1300ms * var(--tempo, 1)) var(--ease-ramp);
+}
+
+html.js [data-reveal="settle"] {
+  opacity: 0;
+  transform: scale(1.03);
+  transition-property: opacity, transform;
+  transition-duration: calc(900ms * var(--tempo, 1)), calc(1500ms * var(--tempo, 1));
+  transition-timing-function: var(--ease-out);
+}
+
+html.js [data-reveal][data-revealed] {
+  opacity: 1;
+  transform: none;
+  filter: none;
+}
+
+/* Route change — see app/template.tsx. Opacity only, so fixed children stay fixed. */
+@utility page-enter {
+  animation: fade 520ms var(--ease-out) both;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 0.5em, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes unmask {
+  from {
+    clip-path: inset(0 0 100% 0);
+    transform: translate3d(0, 0.3em, 0);
+  }
+  to {
+    clip-path: inset(-20% -5% -20% -5%);
+    transform: none;
+  }
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* A light travelling along a line: telemetry flow. */
+@keyframes flow {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(400%);
+  }
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0.25;
+  }
+}
+
+/* Entrance sequences (hero, page headers). --enter-index orders the phases. */
+@utility enter {
+  animation: rise var(--dur-slow) var(--ease-out) both;
+  animation-delay: calc(var(--enter-index, 0) * 110ms + 80ms);
+}
+
+@utility enter-mask {
+  animation: unmask 1100ms var(--ease-ramp) both;
+  animation-delay: calc(var(--enter-index, 0) * 110ms + 80ms);
+}
+
+@utility enter-fade {
+  animation: fade var(--dur-slow) var(--ease-out) both;
+  animation-delay: calc(var(--enter-index, 0) * 110ms + 80ms);
+}
+
+/* System readout lines switch on one after another, like instruments powering up. */
+@utility enter-step {
+  animation: fade 60ms steps(1, end) both;
+  animation-delay: calc(var(--enter-index, 0) * 140ms + 120ms);
+}
+
+/* SVG line draw-on. Paths must set pathLength="1". */
+@utility draw-on {
+  stroke-dasharray: 1;
+  animation: draw 1400ms var(--ease-in-out) both;
+  animation-delay: calc(var(--draw-index, 0) * 14ms + 150ms);
+}
+
+@utility pulse-dot {
+  animation: blink 1.6s var(--ease-in-out) infinite;
+}
+
+/* A moving highlight for lines that carry data. Put on a child of an overflow-hidden line. */
+@utility flow-light {
+  animation: flow 3.6s var(--ease-in-out) infinite;
+}
+
+/* Mechanical link: the underline redraws from the other side. */
+@utility link-underline {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-position: 0 100%;
+  background-repeat: no-repeat;
+  background-size: 100% 1px;
+  transition:
+    background-size var(--dur-fast) var(--ease-snap),
+    color var(--dur-fast) linear;
+  &:hover {
+    background-size: 0% 1px;
+    background-position: 100% 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  html.js [data-reveal],
+  html.js [data-reveal="mask"] > .mask {
+    opacity: 1;
+    transform: none;
+    filter: none;
+    clip-path: none;
+    transition: none;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+  }
+}
+
+/* Touch devices: the grain blend is the one effect not worth its compositing cost. */
+@media (pointer: coarse) {
+  body::after {
+    opacity: 0.045;
+  }
+}

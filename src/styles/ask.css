@@ -1,0 +1,133 @@
+/* ------------------------------------------------------------------------------------------
+   Ask Omjee — the briefing console (components/sections/Ask*).
+
+   Only what utilities cannot express lives here: the console's surface and its four motions.
+   Teal is the working colour; racing yellow appears only on what is selected or hovered.
+   ------------------------------------------------------------------------------------------ */
+
+/* The machined panel, cooled toward navy: this sector is the data room. The light falls on the
+   command line and has faded by the time a brief is read, so long answers sit on a calm field. */
+.ask-console {
+  background:
+    linear-gradient(180deg, rgb(233 231 225 / 0.04), transparent 7rem),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-navy-2) 72%, var(--color-graphite-3)),
+      color-mix(in srgb, var(--color-navy) 82%, var(--color-graphite)) 16rem
+    );
+}
+
+/* Hairlines are re-tuned for the navy surface; the graphite ones disappear on it. Utilities
+   resolve through these variables, so every rule inside the console follows. */
+.ask-console {
+  --color-rule: #1a2733;
+  --color-rule-strong: #2a3947;
+}
+
+/* Focus. The site's ring sits outside its element; controls that run flush to the console's
+   edges draw it inside instead. The query heading takes focus only so that keyboard and
+   screen-reader users land on a new brief — it is not a control and shows no ring. */
+.ask-console .ask-inset:focus-visible {
+  outline-offset: -2px;
+}
+
+.ask-console .ask-query:focus {
+  outline: none;
+}
+
+/* Rows of a brief print in sequence, top to bottom. --row orders them. */
+@keyframes ask-print {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 6px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.ask-row {
+  animation: ask-print 360ms var(--ease-out) both;
+  animation-delay: calc(var(--row, 0) * 55ms);
+}
+
+.ask-print {
+  animation: ask-print 360ms var(--ease-out) both;
+}
+
+/* Questions snap in from the left when a topic is selected: small parts clicking into place. */
+@keyframes ask-snap {
+  from {
+    opacity: 0;
+    transform: translate3d(-10px, 0, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.ask-snap {
+  animation: ask-snap 240ms var(--ease-snap) both;
+  animation-delay: calc(var(--row, 0) * 30ms);
+}
+
+/* Activity line under the command line. A light runs it for as long as a query is in flight,
+   then crosses once more as the brief lands. Two keyframe names so the hand-over restarts. */
+@keyframes ask-sweep {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(380%);
+  }
+}
+
+@keyframes ask-land {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(380%);
+  }
+}
+
+.ask-line {
+  position: relative;
+  height: 1px;
+  overflow: hidden;
+  background: var(--color-rule-strong);
+}
+
+.ask-line > i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 28%;
+  background: linear-gradient(90deg, transparent, var(--color-data), transparent);
+  transform: translateX(-100%);
+}
+
+.ask-line > i[data-ran] {
+  animation: ask-land 900ms var(--ease-ramp) both;
+}
+
+.ask-line[data-busy] > i {
+  animation: ask-sweep 1200ms var(--ease-in-out) infinite;
+}
+
+/* Telemetry trace shown inside a brief while its answer is being retrieved: an engineering
+   scale (the element also carries .scale-ticks) with a light travelling along its top edge. */
+.ask-trace {
+  position: relative;
+  overflow: hidden;
+}
+
+.ask-trace > i {
+  position: absolute;
+  inset: 0 auto auto 0;
+  width: 24%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--color-data), transparent);
+  animation: flow 1400ms var(--ease-in-out) infinite;
+}

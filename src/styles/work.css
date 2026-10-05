@@ -1,0 +1,407 @@
+/* ------------------------------------------------------------------------------------------
+   Work programmes and the transitions between them
+   (components/sections/SelectedWork, components/work, app/work).
+
+   A programme scopes two custom properties to itself — `--prog` and `--prog-2`, "r g b"
+   triplets set inline from components/work/theme.ts — and everything that carries its
+   identity (numeral, rules, figure highlights, the transition out of it) reads those. The
+   fallbacks below are the neutral page, so a figure rendered outside a programme still works.
+   ------------------------------------------------------------------------------------------ */
+.prog-ink {
+  color: rgb(var(--prog, 233 231 225));
+}
+
+.prog-ink-2 {
+  color: rgb(var(--prog-2, 143 152 158));
+}
+
+.prog-bg {
+  background-color: rgb(var(--prog, 233 231 225));
+}
+
+.prog-bg-2 {
+  background-color: rgb(var(--prog-2, 143 152 158));
+}
+
+/* The line that opens a programme: its colour arriving as a lit stretch, then plain structure. */
+.prog-rule {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    rgb(var(--prog)) 0,
+    rgb(var(--prog) / 0.4) 22%,
+    var(--color-rule-strong) 48%,
+    var(--color-rule) 100%
+  );
+}
+
+/* The programme numeral is drawn, not filled — the same drawing-before-object language as the
+   hero. The fill is transparent so the environment's light shows through it. */
+.prog-numeral {
+  color: transparent;
+  -webkit-text-stroke: 1.25px rgb(var(--prog) / 0.9);
+  font-size: clamp(3.5rem, 10.5vw, 9.25rem);
+  line-height: 0.78;
+  letter-spacing: -0.035em;
+  font-variant-numeric: tabular-nums;
+  user-select: none;
+}
+
+.prog-title {
+  font-size: clamp(2.5rem, 6.6vw, 6rem);
+  line-height: 0.92;
+}
+
+/* ------------------------------------------------------------------------------------------
+   Programme compositions. One DOM order (head → figure → brief), three arrangements, so the
+   sequence reads as three programmes in one system rather than one template stamped three
+   times. Below `lg` every composition is the same single column.
+   ------------------------------------------------------------------------------------------ */
+.programme {
+  position: relative;
+  padding-block: clamp(1.5rem, 3vw, 2.5rem);
+}
+
+.prog-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  row-gap: clamp(2rem, 4.5vw, 3.75rem);
+  margin-top: clamp(2rem, 4.5vw, 3.75rem);
+}
+
+.prog-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  row-gap: 1rem;
+}
+
+@media (min-width: 64rem) {
+  .prog-grid,
+  .prog-head {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    column-gap: 2.5rem;
+  }
+
+  .prog-head,
+  .prog-chain {
+    grid-column: 1 / -1;
+  }
+
+  .prog-head {
+    align-items: end;
+    row-gap: 1.25rem;
+  }
+
+  /* lead — numeral in the label gutter, title on the content column; brief left, figure right. */
+  [data-composition="lead"] .prog-numeral {
+    grid-column: 1 / span 3;
+    grid-row: 1 / span 2;
+  }
+
+  [data-composition="lead"] .prog-title,
+  [data-composition="lead"] .prog-designation {
+    grid-column: 4 / -1;
+  }
+
+  [data-composition="lead"] .prog-brief {
+    grid-column: 1 / span 4;
+    grid-row: 2;
+  }
+
+  [data-composition="lead"] .prog-figure {
+    grid-column: 5 / -1;
+    grid-row: 2;
+  }
+
+  /* mirror — title leads, numeral closes the line on the right; figure left, brief right. */
+  [data-composition="mirror"] .prog-title,
+  [data-composition="mirror"] .prog-designation {
+    grid-column: 1 / span 9;
+  }
+
+  [data-composition="mirror"] .prog-numeral {
+    grid-column: 10 / -1;
+    grid-row: 1 / span 2;
+    justify-self: end;
+  }
+
+  [data-composition="mirror"] .prog-figure {
+    grid-column: 1 / span 7;
+    grid-row: 3;
+  }
+
+  [data-composition="mirror"] .prog-brief {
+    grid-column: 9 / -1;
+    grid-row: 3;
+  }
+
+  /* bleed — numeral and title locked up on one line; the figure runs the full measure and the
+     brief sits beneath it in columns. */
+  [data-composition="bleed"] .prog-head {
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: clamp(1.5rem, 3vw, 3rem);
+  }
+
+  [data-composition="bleed"] .prog-numeral {
+    grid-row: 1;
+    font-size: clamp(2.5rem, 6.6vw, 6rem);
+    line-height: 0.92;
+  }
+
+  [data-composition="bleed"] .prog-title {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  [data-composition="bleed"] .prog-designation {
+    grid-column: 1 / -1;
+  }
+
+  [data-composition="bleed"] .prog-figure,
+  [data-composition="bleed"] .prog-brief {
+    grid-column: 1 / -1;
+  }
+}
+
+/* ------------------------------------------------------------------------------------------
+   The brief: problem / system / technology / role / status. A plain definition list; in the
+   bleed composition it spreads into three columns under the figure.
+   ------------------------------------------------------------------------------------------ */
+.brief > div {
+  padding-block: 1.125rem;
+  border-top: 1px solid var(--color-rule);
+}
+
+.brief > div:first-child {
+  border-top-color: rgb(var(--prog) / 0.55);
+}
+
+.brief dt {
+  margin-bottom: 0.5rem;
+  color: var(--color-faint);
+}
+
+.prog-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.75rem;
+}
+
+@media (min-width: 64rem) {
+  /* The list dissolves into the grid so its fields and the actions can share rows: problem and
+     system side by side with the way in beneath them, the metadata stacked on the right. */
+  [data-composition="bleed"] .prog-brief {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    column-gap: 2.5rem;
+    align-items: start;
+  }
+
+  [data-composition="bleed"] .brief {
+    display: contents;
+  }
+
+  [data-composition="bleed"] .brief > div {
+    grid-column: 9 / -1;
+  }
+
+  [data-composition="bleed"] .brief > [data-field="problem"],
+  [data-composition="bleed"] .brief > [data-field="system"],
+  [data-composition="bleed"] .brief > [data-field="technology"] {
+    grid-row: 1;
+    border-top-color: rgb(var(--prog) / 0.55);
+  }
+
+  [data-composition="bleed"] .brief > [data-field="problem"] {
+    grid-column: 1 / span 4;
+  }
+
+  [data-composition="bleed"] .brief > [data-field="system"] {
+    grid-column: 5 / span 4;
+  }
+
+  [data-composition="bleed"] .brief > [data-field="role"] {
+    grid-row: 2;
+  }
+
+  [data-composition="bleed"] .brief > [data-field="status"] {
+    grid-row: 3;
+  }
+
+  [data-composition="bleed"] .prog-actions {
+    grid-column: 1 / span 8;
+    grid-row: 2 / span 2;
+    margin-top: 0.75rem;
+  }
+}
+
+/* ------------------------------------------------------------------------------------------
+   The signal chain (qEEG): how a recording moves through the research system. The wire is
+   solid where a stage is implemented and dashed where it is still being built.
+   ------------------------------------------------------------------------------------------ */
+.chain-steps {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.chain-step {
+  position: relative;
+  padding: 0 0 1.25rem 1.5rem;
+}
+
+/* Narrow screens: the wire runs down the left edge. */
+.chain-step::before {
+  content: "";
+  position: absolute;
+  top: 0.375rem;
+  bottom: -0.375rem;
+  left: 0.1875rem;
+  border-left: 1px solid rgb(var(--prog) / 0.7);
+}
+
+.chain-step[data-stage="in-build"]::before {
+  border-left-style: dashed;
+  border-left-color: rgb(var(--prog-2) / 0.7);
+}
+
+.chain-step:last-child::before {
+  display: none;
+}
+
+.chain-node {
+  position: absolute;
+  top: 0.375rem;
+  left: 0;
+  width: 0.4375rem;
+  height: 0.4375rem;
+  background: rgb(var(--prog));
+}
+
+.chain-step[data-stage="in-build"] .chain-node {
+  background: var(--color-carbon);
+  outline: 1px solid rgb(var(--prog-2));
+  outline-offset: -1px;
+}
+
+@media (min-width: 40rem) {
+  .chain-steps {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    row-gap: 1.75rem;
+  }
+
+  .chain-step {
+    padding: 1.25rem 1.25rem 0 0;
+  }
+
+  /* Wide screens: the wire runs along the top of each step. */
+  .chain-step::before,
+  .chain-step:last-child::before {
+    display: block;
+    top: 0.1875rem;
+    right: 0;
+    bottom: auto;
+    left: 0;
+    border-left: 0;
+    border-top: 1px solid rgb(var(--prog) / 0.7);
+  }
+
+  .chain-step[data-stage="in-build"]::before {
+    border-top-style: dashed;
+    border-top-color: rgb(var(--prog-2) / 0.7);
+  }
+
+  .chain-node {
+    top: 0;
+  }
+}
+
+@media (min-width: 64rem) {
+  .chain-steps {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+/* ------------------------------------------------------------------------------------------
+   DATA_MORPH — the band between programmes (components/work/Morph). Full-bleed: the lines
+   pass through the page rather than sitting in a box. Without JavaScript there is nothing to
+   draw, so the band collapses to plain spacing.
+   ------------------------------------------------------------------------------------------ */
+.morph {
+  display: none;
+  margin-block: clamp(1rem, 3vw, 2.5rem);
+  margin-inline: calc(50% - 50vw);
+}
+
+html.js .morph {
+  display: block;
+}
+
+.morph-canvas {
+  display: block;
+  width: 100%;
+  /* Capped in rem as well as vh, so a very tall window does not turn the band into a wall. */
+  height: clamp(11rem, 30vh, 15rem);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 9%, #000 91%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 9%, #000 91%, transparent);
+}
+
+@media (min-width: 48rem) {
+  .morph-canvas {
+    height: clamp(17rem, 46vh, 27rem);
+  }
+}
+
+/* The rail: a hairline with a lit stretch that travels with scroll, like the racing line. */
+.morph-rail {
+  position: relative;
+  height: 1px;
+  margin-top: 1.25rem;
+  overflow: hidden;
+  background: var(--color-rule-strong);
+}
+
+.morph-lit {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 16%;
+  /* 525% of its own width is the 84% of the rail it has left to travel. */
+  transform: translateX(calc(var(--morph-p) * 525%));
+  background: linear-gradient(90deg, transparent, rgb(var(--morph-ink)) 50%, transparent);
+}
+
+.morph-states {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 0.625rem;
+  color: var(--color-faint);
+}
+
+.morph-states > span {
+  transition: color var(--dur-base) linear;
+}
+
+.morph-states > span:nth-child(2) {
+  text-align: center;
+}
+
+.morph-states > span:nth-child(3) {
+  text-align: right;
+}
+
+.morph[data-state="0"] .morph-states > span:nth-child(1),
+.morph[data-state="1"] .morph-states > span:nth-child(2),
+.morph[data-state="2"] .morph-states > span:nth-child(3) {
+  color: rgb(var(--morph-ink));
+}
+
+/* ------------------------------------------------------------------------------------------
+   Figures inside a programme
+   ------------------------------------------------------------------------------------------ */
+
+/* A pipeline stage that can end the request: the one place the evidence programme uses red. */
+.gate-mark {
+  width: 3px;
+  height: 0.75rem;
+  background: var(--color-perf);
+}
