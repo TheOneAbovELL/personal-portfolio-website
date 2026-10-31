@@ -5,6 +5,7 @@ import { ButtonLink } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import { StatusBadge, TagList } from "@/components/ui/Tag";
 import { ProjectFigure } from "@/components/work/ProjectFigure";
+import { programmeScope } from "@/components/work/theme";
 import { caseStudyProjects, getProject, type TitledNote } from "@/content";
 
 export const dynamicParams = false;
@@ -106,7 +107,7 @@ export default async function CaseStudyPage({ params }: { params: Promise<{ slug
   ];
 
   return (
-    <article className="section" data-tone="teal">
+    <article className="section" data-tone="teal" {...programmeScope(project.theme)}>
       <div className="shell pb-[clamp(4rem,8vw,7rem)] pt-[calc(var(--header-h)+clamp(2rem,5vw,4rem))]">
       <Link
         href="/work"
@@ -122,14 +123,14 @@ export default async function CaseStudyPage({ params }: { params: Promise<{ slug
           <p className="label text-faint">{project.discipline ?? "Case study"}</p>
         </div>
         <h1
-          className="display enter-mask mt-5 text-[clamp(2.75rem,9vw,8rem)] uppercase"
+          className="display enter-mask mt-5 text-[clamp(2.375rem,6vw,5.25rem)] uppercase"
           style={{ "--enter-index": 1 } as React.CSSProperties}
         >
           {project.title}
         </h1>
         {project.fullTitle && <p className="label mt-4 max-w-[40rem] text-steel">{project.fullTitle}</p>}
         <p
-          className="enter mt-6 max-w-[44rem] text-[clamp(1.25rem,2.2vw,1.75rem)] leading-snug text-bone"
+          className="enter mt-6 max-w-[44rem] text-[clamp(1.125rem,1.8vw,1.5rem)] leading-snug text-bone"
           style={{ "--enter-index": 2 } as React.CSSProperties}
         >
           {project.tagline}
@@ -169,9 +170,9 @@ export default async function CaseStudyPage({ params }: { params: Promise<{ slug
         </div>
 
         {project.facts && project.facts.length > 0 && (
-          <dl className="mt-10 grid gap-px border border-rule bg-rule sm:grid-cols-2 lg:grid-cols-4" data-reveal="settle">
+          <dl className="mt-12 grid gap-x-10 gap-y-6 sm:grid-cols-2 lg:grid-cols-4" data-reveal="settle">
             {project.facts.map((fact) => (
-              <div key={fact.label} className="bg-carbon p-4">
+              <div key={fact.label} className="border-t border-[rgb(var(--prog,233_231_225)/0.45)] pt-3">
                 <dt className="label text-faint">{fact.label}</dt>
                 <dd className="mt-2 text-[0.9875rem] leading-snug text-bone">{fact.value}</dd>
               </div>
@@ -193,7 +194,7 @@ export default async function CaseStudyPage({ params }: { params: Promise<{ slug
             href={`/work/${next.slug}`}
             className="group mt-3 inline-flex items-center gap-4 transition-colors duration-[var(--dur-fast)] hover:text-signal"
           >
-            <span className="display text-[clamp(2rem,6vw,4.5rem)] uppercase">{next.title}</span>
+            <span className="display text-[clamp(1.75rem,4vw,3.25rem)] uppercase">{next.title}</span>
             <Icon
               name="arrow-right"
               size={32}

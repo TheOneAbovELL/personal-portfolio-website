@@ -136,7 +136,10 @@ function describeOrigin(doc: KnowledgeDoc): string {
       // Research no longer has a section of its own; it closes the work sector.
       return "From the research and direction notes:";
     case "repo":
-      return "From the Garage:";
+      // "Garage / <repo> / README" — say which README, not just "the Garage".
+      return doc.id.startsWith("readme:") ? `From the ${doc.label.split(" / ")[1]} README:` : "From the Garage:";
+    case "resume":
+      return "From his résumé:";
     case "contact":
       return "From the contact section:";
     default:

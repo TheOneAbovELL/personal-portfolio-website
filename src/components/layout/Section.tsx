@@ -13,7 +13,7 @@ interface SectionProps {
   /** A short, real readout shown at the right of the sector line, e.g. "06 domains". */
   readout?: string;
   tone?: Tone;
-  /** "paper" prints the section light-on-dark inverted, as a document. Default is the dark studio. */
+  /** "paper" sets the section on a graphite document sheet that fades in over the environment. Default is the open studio. */
   surface?: "studio" | "paper";
   /** Optional element on the heading row, e.g. a "view all" link. */
   aside?: React.ReactNode;
@@ -74,7 +74,7 @@ export function Section({
   children,
 }: SectionProps) {
   const heading = (
-    <h2 id={`${id}-title`} className="display text-[clamp(2rem,4.4vw,3.75rem)]" data-reveal="mask">
+    <h2 id={`${id}-title`} className="display title-section max-w-[24ch]" data-reveal="mask" data-drift="">
       <span className="mask">{title}</span>
     </h2>
   );

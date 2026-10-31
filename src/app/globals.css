@@ -59,6 +59,7 @@
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1); /* things that move and stay */
   --ease-snap: cubic-bezier(0.2, 0.9, 0.1, 1); /* mechanical: small parts clicking into place */
   --ease-ramp: cubic-bezier(0.7, 0, 0.2, 1); /* acceleration then settle: lines and masks */
+  --ease-soft: cubic-bezier(0.22, 1, 0.36, 1); /* long, quiet deceleration: content arriving on scroll */
 }
 
 :root {
@@ -68,6 +69,14 @@
   --stagger: 70ms;
 
   --gutter: clamp(1.25rem, 4vw, 4rem);
+
+  /* Type scale. Calm on purpose: section titles lead without shouting, body copy sits at a
+     reading size, and the big moments (the name, the closing line) are the only large type. */
+  --type-title: clamp(1.625rem, 0.95rem + 2.1vw, 2.625rem); /* section titles */
+  --type-subtitle: clamp(1.25rem, 1rem + 0.9vw, 1.75rem); /* sub-section titles */
+  --type-lead: clamp(1.0625rem, 0.95rem + 0.35vw, 1.1875rem); /* lead paragraphs */
+  --type-body: 1rem;
+  --type-small: 0.875rem;
   --header-h: 4rem;
 
   color-scheme: dark;
@@ -90,7 +99,7 @@ body {
   background: transparent;
   color: var(--color-bone);
   font-family: var(--font-sans);
-  font-size: 1.0625rem;
+  font-size: var(--type-body);
   line-height: 1.6;
   text-rendering: optimizeLegibility;
   overflow-x: clip;
@@ -144,9 +153,17 @@ body::after {
 }
 
 @utility prose-body {
-  font-size: clamp(1.0625rem, 0.6vw + 0.95rem, 1.1875rem);
-  line-height: 1.65;
+  font-size: var(--type-lead);
+  line-height: 1.7;
   text-wrap: pretty;
+}
+
+/* Section titles: the display face at the calm end of the scale. */
+@utility title-section {
+  font-size: var(--type-title);
+  font-weight: 600;
+  line-height: 1.04;
+  letter-spacing: -0.018em;
 }
 
 @utility shell {
@@ -256,62 +273,34 @@ body::after {
   --tempo: 1.5;
 }
 
-/* Paper. One section is printed rather than lit: the record of experience reads as a
-   technical document, and it is the one opaque surface on the page — the racing line passes
-   behind it and re-emerges below. Every colour utility resolves through these variables, so
-   the whole palette inverts inside this scope without touching a component. */
+/* Document. One section reads as a record rather than a lit stage: the record of experience.
+   It used to be printed on light paper, which flashed against the dark page; now it is a
+   graphite sheet that fades in and out over the environment, so the change is felt, not seen.
+   The racing line passes behind it (the sheet is nearly opaque in the middle) and re-emerges
+   below. Faint ruled lines and a margin rule give it the feel of a technical document. */
 .section[data-surface="paper"] {
-  --color-carbon: #e6e3da;
-  --color-graphite: #dcd9cf;
-  --color-graphite-2: #e0ddd4;
-  --color-graphite-3: #d4d0c6;
-  --color-gunmetal: #cdc9be;
-  --color-metal: #c8c4b9;
-  --color-metal-2: #b8b3a7;
-  --color-metal-3: #a29d91;
-  --color-rule: #cac6bb;
-  --color-rule-strong: #a7a296;
-  --color-bone: #0c1012;
-  --color-steel: #444c51;
-  --color-faint: #5c646a;
-  /* Inks. On paper the accent is performance red; teal and yellow deepen until they hold 4.5:1. */
-  --color-signal: #b3202a;
-  --color-signal-bright: #c9303a;
-  --color-perf: #b3202a;
-  --color-perf-bright: #b3202a;
-  --color-data: #0a7268;
-  --color-papaya: #a84a00;
-  --color-warn: #b3202a;
-  background: var(--color-carbon);
-  color: var(--color-bone);
-  box-shadow:
-    0 -1px 0 rgb(0 0 0 / 0.5),
-    0 40px 80px -40px rgb(0 0 0 / 0.6);
+  --doc: 16 20 23;
+  background: linear-gradient(
+    180deg,
+    rgb(var(--doc) / 0) 0,
+    rgb(var(--doc) / 0.9) clamp(6rem, 14vw, 12rem),
+    rgb(var(--doc) / 0.94) calc(100% - clamp(6rem, 14vw, 12rem)),
+    rgb(var(--doc) / 0) 100%
+  );
 }
 
 .section[data-surface="paper"]::before {
   content: "";
   position: absolute;
-  inset: 0;
+  inset: clamp(6rem, 14vw, 12rem) 0;
   z-index: -1;
   pointer-events: none;
-  background: linear-gradient(180deg, rgb(0 0 0 / 0.07), transparent 5rem);
-}
-
-/* Carbon weave and machined panels are lit-surface materials; on paper they flatten to tints. */
-.section[data-surface="paper"] .weave {
-  background-image: none;
-  background-color: var(--color-graphite);
-}
-
-.section[data-surface="paper"] .panel {
-  background: var(--color-graphite-2);
-  box-shadow: 0 18px 40px -26px rgb(0 0 0 / 0.45);
-}
-
-.section[data-surface="paper"] ::selection {
-  background: #0c1012;
-  color: #e6e3da;
+  background-image: repeating-linear-gradient(
+    180deg,
+    transparent 0 calc(2rem - 1px),
+    rgb(233 231 225 / 0.018) calc(2rem - 1px) 2rem
+  );
+  mask-image: linear-gradient(180deg, transparent, #000 20%, #000 80%, transparent);
 }
 
 /* The sector line that opens each section: an engineering scale with the line drawn over it. */
@@ -354,11 +343,11 @@ html.js [data-reveal] {
 html.js [data-reveal=""],
 html.js [data-reveal="rise"] {
   opacity: 0;
-  transform: translate3d(0, 22px, 0);
-  filter: blur(6px);
+  transform: translate3d(0, 16px, 0);
+  filter: blur(4px);
   transition-property: opacity, transform, filter;
-  transition-duration: calc(700ms * var(--tempo, 1)), calc(900ms * var(--tempo, 1)), calc(700ms * var(--tempo, 1));
-  transition-timing-function: var(--ease-out);
+  transition-duration: calc(1000ms * var(--tempo, 1)), calc(1250ms * var(--tempo, 1)), calc(800ms * var(--tempo, 1));
+  transition-timing-function: var(--ease-soft);
 }
 
 /* The clip sits on an inner .mask wrapper: a fully clipped element has no visible area,
@@ -394,16 +383,44 @@ html.js [data-reveal="trace"] {
 
 html.js [data-reveal="settle"] {
   opacity: 0;
-  transform: scale(1.03);
+  transform: scale(1.02);
   transition-property: opacity, transform;
-  transition-duration: calc(900ms * var(--tempo, 1)), calc(1500ms * var(--tempo, 1));
-  transition-timing-function: var(--ease-out);
+  transition-duration: calc(1000ms * var(--tempo, 1)), calc(1600ms * var(--tempo, 1));
+  transition-timing-function: var(--ease-soft);
 }
 
 html.js [data-reveal][data-revealed] {
   opacity: 1;
   transform: none;
   filter: none;
+}
+
+/* Scroll you can feel. Section titles drift a little slower than the page as they pass, tied
+   to scroll position rather than time (a view timeline), so the motion follows the hand. Uses
+   the independent `translate` property, so it composes with the reveal transforms. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    html.js [data-drift] {
+      animation: drift linear both;
+      animation-timeline: view();
+      animation-range: entry 0% exit 100%;
+    }
+  }
+}
+
+@keyframes drift {
+  from {
+    translate: 0 calc(var(--drift, 2rem));
+  }
+  to {
+    translate: 0 calc(var(--drift, 2rem) * -1);
+  }
+}
+
+/* Swapped-in content in interactive panels (filters, explorers): a short, soft arrival. */
+@utility swap-in {
+  animation: rise 560ms var(--ease-soft) both;
+  animation-delay: calc(var(--i, 0) * 32ms);
 }
 
 /* Route change — see app/template.tsx. Opacity only, so fixed children stay fixed. */
@@ -468,7 +485,7 @@ html.js [data-reveal][data-revealed] {
 }
 
 /* Entrance sequences (hero, page headers). --enter-index orders the phases; --enter-base (80ms)
-   is when the first phase starts — the start sequence (styles/loader.css) moves it to its curtain. */
+   is when the first phase starts. On a full load the intro pauses entrances until its hand-off (styles/loader.css). */
 @utility enter {
   animation: rise var(--dur-slow) var(--ease-out) both;
   animation-delay: calc(var(--enter-index, 0) * 110ms + var(--enter-base, 80ms));

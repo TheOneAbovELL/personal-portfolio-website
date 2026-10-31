@@ -1,22 +1,29 @@
 import { SectorLabel, SectorLine } from "@/components/layout/Section";
-import { ButtonLink } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import { profile } from "@/content";
 import { reveal } from "@/lib/reveal";
 
 /** The end of the lap: the visual system resolves into one warm light and one action. */
 export function Contact() {
+  const links = [
+    { label: "Résumé", detail: "PDF", href: profile.resume.href },
+    ...profile.socials
+      .filter((social) => ["linkedin", "github", "instagram"].includes(social.id))
+      .map((social) => ({ label: social.label, detail: social.handle, href: social.href })),
+  ];
+
   return (
     <section id="contact" aria-labelledby="contact-title" className="section" data-race-zone="contact" data-tone="red">
-      <div className="shell pb-[clamp(4rem,8vw,7rem)] pt-[clamp(4.5rem,9vw,8.5rem)]">
+      <div className="shell pb-[clamp(5rem,10vw,8rem)] pt-[clamp(4.5rem,9vw,8.5rem)]">
         <SectorLine tone="red" />
-        <SectorLabel id="contact" label="Contact" readout="Channel open" />
-        <div className="kerb mt-4 w-20" aria-hidden="true" {...reveal("trace")} />
+        <SectorLabel id="contact" label="Contact" readout={profile.availability.open ? profile.availability.label : "Channel open"} />
 
         <h2
           id="contact-title"
-          className="display mt-[clamp(2rem,5vw,4rem)] text-[clamp(2.75rem,9.4vw,9rem)] uppercase"
-          {...reveal("mask")}
+          className="display mt-[clamp(3rem,7vw,6rem)] text-[clamp(2.5rem,7.2vw,7rem)] uppercase"
+          data-reveal="mask"
+          data-drift=""
+          style={{ "--drift": "3rem" } as React.CSSProperties}
         >
           <span className="mask">
             Let&rsquo;s build
@@ -25,41 +32,50 @@ export function Contact() {
           </span>
         </h2>
 
-        <div className="mt-[clamp(2.5rem,5vw,4rem)] grid gap-x-10 gap-y-10 lg:grid-cols-12">
-          <p className="prose-body text-steel lg:col-span-5" {...reveal("rise")}>
-            {profile.availability.note}
-          </p>
-
-          <div className="lg:col-span-7" {...reveal("rise", 1)}>
+        <div className="mt-[clamp(3rem,6vw,5rem)] grid gap-x-16 gap-y-12 lg:grid-cols-12">
+          <div className="lg:col-span-7" {...reveal("rise")}>
             <p className="label flex items-center gap-2.5 text-steel">
               <span aria-hidden="true" className="pulse-dot size-1.5 rounded-full bg-perf" />
               Direct line
             </p>
             <a
               href={`mailto:${profile.email}`}
-              className="group mt-3 inline-flex max-w-full items-center gap-3 border-b border-rule-strong pb-2 text-[clamp(1.25rem,3.4vw,2.25rem)] font-medium text-bone transition-colors duration-[var(--dur-fast)] hover:border-signal hover:text-signal"
+              className="group mt-4 inline-flex max-w-full items-center gap-3 text-[clamp(1.25rem,2.8vw,2.25rem)] font-medium tracking-[-0.01em] text-bone transition-colors duration-[var(--dur-base)] hover:text-signal"
             >
-              <span className="truncate">{profile.email}</span>
+              <span className="link-underline truncate pb-1">{profile.email}</span>
               <Icon
                 name="arrow-up-right"
-                size={24}
-                className="shrink-0 transition-transform duration-[220ms] ease-[var(--ease-snap)] group-hover:-translate-y-1 group-hover:translate-x-1"
+                size={22}
+                className="shrink-0 transition-transform duration-[320ms] ease-[var(--ease-out)] group-hover:-translate-y-1 group-hover:translate-x-1"
               />
             </a>
-
-            <div className="mt-8 flex flex-wrap gap-3">
-              <ButtonLink href={profile.resume.href} icon="arrow-up-right">
-                Résumé
-              </ButtonLink>
-              {profile.socials
-                .filter((social) => social.id === "linkedin" || social.id === "github")
-                .map((social) => (
-                  <ButtonLink key={social.id} href={social.href} variant="secondary" icon="arrow-up-right">
-                    {social.label}
-                  </ButtonLink>
-                ))}
-            </div>
+            <p className="prose-body mt-6 max-w-[34rem] text-steel">{profile.availability.note}</p>
           </div>
+
+          <nav aria-label="Elsewhere" className="lg:col-span-4 lg:col-start-9" {...reveal("rise", 1)}>
+            <ul>
+              {links.map((link) => (
+                <li key={link.label} className="border-b border-rule/60 first:border-t">
+                  <a
+                    href={link.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group flex min-h-14 items-center justify-between gap-6 text-bone transition-colors duration-[var(--dur-base)] hover:text-signal"
+                  >
+                    <span className="text-[1rem] font-medium">{link.label}</span>
+                    <span className="flex items-center gap-3">
+                      <span className="label text-faint transition-colors duration-[var(--dur-base)] group-hover:text-steel">{link.detail}</span>
+                      <Icon
+                        name="arrow-up-right"
+                        size={14}
+                        className="text-faint transition-[transform,color] duration-[320ms] ease-[var(--ease-out)] group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-signal"
+                      />
+                    </span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </nav>
         </div>
       </div>
     </section>

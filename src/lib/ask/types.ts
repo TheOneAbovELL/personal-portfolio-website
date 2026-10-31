@@ -15,7 +15,8 @@ export type KnowledgeType =
   | "achievement"
   | "now"
   | "repo"
-  | "contact";
+  | "contact"
+  | "resume";
 
 /** One retrievable unit of portfolio content, derived from `src/content/*`. */
 export interface KnowledgeDoc {

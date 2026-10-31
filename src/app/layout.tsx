@@ -57,7 +57,7 @@ export const viewport: Viewport = {
 
 // Marks the document as script-capable before first paint, so reveal styles
 // (which hide content until it scrolls in) never apply when JavaScript is unavailable.
-// Also arms the start sequence's skip, so it works before hydration (components/loader/boot.ts).
+// Also runs the intro timeline, so it plays (and can be skipped) before hydration (components/loader/boot.ts).
 const JS_FLAG = "document.documentElement.classList.add('js');" + INTRO_BOOT;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

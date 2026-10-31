@@ -44,12 +44,15 @@ export async function Garage() {
         Every experiment, tool and small system. Not flagship work — the things built along the way, listed as they
         are and updated automatically as new repositories appear.
       </p>
-      <div className="mt-10" {...reveal("settle", 1)}>
+      <div className="mt-12" {...reveal("rise", 1)}>
         <GarageBoard repos={repos} />
       </div>
-      <p className="label mt-4 flex items-center gap-2 text-faint">
-        <span aria-hidden="true" className="size-1.5 bg-signal" />
-        Worked on in the last 90 days
+      <p className="label mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 text-faint">
+        <span className="flex items-center gap-2">
+          <span aria-hidden="true" className="size-1.5 rounded-full bg-signal" />
+          Worked on in the last 90 days
+        </span>
+        {repos.some((repo) => repo.activity) && <span>Bars: commits per week, from GitHub</span>}
       </p>
     </Section>
   );

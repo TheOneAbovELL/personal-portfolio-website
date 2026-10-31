@@ -20,8 +20,10 @@ export type ProjectCategory = "research" | "engineering" | "experiment";
 /** Which bespoke figure (if any) illustrates a project. */
 export type ProjectFigure =
   | "pipeline"
-  | "risk"
   | "montage"
+  | "ripple"
+  | "satquery"
+  | "risk"
   // The /projects programmes (components/figures/builds).
   | "agent-trace"
   | "run-compare"
@@ -29,16 +31,19 @@ export type ProjectFigure =
   | "head-circuit"
   | "attention-masks"
   | "chess-board"
-  | "race-replay";
+  | "race-replay"
+  | "rec-engine";
 
 /**
  * A featured programme's identity within the master palette — what the work is about, not a
  * colour. The colours each one maps to live with the components (components/work/theme.ts).
  *   evidence  retrieval, knowledge, citation
  *   signal    neural signals, topology, frequency
+ *   ripple    memories, dependencies, waves of revision
+ *   orbital   satellite imagery, rasters, measured evidence
  *   market    market data, quantitative signals
  */
-export type ProgrammeTheme = "evidence" | "signal" | "market";
+export type ProgrammeTheme = "evidence" | "signal" | "ripple" | "orbital" | "market";
 
 /**
  * The identities of the programmes on /projects, which continue the homepage sequence.
@@ -49,8 +54,17 @@ export type ProgrammeTheme = "evidence" | "signal" | "market";
  *   attention  attention patterns and their cost curves
  *   chess      the board, the engine, the evaluation
  *   telemetry  car positions, laps, the timing tower
+ *   recommend  embedding neighbourhoods, ranked shortlists
  */
-export type ShowcaseTheme = "trace" | "bench" | "context" | "circuit" | "attention" | "chess" | "telemetry";
+export type ShowcaseTheme =
+  | "trace"
+  | "bench"
+  | "context"
+  | "circuit"
+  | "attention"
+  | "chess"
+  | "telemetry"
+  | "recommend";
 
 /** Any programme identity — homepage or /projects. */
 export type ProjectTheme = ProgrammeTheme | ShowcaseTheme;
@@ -146,7 +160,7 @@ export interface Project {
   caseStudy?: CaseStudy;
 }
 
-/** A homepage programme: featured, and carrying one of the three homepage identities (or none). */
+/** A homepage programme: featured, and carrying one of the homepage identities (or none). */
 export type FeaturedProject = Project & { theme?: ProgrammeTheme };
 
 /** A /projects programme: showcased, and carrying one of the /projects identities (or none). */

@@ -56,7 +56,11 @@ export type Intent =
        */
       keyTerms: string[];
     }
-  | { kind: "repo"; name: string };
+  | { kind: "repo"; name: string }
+  /** A question about one part of the résumé ("What skills does his résumé list?"). */
+  | { kind: "resume-section"; section: ResumeSection };
+
+export type ResumeSection = "summary" | "education" | "experience" | "projects" | "achievements" | "skills";
 
 const NONE: Intent = { kind: "none" };
 
@@ -116,11 +120,24 @@ const HANDLE = /\b(github|leetcode|codeforces|linkedin)\b.{0,12}\b(profile|handl
 /** Contact details the portfolio deliberately does not publish. */
 const UNLISTED_CONTACT = /\b(phone|telephone|whats ?app)\b|\b(mobile|cell|contact) (number|no)\b|\bcall (him|omjee)\b/;
 const CONTACT = /\b(contact\w*|e-?mail|reach|get in touch|linkedin|socials?|social media|connect with|message him|dm)\b/;
-const RESUME = /\b(resume|résumé|cv|curriculum vitae)\b/;
+// The question's "résumé" is folded to "resume" first (see classifyIntent): `\b` does not
+// treat "é" as a word character.
+const RESUME = /\b(resume|cv|curriculum vitae)\b/;
+/** The parts of the résumé a question can single out, with the words that point at each. */
+const RESUME_SECTIONS: { section: ResumeSection; cue: RegExp }[] = [
+  { section: "skills", cue: /\b(skills?|tech\w*|stack|tools?|languages?|frameworks?)\b/ },
+  { section: "education", cue: /\b(c?gpa|grades?|marks|educat\w*|degrees?|college|universit\w*|stud\w*)\b/ },
+  { section: "achievements", cue: /\b(achievements?|awards?|codeforces|ratings?|ranks?|recognition)\b/ },
+  { section: "experience", cue: /\b(experience|work history|roles?|jobs?|positions?|research assistant|gssoc)\b/ },
+  { section: "projects", cue: /\b(projects?|built|build)\b/ },
+  { section: "summary", cue: /\b(summary|summari[sz]e|objective|profile)\b/ },
+];
+/** Words that only say "on the résumé". */
+const RESUME_FRAMING = /\b(lists?|listed|mentions?|mentioned|says?|shows?|includes?|written|printed|put|has|have|does|on|in)\b/;
 const AVAILABILITY =
   /\b(availab\w*|hir(e|ing)|looking for|open to|seeking|recruit\w*|opportunit\w*)\b|\b(roles?|jobs?|internships?|positions?)\b.*\b(look\w*|want\w*|seek\w*|interested|open|target\w*)\b|\b(look\w*|want\w*|seek\w*)\b.*\b(roles?|jobs?|internships?|positions?)\b/;
 const EDUCATION =
-  /\b(educat\w*|stud(y|ies|ying|ied)|degrees?|college|universit\w*|b\.?\s?tech|btech|iit|bit mesra|school|major|graduat\w*|student|academic\w*|qualification\w*)\b/;
+  /\b(c?gpa|cumulative grade|grades?|marks|educat\w*|stud(y|ies|ying|ied)|degrees?|college|universit\w*|b\.?\s?tech|btech|iit|bit mesra|school|major|graduat\w*|student|academic\w*|qualification\w*)\b/;
 const ACHIEVEMENTS =
   /\b(codeforces|competitive programming|cp|rating|rated|leetcode|achievements?|awards?|recognition|rank(ed|ing)?|contests?|accomplishments?)\b/;
 const PROJECTS = /\b(projects?|case stud(y|ies)|featured|flagship|portfolio|built|build|made|shipped|worked on|his work)\b/;
@@ -344,7 +361,11 @@ function classifyGlobal(lower: string, focus: Focus, kb: KnowledgeBase): Intent 
 
   if (UNLISTED_CONTACT.test(lower) && simple(UNLISTED_CONTACT, CONTACT)) return { kind: "contact-unlisted" };
   if ((HANDLE.test(lower) || CONTACT.test(lower)) && simple(HANDLE, CONTACT)) return { kind: "contact" };
-  if (RESUME.test(lower) && simple(RESUME)) return { kind: "resume" };
+  if (RESUME.test(lower)) {
+    const match = RESUME_SECTIONS.find(({ cue }) => cue.test(lower));
+    if (match && simple(RESUME, match.cue, RESUME_FRAMING)) return { kind: "resume-section", section: match.section };
+    if (simple(RESUME)) return { kind: "resume" };
+  }
   if (AVAILABILITY.test(lower) && simple(AVAILABILITY)) return { kind: "availability" };
   if (EDUCATION.test(lower.replace(/case stud(y|ies)/g, "")) && simple(EDUCATION)) return { kind: "education" };
   if (ACHIEVEMENTS.test(lower) && simple(ACHIEVEMENTS, SKILLS)) return { kind: "achievements" };
@@ -368,7 +389,12 @@ function classifyGlobal(lower: string, focus: Focus, kb: KnowledgeBase): Intent 
 }
 
 export function classifyIntent(question: string, focus: Focus, kb: KnowledgeBase): Intent {
-  const lower = question.trim().toLowerCase().replace(/\s+/g, " ");
+  const lower = question
+    .trim()
+    .toLowerCase()
+    .normalize("NFC")
+    .replace(/\s+/g, " ")
+    .replace(/r[eé]sum[eé]/g, "resume");
   const aboutPortfolio = REFERS_TO_PERSON.test(lower) || focus.explicit.length > 0;
 
   if (INJECTION.test(lower)) return { kind: "offtopic" };

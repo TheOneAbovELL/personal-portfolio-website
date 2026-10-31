@@ -10,13 +10,16 @@ import { featuredProjects, type ProgrammeTheme } from "@/content";
 import { ResearchDirection } from "./Research";
 
 /**
- * What a programme's material turns into as the page leaves it (DATA_MORPH):
- * documents become signal, waveforms become a chart, and the chart flattens into the grid
- * that the research block is drawn on.
+ * What a programme's material turns into as the page leaves it (DATA_MORPH): documents become
+ * signal; the waveforms become a dependency graph and its waves; the waves straighten into a
+ * satellite swath and a raster tile; the tile's rows read out into a market series; and the
+ * series flattens into the grid that the research block is drawn on.
  */
 const TRANSITION_OUT: Record<ProgrammeTheme, MorphKind> = {
   evidence: "information-signal",
-  signal: "waveform-chart",
+  signal: "waveform-belief",
+  ripple: "ripple-raster",
+  orbital: "raster-series",
   market: "chart-grid",
 };
 

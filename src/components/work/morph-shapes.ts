@@ -17,6 +17,10 @@ export type MorphKind =
   | "information-signal"
   | "waveform-chart"
   | "chart-grid"
+  // Homepage, from v6: qEEG → Ripple → SatQuery AI → ARGUS.
+  | "waveform-belief"
+  | "ripple-raster"
+  | "raster-series"
   // The /projects sequence.
   | "trace-bars"
   | "bars-context"
@@ -24,7 +28,10 @@ export type MorphKind =
   | "circuit-matrix"
   | "curves-board"
   | "board-track"
-  | "track-grid";
+  | "track-grid"
+  // /projects, from v6: F1 Replay → Semantic Recommendation Engine → the page.
+  | "track-neighbours"
+  | "neighbours-grid";
 
 /** One state of the line set. Points are normalised to the band: x and y run 0 → 1. */
 export interface MorphShape {
@@ -628,6 +635,176 @@ const track: ShapeBuilder = (g) => {
 const straight: ShapeBuilder = (g) =>
   shape(g, (line, u) => [lerp(0.08, 0.92, u), 0.5 + (line / (g.lines - 1) - 0.5) * 0.3], laneStyle(g));
 
+/* ============================================================================================
+   v6 — the homepage grows to five programmes and /projects gains a recommender. Each new
+   transition starts from the shape the outgoing programme's figure speaks and ends in the shape
+   the incoming one speaks; existing builders are reused where a state is shared, never edited.
+   ============================================================================================ */
+
+/* Ripple: one changed fact fanning out along its dependency links — wave 1, then wave 2 —
+   and then the same lines as the waves themselves, rings travelling out from the fact. */
+const FACT_X = 0.14;
+/** The wave-1 group whose belief is revised: carried in the secondary colour through both states. */
+const REVISED = 1;
+
+const waveGroup = (g: MorphGeometry, line: number, groups: number) => Math.floor((line * groups) / g.lines);
+
+const beliefGraph: ShapeBuilder = (g) => {
+  const last = g.lines - 1;
+  const layerX = [FACT_X, 0.4, 0.64, 0.86];
+  return shape(
+    g,
+    (line, u) => {
+      const layerY = [
+        0.5,
+        lerp(0.2, 0.8, waveGroup(g, line, 4) / 3),
+        lerp(0.1, 0.9, waveGroup(g, line, 6) / 5),
+        lerp(0.06, 0.94, line / last),
+      ];
+      const span = Math.min(2, Math.floor(u * 3));
+      const f = u * 3 - span;
+      return [lerp(layerX[span], layerX[span + 1], f), lerp(layerY[span], layerY[span + 1], smoothstep(0.1, 0.9, f))];
+    },
+    {
+      alpha: (line) => (waveGroup(g, line, 4) === REVISED ? 0.9 : 0.5),
+      tone: (line) => (waveGroup(g, line, 4) === REVISED ? 1 : 0),
+      nodes: 1,
+    },
+  );
+};
+
+const rings: ShapeBuilder = (g) => {
+  const last = g.lines - 1;
+  return shape(
+    g,
+    (line, u) => {
+      // Radius in band heights; x is divided by the aspect so the rings stay round.
+      const radius = 0.07 + (line / last) * Math.min(1.25, 0.72 * g.aspect);
+      const reach = radius > 0.47 ? Math.asin(0.47 / radius) : Math.PI / 2;
+      const angle = lerp(-reach, reach, u);
+      return [FACT_X + (radius * Math.cos(angle)) / g.aspect, 0.5 + radius * Math.sin(angle)];
+    },
+    {
+      // One wave front carries the colour; the rest fade out with distance from the fact.
+      alpha: (line) => (waveGroup(g, line, 4) === REVISED ? 0.9 : 0.62 - 0.36 * (line / last)),
+      tone: (line) => (waveGroup(g, line, 4) === REVISED ? 1 : 0),
+    },
+  );
+};
+
+/* SatQuery AI: the rings straighten into a satellite's swath — parallel scan lines on a slant —
+   and the swath squares up into a raster tile, the unit every question in the figure runs on. */
+const swath: ShapeBuilder = (g) => {
+  const last = g.lines - 1;
+  const lit = Math.round(last * 0.55);
+  return shape(
+    g,
+    (line, u) => {
+      const base = lerp(0.22, 0.78, line / last);
+      return [lerp(0.08, 0.92, u), base + 0.18 * (0.5 - u) + 0.03 * Math.sin(Math.PI * u)];
+    },
+    { alpha: (line) => (line === lit ? 0.85 : line % 3 === 1 ? 0.6 : 0.4), tone: (line) => (line === lit ? 1 : 0) },
+  );
+};
+
+const TILE_CELLS = 10;
+const TILE = 0.84;
+
+/** A square raster tile, centred: each line threads a few of its row and column rules end to end. */
+const raster: ShapeBuilder = (g) => {
+  const width = TILE / g.aspect;
+  const left = 0.5 - width / 2;
+  const top = 0.5 - TILE / 2;
+  const toBand = ([column, rank]: Point): Point => [left + (column / TILE_CELLS) * width, top + (rank / TILE_CELLS) * TILE];
+  const horizontals = Math.ceil(g.lines / 2);
+  const rules = TILE_CELLS + 1;
+  const paths = Array.from({ length: g.lines }, (_, line) => {
+    const vertical = line >= horizontals;
+    const count = vertical ? g.lines - horizontals : horizontals;
+    const k = vertical ? line - horizontals : line;
+    const first = Math.min(rules - 1, Math.floor((k * rules) / count));
+    const end = Math.min(rules, Math.max(first + 1, Math.floor(((k + 1) * rules) / count)));
+    const vertices: Point[] = [];
+    const shares: number[] = [];
+    for (let r = first; r < end; r++) {
+      const a: Point = vertical ? [r, 0] : [0, r];
+      const b: Point = vertical ? [r, TILE_CELLS] : [TILE_CELLS, r];
+      const [from, to] = (r - first) % 2 === 0 ? [a, b] : [b, a];
+      if (vertices.length) {
+        const previous = vertices[vertices.length - 1];
+        vertices.push(vertical ? [previous[0], from[1]] : [from[0], previous[1]], from);
+        shares.push(0.1, 0.1);
+      } else vertices.push(from);
+      vertices.push(to);
+      shares.push(1);
+    }
+    return path(vertices.map(toBand), g.aspect, shares);
+  });
+  // The rules through the middle of the tile carry the measured change.
+  const changed = (line: number) =>
+    line === Math.floor(horizontals / 2) || line === horizontals + Math.floor((g.lines - horizontals) / 2);
+  return traced(g, paths, { alpha: (line) => (changed(line) ? 0.85 : 0.42), tone: (line) => (changed(line) ? 1 : 0) });
+};
+
+/* SatQuery AI → ARGUS: the tile's rows read out as transects — pixel values, stepped — and the
+   steps smooth into the market series the ARGUS figure plots. */
+const PIXELS = 28;
+
+const transect: ShapeBuilder = (g) => {
+  const last = g.lines - 1;
+  const lit = Math.round(last * 0.55);
+  return shape(
+    g,
+    (line, u) => {
+      const pixel = Math.min(PIXELS - 1, Math.floor(u * PIXELS));
+      const value = hash(line * 31 + pixel * 7) - 0.5 + 0.35 * Math.sin((pixel / PIXELS) * TAU + line);
+      return [lerp(0.07, 0.93, u), lerp(0.14, 0.86, line / last) + 0.032 * value];
+    },
+    { alpha: (line) => (line === lit ? 0.9 : 0.45), tone: (line) => (line === lit ? 1 : 0) },
+  );
+};
+
+/* Semantic Recommendation Engine: the straight's lanes swing round into an embedding
+   neighbourhood — rays from the query to its nearest products — and the neighbours re-rank into
+   a shortlist, whose rows level out into the grid the page is drawn on. */
+const QUERY: Point = [0.5, 0.5];
+
+/** Line k is the k-th nearest neighbour. Re-ranking moves a few of them: rank is not distance. */
+function rankOf(g: MorphGeometry, line: number): number {
+  const order = Array.from({ length: g.lines }, (_, k) => k).sort((a, b) => a + 2.6 * hash(a + 71) - (b + 2.6 * hash(b + 71)));
+  return order.indexOf(line);
+}
+
+const neighbours: ShapeBuilder = (g) => {
+  const last = g.lines - 1;
+  return shape(
+    g,
+    (line, u) => {
+      const angle = TAU * hash(line * 5 + 3) + line * 2.4;
+      const radius = 0.1 + 0.32 * Math.pow(line / last, 0.85);
+      const end: Point = [QUERY[0] + (radius * Math.cos(angle) * 1.6) / g.aspect, QUERY[1] + radius * Math.sin(angle)];
+      return [lerp(QUERY[0], end[0], u), lerp(QUERY[1], end[1], u)];
+    },
+    { alpha: (line) => 0.95 - 0.6 * (line / last), tone: (line) => (rankOf(g, line) < 3 ? 1 : 0) },
+  );
+};
+
+const shortlist: ShapeBuilder = (g) => {
+  const last = g.lines - 1;
+  return shape(
+    g,
+    (line, u) => {
+      const rank = rankOf(g, line);
+      const length = 0.62 * (1 - 0.6 * (rank / last));
+      return [lerp(0.19, 0.19 + length, u), lerp(0.12, 0.88, rank / last)];
+    },
+    {
+      alpha: (line) => 0.9 - 0.5 * (rankOf(g, line) / last),
+      tone: (line) => (rankOf(g, line) < 3 ? 1 : 0),
+    },
+  );
+};
+
 export const MORPHS: Record<MorphKind, MorphSpec> = {
   "information-signal": { states: ["Text", "Retrieval", "Signal"], build: [text, retrieval, traces] },
   "waveform-chart": { states: ["Waveform", "Spectrum", "Series"], build: [traces, spectra, chart] },
@@ -639,4 +816,9 @@ export const MORPHS: Record<MorphKind, MorphSpec> = {
   "curves-board": { states: ["Curves", "Grid", "Board"], build: [curves, maskGrid, board] },
   "board-track": { states: ["Board", "Moves", "Track"], build: [board, moves, track] },
   "track-grid": { states: ["Track", "Straight", "Grid"], build: [track, straight, grid] },
+  "waveform-belief": { states: ["Waveform", "Dependencies", "Waves"], build: [traces, beliefGraph, rings] },
+  "ripple-raster": { states: ["Waves", "Swath", "Raster"], build: [rings, swath, raster] },
+  "raster-series": { states: ["Raster", "Transect", "Series"], build: [raster, transect, chart] },
+  "track-neighbours": { states: ["Track", "Straight", "Neighbours"], build: [track, straight, neighbours] },
+  "neighbours-grid": { states: ["Neighbours", "Shortlist", "Grid"], build: [neighbours, shortlist, grid] },
 };

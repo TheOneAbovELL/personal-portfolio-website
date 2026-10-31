@@ -23,7 +23,7 @@ const byOrder = (a: Project, b: Project) => a.order - b.order;
 
 export const visibleProjects = (): Project[] => projects.filter((p) => p.visible).sort(byOrder);
 
-const HOMEPAGE_THEMES: readonly (ProgrammeTheme | undefined)[] = ["evidence", "signal", "market", undefined];
+const HOMEPAGE_THEMES: readonly (ProgrammeTheme | undefined)[] = ["evidence", "signal", "ripple", "orbital", "market", undefined];
 
 /** The homepage programmes. A featured project carries a homepage identity (or none). */
 export const featuredProjects = (): FeaturedProject[] =>
@@ -37,6 +37,7 @@ const SHOWCASE_THEMES: readonly (ShowcaseTheme | undefined)[] = [
   "attention",
   "chess",
   "telemetry",
+  "recommend",
   undefined,
 ];
 

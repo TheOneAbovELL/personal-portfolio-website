@@ -88,24 +88,7 @@
 
 /* ------------------------------------------------------------------------------------------
    Start sequence hand-off (components/loader, styles/loader.css).
-
-   The intro car lands on the stage's car geometry, so it uses the same three variables at the
-   same breakpoint — keep these in step with .hero-stage above.
    ------------------------------------------------------------------------------------------ */
-.intro-frame {
-  --car-cx: 0.5;
-  --car-cy: 0.845;
-  --car-span: 0.94;
-}
-
-@media (min-width: 48rem) {
-  .intro-frame {
-    --car-cx: 0.57;
-    --car-cy: 0.55;
-    --car-span: 0.64;
-  }
-}
-
 /* Under the curtain the hero's drawing is already complete: the curtain lifts onto a finished
    drawing that matches the one which just landed on it. */
 html:has(#intro) .hero-poster {
@@ -120,4 +103,27 @@ html:has(#intro:not([data-state="done"])) .hero-stage .hero-poster {
 
 html:has(#intro:not([data-state="done"])) .hero-stage .hero-canvas {
   opacity: 0;
+}
+
+/* ------------------------------------------------------------------------------------------
+   Hero type. The name is set like a title on a cover — in the display face, in title case,
+   at a size that sits beside the car rather than over it — and the statement is a quiet lede.
+   ------------------------------------------------------------------------------------------ */
+.hero-name {
+  font-size: clamp(2.5rem, 11.5vw, 3.125rem);
+  font-weight: 560;
+  letter-spacing: -0.025em;
+  line-height: 0.98;
+}
+
+@media (min-width: 48rem) {
+  .hero-name {
+    font-size: clamp(3rem, 5.2vw, 5.25rem);
+  }
+}
+
+.hero-statement {
+  font-size: clamp(1rem, 0.35vw + 0.92rem, 1.125rem);
+  line-height: 1.62;
+  text-wrap: pretty;
 }

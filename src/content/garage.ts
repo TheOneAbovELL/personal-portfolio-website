@@ -33,12 +33,13 @@ export const GARAGE_HIDDEN: string[] = [
   "legal-lens-backend",
   "ARGUS",
   "Agentic-Precision-Psychiatry-System",
+  // Homepage programmes since v6 (Ripple 03, SatQuery AI 04).
+  "RIPPLE",
+  "SATQUERY",
   // README currently contains placeholder badges and plain-text demo credentials; hidden until cleaned up.
   "RESUME-ANALYZER",
   // This site itself; listing it in its own Garage is self-reference.
   "personal-portfolio-website",
-  // Empty repository (no commits) as of 2026-10-31.
-  "RIPPLE",
   // A keystroke-replay utility whose README has to argue it is not for cheating; the optics are not worth it.
   "Autotype-Script",
 ];

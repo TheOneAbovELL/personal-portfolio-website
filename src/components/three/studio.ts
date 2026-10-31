@@ -19,8 +19,8 @@ import { COLORS } from "./materials";
  * Reflections come from a small procedural room of softboxes rather than a generic
  * environment, because on glossy paint the shape of the lights *is* the picture: one long
  * overhead bank draws the highlight down the spine, a strip at the camera's side draws the
- * shoulder line, and two coloured sources behind the car — teal high on one side, red low on
- * the other — are where the palette comes from. The car itself is never painted in colour.
+ * shoulder line, and coloured sources behind the car — teal on one side, red low ahead and high
+ * behind on the other — are where the palette comes from. Apart from a few red livery panels, the car is never painted in colour.
  */
 
 interface Softbox {
@@ -46,7 +46,10 @@ const SOFTBOXES: Softbox[] = [
   // Teal rim: behind the car. Only rear-facing shoulders can see it.
   { position: [-10, 1.9, -2.5], size: [0.2, 2.6, 4.5], colour: COLORS.data, power: 3 },
   // Red kicker: low, far side, ahead of the car. Only leading edges can see it.
-  { position: [7.5, 0.8, -6], size: [3.4, 0.7, 0.2], colour: COLORS.perf, power: 2.4 },
+  { position: [7.5, 0.8, -6], size: [3.4, 0.7, 0.2], colour: COLORS.perf, power: 2.8 },
+  // Red rim: a tall strip high behind the car's far shoulder. It draws one warm line along the
+  // top of the engine cover and the wing — the livery's colour, carried by light.
+  { position: [-3.5, 3.6, -8.5], size: [5, 0.6, 0.2], colour: COLORS.perf, power: 1.8 },
   // The lit patch of floor under the car, seen by the bodywork's undersides.
   { position: [0, -0.4, 0.6], size: [9, 0.1, 5], colour: "#7f8a92", power: 0.1 },
 ];
@@ -102,14 +105,18 @@ export function createStudioLights(scene: Scene): StudioLights {
   rim.position.set(-9, 2.4, -1.6);
   const kicker = new DirectionalLight(COLORS.perf, 0);
   kicker.position.set(7, 0.9, -5.5);
+  // Warm rim from high behind the far side: separates the car's top line from the dark.
+  const warmRim = new DirectionalLight("#ff3b44", 0);
+  warmRim.position.set(-1.5, 0.9, -8);
   // Sky and floor bounce.
   const bounce = new HemisphereLight("#a9bccb", "#242a2f", 0);
-  scene.add(key, rim, kicker, bounce);
+  scene.add(key, rim, kicker, warmRim, bounce);
 
   const rig = [
     { light: key, intensity: 1.15 },
     { light: rim, intensity: 1.2 },
-    { light: kicker, intensity: 0.75 },
+    { light: kicker, intensity: 0.85 },
+    { light: warmRim, intensity: 0.12 },
     { light: bounce, intensity: 0.4 },
   ];
 

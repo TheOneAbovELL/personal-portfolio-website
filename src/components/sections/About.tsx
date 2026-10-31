@@ -7,7 +7,7 @@ export function About() {
 
   return (
     <Section id="about" label="Engineering philosophy" title={about.lead} readout="Operating principle" tone="teal">
-      <div className="grid gap-x-10 gap-y-6 md:grid-cols-2">
+      <div className="grid gap-x-12 gap-y-6 md:grid-cols-2">
         {about.paragraphs.map((paragraph, index) => (
           <p key={index} className="prose-body text-steel" {...reveal("rise", index)}>
             {paragraph}
@@ -15,12 +15,13 @@ export function About() {
         ))}
       </div>
 
-      {/* The working loop, as a single quiet line. It returns in the footer as a sign-off. */}
-      <p className="label mt-10 flex flex-wrap items-center gap-x-3 gap-y-2 text-steel" {...reveal("snap")}>
+      {/* The working loop, as a single quiet line that switches on step by step. It returns in the
+          footer as a sign-off. */}
+      <p className="label mt-12 flex flex-wrap items-center gap-x-3 gap-y-2 text-steel">
         {loop.map((step, index) => (
-          <span key={step} className="flex items-center gap-3">
+          <span key={step} className="flex items-center gap-3" {...reveal("snap", index * 1.6 + 2)}>
             {index > 0 && (
-              <span aria-hidden="true" className="text-signal">
+              <span aria-hidden="true" className="text-data">
                 →
               </span>
             )}
@@ -29,34 +30,42 @@ export function About() {
         ))}
       </p>
 
-      {/* The path a system takes from raw data to something people use — data flows in cyan. */}
-      <div className="mt-[clamp(3rem,6vw,5rem)]">
+      {/* The path a system takes from raw data to something people use. The line draws first,
+          then each stage arrives in order; a light keeps travelling along it — data in flow. */}
+      <div className="mt-[clamp(3.5rem,7vw,6rem)]">
         <p className="label text-faint" {...reveal("snap")}>
           Where I work — the whole path
         </p>
-        <div className="mt-5 hidden h-px bg-gradient-to-r from-data via-data/40 to-signal sm:block" aria-hidden="true" {...reveal("trace")} />
-        <ol className="grid border-t border-rule sm:grid-cols-5 sm:border-t-0">
+        <div className="relative mt-6 hidden h-px overflow-hidden sm:block" aria-hidden="true">
+          <div className="absolute inset-0 bg-gradient-to-r from-data/70 via-data/30 to-signal/70" {...reveal("trace")} />
+          <span className="flow-light absolute inset-y-0 left-0 w-1/4 bg-gradient-to-r from-transparent via-data to-transparent opacity-80" />
+        </div>
+        <ol className="grid sm:grid-cols-5">
           {layers.map((layer, index) => (
-            <li key={layer.label} className="relative border-b border-rule py-4 sm:border-b-0 sm:pr-5 sm:pt-5" {...reveal("rise", index)}>
+            <li
+              key={layer.label}
+              className="relative border-b border-rule/60 py-4 last:border-b-0 sm:border-b-0 sm:pr-6 sm:pt-6"
+              {...reveal("rise", index * 3 + 2)}
+            >
               <span
                 aria-hidden="true"
-                className={`absolute -top-[3px] left-0 hidden size-[5px] rounded-full sm:block ${
+                className={`absolute -top-[3px] left-0 hidden size-[7px] rounded-full ring-4 ring-carbon/60 sm:block ${
                   index === layers.length - 1 ? "bg-signal" : "bg-data"
                 }`}
               />
               <span className="flex items-baseline gap-3 sm:block">
                 <span className="label text-faint">{String(index + 1).padStart(2, "0")}</span>
-                <span className="display block text-[1.125rem] sm:mt-2">{layer.label}</span>
+                <span className="block text-[1.0625rem] font-medium text-bone sm:mt-2">{layer.label}</span>
               </span>
-              <span className="mt-1.5 block text-[0.875rem] leading-snug text-steel sm:mt-2">{layer.note}</span>
+              <span className="mt-1.5 block text-[0.875rem] leading-relaxed text-steel sm:mt-2">{layer.note}</span>
             </li>
           ))}
         </ol>
       </div>
 
-      <dl className="mt-[clamp(3rem,6vw,5rem)] grid gap-x-10 gap-y-8 md:grid-cols-3">
+      <dl className="mt-[clamp(3.5rem,7vw,6rem)] grid gap-x-12 gap-y-10 md:grid-cols-3">
         {principles.map((principle, index) => (
-          <div key={principle.title} className="border-t border-rule-strong pt-4" {...reveal("rise", index)}>
+          <div key={principle.title} className="border-t border-rule pt-5" {...reveal("rise", index)}>
             <dt className="label text-bone">
               <span className="text-signal">{String.fromCharCode(65 + index)}</span>
               <span aria-hidden="true" className="mx-2 text-metal-3">

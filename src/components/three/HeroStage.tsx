@@ -6,6 +6,8 @@ import type { HeroScene } from "./scene";
 
 /** How long the server-rendered drawing takes to finish drawing itself (see `draw-on`). */
 const POSTER_SETTLE_MS = 2500;
+/** Longest the scene waits for the start sequence to hand off before booting anyway. */
+const INTRO_TIMEOUT_MS = 9000;
 /** Fraction of the hero's height over which the scroll transition plays. */
 const SCROLL_RANGE = 0.85;
 /** The studio dissolves over the last part of the hero's exit: from this fraction scrolled out, to gone. */
@@ -26,6 +28,38 @@ function canUseWebGL(): boolean {
   }
 }
 
+/**
+ * Run `callback` once the start sequence (components/loader) has handed off — it marks <html>
+ * with `intro-active` while it plays. Booting WebGL during it would compete with its animation
+ * for the main thread. Returns a cancel function.
+ */
+function afterIntro(callback: (hadIntro: boolean) => void): () => void {
+  const root = document.documentElement;
+  const active = () => root.classList.contains("intro-active");
+  if (!active()) {
+    callback(false);
+    return () => {};
+  }
+  let done = false;
+  const finish = () => {
+    if (done) return;
+    done = true;
+    observer.disconnect();
+    window.clearTimeout(timer);
+    callback(true);
+  };
+  const observer = new MutationObserver(() => {
+    if (!active()) finish();
+  });
+  observer.observe(root, { attributes: true, attributeFilter: ["class"] });
+  const timer = window.setTimeout(finish, INTRO_TIMEOUT_MS);
+  return () => {
+    done = true;
+    observer.disconnect();
+    window.clearTimeout(timer);
+  };
+}
+
 function shouldSaveData(): boolean {
   const connection = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
   return Boolean(connection?.saveData);
@@ -35,8 +69,9 @@ function shouldSaveData(): boolean {
  * The hero's visual layer.
  *
  * `children` is the server-rendered SVG drawing. It is always shown first. On capable
- * devices the WebGL scene is imported when the browser is idle, rendered once behind the
- * drawing, and then cross-faded in — at which point the drawing turns into an object.
+ * devices the WebGL scene is imported once the start sequence has handed off and the browser
+ * is idle, rendered once behind the drawing, and then cross-faded in — at which point the
+ * drawing turns into an object.
  * Reduced-motion, Save-Data and no-WebGL visitors simply keep the drawing.
  *
  * Either way the studio hands the page over to the race environment as the hero leaves: it
@@ -111,16 +146,18 @@ export function HeroStage({ children }: { children: React.ReactNode }) {
 
     const getProgress = () => clamp01((window.scrollY - extent.top) / (extent.height * SCROLL_RANGE));
 
+    let hadIntro = false;
     const boot = async () => {
       const { createHeroScene } = await import("./scene");
       if (cancelled) return;
 
-      // Let the drawing finish before the hand-off so the two never fight.
+      // Let the drawing finish before the hand-off so the two never fight. Behind the start
+      // sequence the drawing is already complete, so there is nothing to wait for.
       const debugStill = process.env.NODE_ENV !== "production" && window.location.search.includes("hero=");
-      const wait = debugStill ? 0 : Math.max(0, POSTER_SETTLE_MS - (performance.now() - mountedAt));
-      timer = window.setTimeout(() => {
+      const wait = debugStill || hadIntro ? 0 : Math.max(0, POSTER_SETTLE_MS - (performance.now() - mountedAt));
+      timer = window.setTimeout(async () => {
         if (cancelled) return;
-        scene = createHeroScene({
+        const created = createHeroScene({
           canvas,
           stage,
           getProgress,
@@ -128,13 +165,17 @@ export function HeroStage({ children }: { children: React.ReactNode }) {
           onFirstFrame: () => setLive(true),
           onContextLost: () => setLive(false),
         });
+        scene = created;
+        // Nothing is drawn until the shaders are ready, so the first frame cannot stall.
+        await created.ready;
+        if (cancelled) return;
 
         // Dev-only: `?hero=0.5` renders one settled frame at that scroll progress and stops,
         // which makes the scene screenshot-testable in a headless browser.
         if (process.env.NODE_ENV !== "production") {
           const still = new URLSearchParams(window.location.search).get("hero");
           if (still !== null) {
-            scene.renderStill(Number(still));
+            created.renderStill(Number(still));
             stage.dataset.still = "";
             setLive(true);
             return;
@@ -156,15 +197,21 @@ export function HeroStage({ children }: { children: React.ReactNode }) {
     };
     document.addEventListener("visibilitychange", onVisibility);
 
-    // Import three.js only once the main thread is idle; it must never delay first paint.
+    // Import three.js only after the start sequence and once the main thread is idle; it must
+    // never delay first paint or take frames from the intro.
     const idle =
       window.requestIdleCallback ?? ((cb: () => void) => window.setTimeout(cb, 250) as unknown as number);
-    const idleHandle = idle(() => void boot(), { timeout: 2000 });
+    let idleHandle = 0;
+    const cancelIntroWait = afterIntro((intro) => {
+      hadIntro = intro;
+      idleHandle = idle(() => void boot(), { timeout: intro ? 600 : 2000 });
+    });
 
     return () => {
       cancelled = true;
+      cancelIntroWait();
       window.clearTimeout(timer);
-      window.cancelIdleCallback?.(idleHandle);
+      if (idleHandle) window.cancelIdleCallback?.(idleHandle);
       document.removeEventListener("visibilitychange", onVisibility);
       observer?.disconnect();
       scene?.dispose();

@@ -12,7 +12,7 @@ import { featuredProjects, showcaseProjects, type ShowcaseTheme } from "@/conten
 export const metadata: Metadata = {
   title: "Projects",
   description:
-    "Programmes 04 to 10 by Omjee R Giri: agent and RAG evaluation workbenches, three research laboratories on how Transformers attend, and two builds for the board and the track — each with its real status.",
+    "Programmes 06 to 13 by Omjee R Giri: agent and RAG evaluation workbenches, three research laboratories on how Transformers attend, builds for the board and the track, and an explainable recommender — each with its real status.",
   alternates: { canonical: "/projects" },
 };
 
@@ -20,7 +20,8 @@ export const metadata: Metadata = {
  * What each programme's material turns into as the page leaves it (DATA_MORPH, as on the
  * homepage): a trace resolves into score bars, bars break into tokens, the window into
  * attention arcs, layers into a matrix, cost curves into a board, the board into a track,
- * and the track straightens into the grid the page is drawn on.
+ * the track straightens into an embedding neighbourhood, and the shortlist levels out into the
+ * grid the page is drawn on.
  */
 const TRANSITION_OUT: Record<ShowcaseTheme, MorphKind> = {
   trace: "trace-bars",
@@ -29,7 +30,8 @@ const TRANSITION_OUT: Record<ShowcaseTheme, MorphKind> = {
   circuit: "circuit-matrix",
   attention: "curves-board",
   chess: "board-track",
-  telemetry: "track-grid",
+  telemetry: "track-neighbours",
+  recommend: "neighbours-grid",
 };
 
 const linkClass =
@@ -38,7 +40,7 @@ const arrowClass =
   "transition-transform duration-[var(--dur-fast)] ease-[var(--ease-snap)] group-hover:translate-x-1";
 
 /**
- * Programmes 04–10. The homepage carries 01–03; this page continues the same sequence with the
+ * Programmes 06–13. The homepage carries 01–05; this page continues the same sequence with the
  * same parts — Programme, its figure, and a transition handing each one to the next — so the
  * whole body of work reads as one run.
  */
@@ -59,14 +61,15 @@ export default function ProjectsPage() {
           </span>
           Programmes {first}–{last}
         </p>
-        <h1 className="display enter-mask mt-5 text-[clamp(2.75rem,8vw,7rem)] uppercase">Projects</h1>
+        <h1 className="display enter-mask mt-5 text-[clamp(2.375rem,6vw,5.25rem)] uppercase">Projects</h1>
         <p
           className="prose-body enter mt-6 max-w-[40rem] text-steel"
           style={{ "--enter-index": 1 } as React.CSSProperties}
         >
-          The sequence continues from the three programmes on the homepage: two workbenches that measure AI systems
-          by what they actually do, three laboratories that take Transformers apart, and two builds for the board and
-          the track. Each is described as it is — research, prototype or complete — with the code linked.
+          The sequence continues from the five programmes on the homepage: two workbenches that measure AI systems
+          by what they actually do, three laboratories that take Transformers apart, two builds for the board and
+          the track, and a recommender that explains its rankings. Each is described as it is — research, prototype
+          or complete — with the code linked.
         </p>
 
         <div className="mt-[clamp(3.5rem,7vw,6rem)]">

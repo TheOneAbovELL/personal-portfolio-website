@@ -1,0 +1,736 @@
+/* ------------------------------------------------------------------------------------------
+   Navigator (components/nav/*) — the Menu control in the header and the sheet it opens.
+
+   No boxes: the sheet is one dark room. Type, alignment and hairlines carry the structure;
+   colour arrives only with a programme, and the room takes on that programme's light.
+   ------------------------------------------------------------------------------------------ */
+
+/* ------------------------------------------------------------------ header control */
+
+.nav-kbd {
+  display: inline-flex;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  align-items: center;
+  justify-content: center;
+  padding-inline: 0.3rem;
+  border: 1px solid var(--color-rule-strong);
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  color: var(--color-faint);
+  text-transform: none;
+}
+
+.nav-burger {
+  display: inline-grid;
+  width: 1rem;
+  gap: 4px;
+}
+
+.nav-burger i {
+  display: block;
+  height: 1px;
+  background: currentColor;
+  transition: transform var(--dur-fast) var(--ease-snap);
+}
+
+.nav-burger i:last-child {
+  width: 65%;
+  justify-self: end;
+}
+
+.nav-menu-button {
+  transition:
+    border-color var(--dur-fast) linear,
+    color var(--dur-fast) linear;
+}
+
+.nav-menu-button:hover {
+  border-color: var(--color-metal-3);
+}
+
+.nav-menu-button:hover .nav-burger i:first-child {
+  transform: scaleX(0.65) translateX(27%);
+}
+
+.nav-menu-button:hover .nav-burger i:last-child {
+  transform: scaleX(1.54) translateX(-17.5%);
+}
+
+/* The sector readout in the header changes like a timing board: a quick, small rise. */
+@keyframes nav-readout {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 5px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.nav-readout {
+  animation: nav-readout 360ms var(--ease-out) both;
+}
+
+/* ------------------------------------------------------------------------- overlay */
+
+@keyframes nav-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes nav-rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.nav-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--color-carbon);
+  color: var(--color-bone);
+  animation: nav-in 280ms var(--ease-out) both;
+  outline: none;
+  transition:
+    opacity var(--close-ms, 220ms) var(--ease-in-out),
+    transform var(--close-ms, 220ms) var(--ease-in-out);
+}
+
+.nav-overlay[data-state="closing"] {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.nav-overlay[data-state="closing"] .nav-frame {
+  transform: translate3d(0, -8px, 0);
+  transition: transform 220ms var(--ease-in-out);
+}
+
+/* The room's light: one soft field of the previewed programme's colour, top right. It eases
+   from colour to colour, so moving down the list washes the sheet rather than flashing it. */
+.nav-glow {
+  position: fixed;
+  top: -20vh;
+  right: -12vw;
+  width: 70vw;
+  height: 90vh;
+  pointer-events: none;
+  background-color: rgb(var(--glow) / 0.1);
+  mask-image: radial-gradient(closest-side, #000, transparent);
+  -webkit-mask-image: radial-gradient(closest-side, #000, transparent);
+  transition: background-color 700ms var(--ease-out);
+}
+
+.nav-frame {
+  position: relative;
+  display: flex;
+  min-height: 100%;
+  flex-direction: column;
+  padding-bottom: clamp(1.5rem, 4vh, 2.5rem);
+}
+
+.nav-rise {
+  animation: nav-rise 620ms var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 16ms + 70ms);
+}
+
+/* --------------------------------------------------------------------------- top */
+
+.nav-top {
+  display: flex;
+  height: var(--header-h);
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--color-rule);
+}
+
+.nav-wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  font-size: 0.75rem;
+  color: var(--color-bone);
+}
+
+.nav-wordmark-tick {
+  display: block;
+  width: 1px;
+  height: 0.75rem;
+  background: var(--color-perf);
+}
+
+.nav-close {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  gap: 0.75rem;
+  margin-right: -0.5rem;
+  padding-inline: 0.5rem;
+  color: var(--color-bone);
+  transition: color var(--dur-fast) linear;
+}
+
+.nav-close:hover {
+  color: var(--color-signal);
+}
+
+/* ------------------------------------------------------------------------ search */
+
+.nav-search {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: baseline;
+  gap: 1.25rem;
+  margin-top: clamp(1.5rem, 4vh, 2.75rem);
+  padding-bottom: 0.875rem;
+}
+
+.nav-search-label {
+  color: var(--color-faint);
+}
+
+.nav-search-input {
+  min-width: 0;
+  background: transparent;
+  font-size: clamp(1.25rem, 1.9vw, 1.75rem);
+  font-weight: 380;
+  letter-spacing: -0.012em;
+  line-height: 1.2;
+  color: var(--color-bone);
+  caret-color: var(--color-signal);
+  outline: none;
+}
+
+.nav-search-input::placeholder {
+  color: var(--color-metal-3);
+}
+
+/* The lit hairline below is this field's focus indicator. */
+.nav-search-input:focus-visible {
+  outline: none;
+}
+
+.nav-search-hint {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  color: var(--color-faint);
+}
+
+.nav-hint-keys {
+  display: inline-flex;
+  gap: 0.25rem;
+}
+
+/* A hairline that lights from the left while the field has focus. */
+.nav-search-rule {
+  position: absolute;
+  inset: auto 0 0;
+  height: 1px;
+  background: var(--color-rule-strong);
+}
+
+.nav-search-rule::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--color-signal);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 520ms var(--ease-ramp);
+}
+
+.nav-search:focus-within .nav-search-rule::after {
+  transform: scaleX(1);
+}
+
+/* -------------------------------------------------------------------------- grid */
+
+.nav-grid {
+  display: grid;
+  gap: clamp(2.25rem, 4vw, 4.5rem);
+  margin-top: clamp(1.5rem, 3.5vh, 2.5rem);
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 64rem) {
+  .nav-grid {
+    grid-template-columns: minmax(0, 4.2fr) minmax(0, 4.8fr) minmax(0, 3fr);
+    align-items: start;
+  }
+}
+
+.nav-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding-bottom: 0.625rem;
+  margin-bottom: 0.375rem;
+  border-bottom: 1px solid var(--color-rule);
+  color: var(--color-faint);
+}
+
+.nav-count {
+  font-variant-numeric: tabular-nums;
+  color: var(--color-metal-3);
+}
+
+/* Shared row behaviour: a focus ring drawn inside, so rows can sit flush. */
+.nav-sector,
+.nav-page,
+.nav-programme,
+.nav-ask {
+  position: relative;
+  outline-offset: -2px;
+}
+
+/* ---------------------------------------------------------------------- sectors */
+
+.nav-sector {
+  display: grid;
+  grid-template-columns: 2.25rem minmax(0, 1fr) auto;
+  align-items: baseline;
+  padding-block: 0.4rem;
+}
+
+.nav-sector-number {
+  font-size: 0.6875rem;
+  color: var(--color-faint);
+  transition: color var(--dur-fast) linear;
+}
+
+.nav-sector-label {
+  font-size: clamp(1.375rem, 1.75vw, 1.875rem);
+  text-transform: uppercase;
+  color: var(--color-steel);
+  transition:
+    color var(--dur-fast) linear,
+    transform 380ms var(--ease-out);
+}
+
+.nav-sector:hover .nav-sector-label,
+.nav-sector:focus-visible .nav-sector-label,
+.nav-sector[aria-current] .nav-sector-label {
+  color: var(--color-bone);
+}
+
+.nav-sector:hover .nav-sector-label,
+.nav-sector:focus-visible .nav-sector-label {
+  transform: translate3d(0.375rem, 0, 0);
+}
+
+.nav-sector:hover .nav-sector-number,
+.nav-sector:focus-visible .nav-sector-number,
+.nav-sector[aria-current] .nav-sector-number {
+  color: var(--color-signal);
+}
+
+.nav-here {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--color-signal);
+}
+
+.nav-here i,
+.nav-dot {
+  display: block;
+  width: 5px;
+  height: 5px;
+  background: var(--color-signal);
+  animation: blink 1.6s var(--ease-in-out) infinite;
+}
+
+/* ------------------------------------------------------------------------- pages */
+
+.nav-pages {
+  margin-top: clamp(1.75rem, 4vh, 2.5rem);
+}
+
+.nav-page {
+  display: grid;
+  grid-template-columns: 2.25rem auto minmax(0, 1fr) auto;
+  align-items: baseline;
+  padding-block: 0.4375rem;
+}
+
+.nav-page-mark {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--color-metal-3);
+  transition: color var(--dur-fast) linear;
+}
+
+.nav-page-label {
+  font-size: 1.0625rem;
+  color: var(--color-bone);
+}
+
+.nav-page-note {
+  overflow: hidden;
+  padding-left: 0.875rem;
+  font-size: 0.875rem;
+  color: var(--color-faint);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nav-page:hover .nav-page-mark,
+.nav-page:focus-visible .nav-page-mark {
+  color: var(--color-signal);
+}
+
+.nav-page .nav-dot {
+  align-self: center;
+}
+
+/* -------------------------------------------------------------------- programmes */
+
+.nav-group + .nav-group {
+  margin-top: clamp(1.5rem, 3.5vh, 2.25rem);
+}
+
+.nav-programme {
+  display: grid;
+  grid-template-columns: 2.25rem auto minmax(0, 1fr);
+  align-items: baseline;
+  padding-block: 0.3125rem;
+}
+
+/* Each programme's colour lives in one 2px bar that grows when the row is pointed at. */
+.nav-programme-bar {
+  position: absolute;
+  top: 22%;
+  bottom: 22%;
+  left: -0.875rem;
+  width: 2px;
+  background: rgb(var(--prog));
+  transform: scaleY(0);
+  transition: transform 320ms var(--ease-snap);
+}
+
+.nav-programme-number {
+  font-size: 0.75rem;
+  color: rgb(var(--prog));
+}
+
+.nav-programme-title {
+  font-size: 1.0625rem;
+  white-space: nowrap;
+  color: var(--color-steel);
+  transition:
+    color var(--dur-fast) linear,
+    transform 380ms var(--ease-out);
+}
+
+.nav-programme-discipline {
+  overflow: hidden;
+  padding-left: 1.25rem;
+  font-size: 0.625rem;
+  text-align: right;
+  text-overflow: ellipsis;
+  color: var(--color-metal-3);
+  white-space: nowrap;
+  transition: color var(--dur-fast) linear;
+}
+
+.nav-programme:hover .nav-programme-bar,
+.nav-programme:focus-visible .nav-programme-bar,
+.nav-programme[data-previewed] .nav-programme-bar,
+.nav-programme[aria-current] .nav-programme-bar {
+  transform: scaleY(1);
+}
+
+.nav-programme:hover .nav-programme-title,
+.nav-programme:focus-visible .nav-programme-title,
+.nav-programme[data-previewed] .nav-programme-title,
+.nav-programme[aria-current] .nav-programme-title {
+  color: var(--color-bone);
+}
+
+.nav-programme:hover .nav-programme-title,
+.nav-programme:focus-visible .nav-programme-title {
+  transform: translate3d(0.375rem, 0, 0);
+}
+
+.nav-programme:hover .nav-programme-discipline,
+.nav-programme:focus-visible .nav-programme-discipline,
+.nav-programme[data-previewed] .nav-programme-discipline {
+  color: var(--color-steel);
+}
+
+/* -------------------------------------------------------------------------- ask */
+
+.nav-ask {
+  display: grid;
+  grid-template-columns: 2.25rem minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 0;
+  padding-block: 0.625rem;
+  color: var(--color-bone);
+}
+
+.nav-ask-prompt {
+  font-size: 1.125rem;
+  color: var(--color-data);
+}
+
+.nav-ask-text {
+  font-size: 1.0625rem;
+  color: var(--color-steel);
+}
+
+.nav-ask-text q {
+  color: var(--color-bone);
+  quotes: "“" "”";
+}
+
+.nav-ask-arrow {
+  align-self: center;
+  color: var(--color-data);
+  transition: transform var(--dur-fast) var(--ease-snap);
+}
+
+.nav-ask:hover .nav-ask-arrow,
+.nav-ask:focus-visible .nav-ask-arrow {
+  transform: translate3d(0.25rem, 0, 0);
+}
+
+/* ---------------------------------------------------------------------- preview */
+
+.nav-preview {
+  display: none;
+}
+
+@media (min-width: 64rem) {
+  .nav-preview {
+    position: sticky;
+    top: 2rem;
+    display: block;
+  }
+}
+
+@keyframes nav-preview {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 8px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.nav-preview-card {
+  --prog: 242 194 48;
+  --prog-2: 143 152 158;
+  position: relative;
+  padding-top: 1.25rem;
+  animation: nav-preview 420ms var(--ease-out) both;
+}
+
+/* A hairline in the programme's colour with a short mark in its second voice. */
+.nav-preview-rule {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 1px;
+  background: linear-gradient(90deg, rgb(var(--prog)) 0 2.5rem, rgb(var(--prog-2)) 2.5rem 3.25rem, var(--color-rule) 3.25rem);
+}
+
+.nav-preview-kicker {
+  color: rgb(var(--prog));
+}
+
+.nav-preview-numeral {
+  margin-top: 1.5rem;
+  font-size: clamp(4.5rem, 7vw, 7rem);
+  line-height: 0.8;
+  color: transparent;
+  -webkit-text-stroke: 1.25px rgb(var(--prog) / 0.85);
+}
+
+.nav-preview-title {
+  margin-top: 1.5rem;
+  font-size: clamp(1.25rem, 1.5vw, 1.625rem);
+  line-height: 1.05;
+  text-transform: uppercase;
+}
+
+.nav-preview-meta {
+  margin-top: 0.75rem;
+  color: var(--color-steel);
+}
+
+.nav-preview-text {
+  margin-top: 1rem;
+  max-width: 22rem;
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: var(--color-steel);
+  text-wrap: pretty;
+}
+
+.nav-preview-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+  color: var(--color-faint);
+}
+
+.nav-preview-status i {
+  display: block;
+  width: 5px;
+  height: 5px;
+  background: rgb(var(--prog));
+}
+
+/* ------------------------------------------------------------------------- foot */
+
+.nav-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem 2rem;
+  margin-top: auto;
+  padding-top: clamp(2rem, 5vh, 3rem);
+}
+
+.nav-foot::before {
+  content: "";
+  flex-basis: 100%;
+  height: 1px;
+  margin-bottom: 0.25rem;
+  background: var(--color-rule);
+}
+
+.nav-foot-email {
+  font-size: 0.9375rem;
+  color: var(--color-bone);
+  background-image: linear-gradient(currentColor, currentColor);
+  background-position: 0 100%;
+  background-repeat: no-repeat;
+  background-size: 0% 1px;
+  transition: background-size var(--dur-fast) var(--ease-snap);
+}
+
+.nav-foot-email:hover {
+  background-size: 100% 1px;
+}
+
+.nav-socials {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.5rem;
+}
+
+.nav-social {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  gap: 0.375rem;
+  color: var(--color-steel);
+  transition: color var(--dur-fast) linear;
+}
+
+.nav-social:hover {
+  color: var(--color-bone);
+}
+
+.nav-resume {
+  color: var(--color-bone);
+}
+
+/* ------------------------------------------------------------------------ phones */
+
+@media (max-width: 63.99rem) {
+  .nav-search {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+
+  .nav-search-hint {
+    display: none;
+  }
+
+  .nav-sector,
+  .nav-page,
+  .nav-programme,
+  .nav-ask {
+    min-height: 2.75rem;
+    align-items: center;
+  }
+
+  .nav-sector {
+    padding-block: 0.25rem;
+  }
+
+  .nav-page {
+    grid-template-columns: 2.25rem auto minmax(0, 1fr) auto;
+  }
+
+  .nav-programme-bar {
+    left: -0.625rem;
+  }
+}
+
+@media (max-width: 30rem) {
+  .nav-page-note,
+  .nav-programme-discipline {
+    display: none;
+  }
+}
+
+/* Development stills (?nav=open): the sheet as it settles, without waiting on the motion. */
+.nav-overlay[data-still],
+.nav-overlay[data-still] * {
+  animation: none !important;
+}
+
+/* --------------------------------------------------------------- reduced motion */
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-overlay,
+  .nav-rise,
+  .nav-preview-card,
+  .nav-readout {
+    animation: none;
+  }
+
+  .nav-overlay,
+  .nav-overlay[data-state="closing"] .nav-frame {
+    transition: none;
+  }
+
+  .nav-sector:hover .nav-sector-label,
+  .nav-sector:focus-visible .nav-sector-label,
+  .nav-programme:hover .nav-programme-title,
+  .nav-programme:focus-visible .nav-programme-title {
+    transform: none;
+  }
+
+  .nav-here i,
+  .nav-dot {
+    animation: none;
+  }
+}

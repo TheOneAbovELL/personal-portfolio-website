@@ -17,6 +17,22 @@
     );
 }
 
+/* A surface, not a box: no side walls and no drop shadow. A lit hairline above the command
+   line and a quiet one below hold it; the field fades out instead of ending at an edge. */
+.ask-console.panel {
+  border-inline-color: transparent;
+  border-bottom-color: var(--color-rule);
+  border-top-color: rgb(60 207 192 / 0.35);
+  box-shadow: inset 0 1px 0 rgb(233 231 225 / 0.05);
+  background:
+    linear-gradient(180deg, rgb(233 231 225 / 0.035), transparent 6rem),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-navy-2) 55%, transparent),
+      color-mix(in srgb, var(--color-navy) 30%, transparent) 22rem
+    );
+}
+
 /* Hairlines are re-tuned for the navy surface; the graphite ones disappear on it. Utilities
    resolve through these variables, so every rule inside the console follows. */
 .ask-console {

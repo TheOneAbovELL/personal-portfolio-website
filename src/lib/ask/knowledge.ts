@@ -1,9 +1,10 @@
 /**
  * The assistant's knowledge index.
  *
- * Built entirely from the portfolio's own content modules plus the public GitHub and
- * Codeforces data the site already shows — there is no separate knowledge base to keep in
- * sync. Roughly fifty short documents, so retrieval is lexical and in-memory.
+ * Built from the portfolio's own content modules, the résumé (src/content/resume.ts, which
+ * mirrors /resume.pdf), the public GitHub and Codeforces data the site already shows, and the
+ * READMEs of the programme and Garage repositories. A few hundred short documents at most,
+ * so retrieval is lexical and in-memory.
  */
 
 import {
@@ -22,11 +23,14 @@ import {
 } from "@/content";
 import type { CaseStudy, Project, TitledNote } from "@/content";
 import { GITHUB_USER } from "@/content/garage";
+import { resume } from "@/content/resume";
 import { getCodeforces } from "@/lib/codeforces";
 import type { CodeforcesData } from "@/lib/codeforces";
 import { getGarage } from "@/lib/github";
 import type { GarageRepo } from "@/lib/github";
 
+import { githubSlug, loadReadmeDocs } from "./readme";
+import type { ReadmeTarget } from "./readme";
 import { joinList, normalize, stem, stemTokens } from "./text";
 import type { KnowledgeDoc } from "./types";
 
@@ -403,6 +407,122 @@ function contactDocs(): KnowledgeDoc[] {
   ];
 }
 
+/* --------------------------------------------------------------------- résumé */
+
+const RESUME_TAGS = ["resume", "cv", "résumé"];
+
+/** CGPA sentences, shared with the direct answers. */
+export function cgpaSentence(subject = "His résumé lists"): string {
+  return `${subject} a CGPA of ${joinList(resume.education.map((item) => `${item.cgpa} in the ${item.degree} at ${item.short}`))}.`;
+}
+
+/**
+ * The résumé, one section per document, cited as "Résumé / <section>" and linked to the PDF.
+ * Project entries carry their project's entity, so naming a project also reaches its résumé
+ * lines.
+ */
+function resumeDocs(projects: Project[]): KnowledgeDoc[] {
+  const href = resume.href;
+  const visible = new Set(projects.map((project) => project.slug));
+  return [
+    {
+      id: "resume:summary",
+      type: "resume",
+      title: "Résumé summary",
+      label: "Résumé / Summary",
+      href,
+      importance: 1.05,
+      tags: [...RESUME_TAGS, "summary", "profile", "seeking", "internships"],
+      text: `The professional summary on Omjee's résumé: ${resume.summary}`,
+    },
+    {
+      id: "resume:education",
+      type: "resume",
+      title: "Résumé education and CGPA",
+      label: "Résumé / Education",
+      href,
+      importance: 1.1,
+      tags: [...RESUME_TAGS, "education", "cgpa", "gpa", "grades", "marks", "degree", ...resume.education.map((item) => item.short)],
+      text: [
+        ...resume.education.map(
+          (item) => `${item.degree}, ${item.field} at ${item.institution} (${item.period}), CGPA ${item.cgpa}.`,
+        ),
+        cgpaSentence("The résumé lists"),
+      ].join("\n"),
+    },
+    ...resume.experience.map(
+      (role): KnowledgeDoc => ({
+        id: `resume:experience:${normalize(role.short).replace(/ /g, "-")}`,
+        type: "resume",
+        title: `Résumé: ${role.role}, ${role.organization}`,
+        label: `Résumé / Experience — ${role.short}`,
+        href,
+        importance: 1,
+        tags: [...RESUME_TAGS, "experience", role.role, role.organization, role.short],
+        text: [`${role.role} at ${role.organization} (${role.period}).`, ...role.bullets].join("\n"),
+      }),
+    ),
+    ...resume.projects.map(
+      (entry): KnowledgeDoc => ({
+        id: `resume:project:${entry.slug ?? normalize(entry.short).replace(/ /g, "-")}`,
+        type: "resume",
+        title: `Résumé: ${entry.title}`,
+        label: `Résumé / Projects — ${entry.short}`,
+        href,
+        importance: 1,
+        entity: entry.slug && visible.has(entry.slug) ? projectEntityId(entry.slug) : undefined,
+        tags: [...RESUME_TAGS, "project", entry.short, ...entry.stack],
+        text: [
+          `${entry.title}${entry.note ? ` (${entry.note})` : ""}.`,
+          ...entry.bullets,
+          `Tech stack on the résumé: ${entry.stack.join(", ")}.`,
+          entry.live ? `Live: ${entry.live}.` : null,
+        ]
+          .filter((line): line is string => Boolean(line))
+          .join("\n"),
+      }),
+    ),
+    {
+      id: "resume:achievements",
+      type: "resume",
+      title: "Résumé achievements",
+      label: "Résumé / Achievements",
+      href,
+      importance: 1.05,
+      tags: [...RESUME_TAGS, "achievements", "codeforces", "rating", "gssoc", "rank", "awards"],
+      text: `Achievements on Omjee's résumé:\n${resume.achievements.join("\n")}`,
+    },
+    {
+      id: "resume:skills",
+      type: "resume",
+      title: "Résumé technical skills",
+      label: "Résumé / Skills",
+      href,
+      importance: 1.05,
+      tags: [...RESUME_TAGS, "skills", "technical skills", "technologies", ...resume.skills.map((group) => group.group)],
+      text: [
+        `Technical skills on Omjee's résumé, in ${resume.skills.length} groups.`,
+        ...resume.skills.map((group) => `${group.group}: ${group.items.join(", ")}.`),
+      ].join("\n"),
+    },
+  ];
+}
+
+/** Every repository whose README is indexed: the programmes' and the Garage's. */
+function readmeTargets(projects: Project[], repos: GarageRepo[], projectRepoNames: Set<string>): ReadmeTarget[] {
+  const targets: ReadmeTarget[] = [];
+  for (const project of projects) {
+    const slug = githubSlug(project.links.repo);
+    if (slug) targets.push({ slug, title: project.title, url: project.links.repo as string, entity: projectEntityId(project.slug) });
+  }
+  for (const repo of repos) {
+    if (projectRepoNames.has(repo.name.toLowerCase())) continue;
+    const slug = githubSlug(repo.url);
+    if (slug) targets.push({ slug, title: repo.title, url: repo.url, entity: repoEntityId(repo.name) });
+  }
+  return targets;
+}
+
 /* ------------------------------------------------------------------- entities */
 
 /** Words too common in repository names to identify one on their own. */
@@ -479,6 +599,7 @@ async function build(): Promise<KnowledgeBase> {
   const projectRepoNames = new Set(
     projects.map((project) => repoNameFromUrl(project.links.repo)?.toLowerCase()).filter((name): name is string => Boolean(name)),
   );
+  const readmes = await loadReadmeDocs(readmeTargets(projects, garage.repos, projectRepoNames));
 
   const docs: KnowledgeDoc[] = [
     ...profileDocs(),
@@ -489,6 +610,8 @@ async function build(): Promise<KnowledgeBase> {
     ...currentDocs(),
     ...garageDocs(garage.repos, projectRepoNames),
     ...contactDocs(),
+    ...resumeDocs(projects),
+    ...readmes,
   ];
 
   return {

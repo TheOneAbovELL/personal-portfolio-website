@@ -23,10 +23,14 @@ export const PROGRAMME_PALETTE: Record<ProjectTheme, ProgrammePalette> = {
   evidence: { primary: "60 207 192", secondary: "215 38 47" },
   // Signal, neural topology, frequency: deep blue with cyan.
   signal: { primary: "79 157 255", secondary: "96 214 230" },
+  // Memories and the waves that revise them: warm amber, with ember for a belief that changed.
+  ripple: { primary: "232 166 84", secondary: "222 104 70" },
+  // Satellite imagery: thin-atmosphere blue-grey, with chlorophyll for a measured change.
+  orbital: { primary: "164 190 226", secondary: "190 216 104" },
   // Market data, quantitative signals: restrained green with cyan, on graphite.
   market: { primary: "88 201 139", secondary: "60 207 192" },
 
-  // The /projects programmes (04–10), in sequence.
+  // The /projects programmes (06–13), in sequence.
   // Agent traces and grading: racing yellow, with red for a failed check.
   trace: { primary: "242 194 48", secondary: "215 38 47" },
   // Evaluation runs compared: teal, with yellow for the run being compared against.
@@ -41,6 +45,8 @@ export const PROGRAMME_PALETTE: Record<ProjectTheme, ProgrammePalette> = {
   chess: { primary: "233 231 225", secondary: "88 201 139" },
   // Race telemetry: racing red with yellow.
   telemetry: { primary: "215 38 47", secondary: "242 194 48" },
+  // Embedding neighbourhoods and ranked shortlists: indigo, with yellow for the signals that ranked them.
+  recommend: { primary: "136 146 248", secondary: "242 194 48" },
 };
 
 /** Where the last programme's colour goes: back to the structure of the page. */
@@ -56,5 +62,5 @@ export function programmeScope(theme: ProjectTheme | undefined): { style?: CSSPr
   };
 }
 
-/** "01", "02" … — a programme's position in the sequence (homepage 01–03, then /projects). */
+/** "01", "02" … — a programme's position in the sequence (homepage 01–05, then /projects). */
 export const programmeNumber = (index: number): string => String(index + 1).padStart(2, "0");

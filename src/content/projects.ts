@@ -181,7 +181,7 @@ export const projects: Project[] = [
     statusNote: "A research and engineering project — not a trading system.",
     featured: true,
     visible: true,
-    order: 3,
+    order: 5,
     year: "2026",
     role: "Design and implementation",
     context: "Personal project",
@@ -388,6 +388,291 @@ export const projects: Project[] = [
   },
 
   {
+    slug: "ripple",
+    title: "Ripple",
+    discipline: "AI / Agent memory",
+    designation: "Dependency-aware memory for long-running AI agents",
+    theme: "ripple",
+    brief: {
+      problem:
+        "Agents now remember and act for months, and their worst failure is not forgetting — it is acting confidently on knowledge that has gone stale. Most memory systems update the contradicted fact and leave everything built on it behind.",
+      system:
+        "Every memory is linked to the memories it was derived from. When a fact changes, deterministic code walks those links wave by wave to decide which beliefs are affected; domain rules settle what they can compute, and a schema-validated model decides only how to fix the rest.",
+    },
+    tagline: "Memory that knows what else to forget",
+    summary:
+      "A memory system for AI agents that makes the dependencies between memories explicit. When a fact changes, a deterministic engine walks those links wave by wave, and every belief that rested on the fact is kept, updated, retired or turned into a question — with an audit record of why. The first product built on it is a job-hunt assistant for engineering students.",
+    category: "research",
+    status: "in-development",
+    statusNote:
+      "In development. RippleBench is synthetic, with a scripted oracle resolver; the real-model comparison and the student pilot have not been run yet.",
+    featured: true,
+    visible: true,
+    order: 3,
+    year: "2026",
+    role: "Design and implementation",
+    context: "Research project",
+    stack: [
+      "Python",
+      "FastAPI",
+      "PostgreSQL",
+      "pgvector",
+      "SQLAlchemy",
+      "Anthropic API",
+      "ModernBERT",
+      "MCP",
+      "Next.js",
+      "Redis",
+      "Docker",
+    ],
+    figure: "ripple",
+    links: {
+      repo: "https://github.com/TheOneAbovELL/RIPPLE",
+    },
+    facts: [
+      { label: "Decisions", value: "Keep, update, retire or ask — per belief" },
+      { label: "Propagation", value: "Graph traversal, never a model call" },
+      { label: "Invariants", value: "I1–I8, each with a named test" },
+      { label: "Evaluation", value: "RippleBench — synthetic, three domains" },
+    ],
+    caseStudy: {
+      problem: [
+        "Agents now remember and act for months. Their worst failure is not forgetting; it is acting confidently on knowledge that has gone stale. When a student's CGPA rises, the eligibility verdicts, recommendations and search criteria that were built on the old CGPA have to change too.",
+        "Most memory systems update the contradicted fact and leave its dependents behind. Ripple makes the dependencies between memories explicit, and when one changes it re-examines exactly what rested on it — no more, and no less.",
+      ],
+      approach: [
+        "The split is the whole idea: deterministic code decides which memories a change affects, and a language model decides only how to fix each one. Every memory is linked to the memories it was derived from, so the question \"what else does this change?\" is a graph query, not a judgement call.",
+        "When a fact changes, intake detects it and links the new version. The ripple engine then walks the dependency links wave by wave — the beliefs derived directly from the fact, then whatever depended on those — by graph traversal alone.",
+        "Each affected belief goes to a resolver chain. Domain rules settle what they can compute, such as eligibility from a CGPA and a cutoff. Only the rest goes to the model, and its answer is validated against a schema before it can touch memory.",
+        "Every belief ends a ripple kept, updated, retired, or turned into a question for the user when guessing would be wrong — a CGPA on a 4-point scale set against 10-point cutoffs, for example. Each state change leaves an audit record with its reason and evidence.",
+      ],
+      architecture: [
+        {
+          title: "Core",
+          detail:
+            "Models, the store protocol, the ripple engine, intake and the resolver chain — domain-agnostic, so the job-hunt product is one adapter on top of it.",
+        },
+        {
+          title: "Storage",
+          detail:
+            "PostgreSQL with pgvector through async SQLAlchemy 2 and Alembic migrations; for development it runs embedded, so Docker is not needed.",
+        },
+        {
+          title: "Linking",
+          detail:
+            "Link finders that propose typed dependency links: rules, a language model, and a trained ModernBERT-base pair classifier.",
+        },
+        {
+          title: "Retrieval",
+          detail: "Validity-aware hybrid retrieval with graph expansion, so a retired belief is not served as current.",
+        },
+        {
+          title: "Model layer",
+          detail:
+            "A provider router, schemas and versioned prompts — the only code in the system that calls a language model.",
+        },
+        {
+          title: "Product",
+          detail:
+            "The job-hunt adapter (vocabulary, rules, parsers, ranking), agents for conversation, scouting, curation and tailoring, a FastAPI API, an MCP server, Telegram alerts, scheduled jobs and a Next.js dashboard.",
+        },
+      ],
+      decisions: [
+        {
+          title: "Propagation is never a model call",
+          detail:
+            "Which beliefs a change reaches is decided by walking explicit links. The traversal is deterministic, testable and the same every time (invariant I3).",
+        },
+        {
+          title: "Rules before the model",
+          detail:
+            "Anything a domain rule can compute — eligibility from a CGPA and a cutoff — is settled by the rule. The model is asked only about what is left.",
+        },
+        {
+          title: "The model's answer is validated",
+          detail:
+            "A resolver's output must pass a schema before it changes memory (I4); a malformed answer cannot quietly rewrite a belief.",
+        },
+        {
+          title: "Ask instead of guessing",
+          detail:
+            "When a belief cannot be settled honestly, it becomes a question parked for the user rather than a confident guess.",
+        },
+        {
+          title: "Nothing changes without a record",
+          detail:
+            "Every state change writes an audit record with its reason and evidence (I2), which is what answers \"why do you believe this?\".",
+        },
+        {
+          title: "The agent never invents profile facts",
+          detail:
+            "Facts extracted from a résumé are shown beside the exact line they came from, and nothing enters memory until the student confirms it (I5). Ripple never applies to a job or acts on an external site (I6).",
+        },
+      ],
+      reliability: [
+        "Each invariant, I1 to I8, has a named test, and behaviour scenarios replay a user's timeline and assert every memory's state after each event.",
+        "The database suite runs against a throwaway embedded Postgres; linting, formatting and type checks run with Ruff and Pyright, and the dashboard has its own lint, tests and build.",
+        "When the model is unavailable, the API says so and lists the change events the nightly sweep will finish later. It never claims a ripple it did not complete.",
+        "Forgetting removes a memory's whole version chain and cascades along its dependencies (I7); everything can be exported or deleted.",
+      ],
+      outcome: [
+        "A working local system: résumé intake with source lines, openings from pasted job descriptions or forwarded placement emails, derived beliefs with \"why do you believe this?\" one click away, a wave-by-wave view of each ripple, parked questions, Telegram digests and alerts, and an MCP server for other agents.",
+        "Structured facts, the rules, the ripple engine, retrieval, the inspector, questions, export and forget all work without a model key; parsing free text and the fallback resolver need one.",
+        "RippleBench compares Ripple with append-only, newest-wins and check-everything memory on synthetic, labelled timelines in three domains — jobs, news and finance — with ablations, and the link finder is evaluated against the rule linker with cross-domain transfer.",
+      ],
+      limitations: [
+        "The benchmarks are synthetic and use a scripted oracle resolver, and the reported results come from an uncommitted tree.",
+        "The real-model comparison and the student pilot have not been run; the reports give the exact commands and protocol for each.",
+        "Paper and thesis drafts render every number from the results directory (invariant I8), so they carry the same limits.",
+      ],
+      next: [
+        "Run the real-model comparison against the same timelines.",
+        "Run the student pilot with the job-hunt assistant.",
+      ],
+    },
+  },
+
+  {
+    slug: "satquery",
+    title: "SatQuery AI",
+    fullTitle: "An interactive vision-language assistant for multimodal remote-sensing image analysis through text queries",
+    discipline: "AI / Remote sensing",
+    designation: "Vision-language assistant for satellite imagery, with measured evidence",
+    theme: "orbital",
+    brief: {
+      problem:
+        "Asked about satellite imagery, a vision-language model will happily produce a changed area or a backscatter level it never measured. For remote sensing an answer is only useful if its numbers came from the pixels.",
+      system:
+        "A modality-aware router sends each question to deterministic geospatial tools — change detection, SAR statistics, cross-modal overlap — and Qwen2-VL with a remote-sensing LoRA interprets the measured evidence. Every answer carries a five-stage execution trace.",
+    },
+    tagline: "Questions about satellite imagery, answered with measurements and a trace",
+    summary:
+      "A vision-language assistant for ISRO's Smart India Hackathon 2026 problem statement 26167. It answers natural-language questions over optical, multispectral and SAR imagery by routing each query to deterministic geospatial tools for the measurements, so the model interprets evidence but never invents numbers.",
+    category: "engineering",
+    status: "prototype",
+    statusNote:
+      "Feature-frozen team prototype for SIH 2026. Benchmarks (VRSBench, RSVQA, CDVQA) have not been run, and no ISRO/SAC validation is claimed.",
+    featured: true,
+    visible: true,
+    order: 4,
+    year: "2026",
+    context: "Smart India Hackathon 2026 · Team project",
+    stack: ["Python", "FastAPI", "Qwen2-VL", "PEFT (LoRA)", "Rasterio", "Shapely", "NumPy", "SciPy", "Next.js"],
+    figure: "satquery",
+    links: {
+      repo: "https://github.com/TheOneAbovELL/SATQUERY",
+    },
+    facts: [
+      { label: "Modalities", value: "Optical, multispectral, SAR" },
+      { label: "Model", value: "Qwen2-VL-2B-Instruct + rank-8 LoRA" },
+      { label: "Flows", value: "4 verified: VQA, change, SAR, optical + SAR" },
+      { label: "Tests", value: "54 passed, 1 skipped" },
+    ],
+    caseStudy: {
+      problem: [
+        "Remote-sensing analysis usually means choosing the right GIS algorithm by hand. A general vision-language model removes that step — and replaces it with a worse one: asked what changed between two scenes, it will produce a changed area it never measured.",
+        "SatQuery AI was built for ISRO's Smart India Hackathon 2026 problem statement 26167, an interactive vision-language assistant for multimodal remote-sensing imagery, around one separation: the model interprets imagery and evidence, and deterministic geospatial tools perform the measurements.",
+      ],
+      approach: [
+        "A user uploads imagery and asks a question in plain language. Each GeoTIFF is validated first — coordinate reference system, affine transform, bounds, resolution and band descriptions — and its metadata decides the modality: RGB, multispectral, SAR or grayscale. Invalid files are rejected with a structured error.",
+        "A router then picks the capability from the assets themselves: one optical image goes to visual question answering, two optical images to bi-temporal change analysis, one SAR image to the SAR specialist, and an optical image with a SAR image to cross-modal evidence.",
+        "The tools compute the numbers: changed-pixel counts and change fractions from masked array differencing and connected regions, SAR statistics in decibels with outlier clipping, and bounding-box IoU between optical and SAR evidence.",
+        "Qwen2-VL-2B-Instruct with a remote-sensing LoRA adapter receives that evidence as structured text and writes the answer. It describes and contextualises the measurements; it does not perform the arithmetic.",
+      ],
+      architecture: [
+        {
+          title: "Input validation",
+          detail:
+            "Rasterio inspects CRS, transform, bounds, resolution and band tags; metadata such as Sentinel-1 VV/VH tags determines the modality, and a valid projected CRS enables physical area calculations.",
+        },
+        {
+          title: "Router",
+          detail:
+            "A deterministic, modality-aware router keyed on asset counts, behind provider interfaces designed to admit open-ended model planning later.",
+        },
+        {
+          title: "Bi-temporal change",
+          detail:
+            "CRS and overlap checks, NoData masking, pixel differencing, thresholding, a change mask, connected regions, and counts and fractions.",
+        },
+        {
+          title: "SAR specialist",
+          detail:
+            "VV/VH detection, linear backscatter to decibels, and robust statistics (mean, median, p99) with 2nd–98th percentile clipping against speckle.",
+        },
+        {
+          title: "Cross-modal evidence",
+          detail:
+            "Change regions on the optical pair against thresholded SAR returns, compared by bounding-box IoU and classified as agreement, disagreement or complementary.",
+        },
+        {
+          title: "Vision-language model",
+          detail:
+            "Qwen2-VL-2B-Instruct with a PEFT LoRA adapter (rank 8, alpha 16, on the attention projections) loaded at runtime; the base weights are not in the repository.",
+        },
+        {
+          title: "Interface",
+          detail:
+            "A FastAPI backend and a map-centric Next.js 16 dashboard with asset upload, an image canvas, a query bar, and a timeline trace with an evidence drawer.",
+        },
+      ],
+      decisions: [
+        {
+          title: "Measurement is not generation",
+          detail:
+            "Changed-pixel counts, change fractions, area, spectral indices, SAR statistics and bbox IoU come from deterministic code paths where supported. The language model cannot invent them.",
+        },
+        {
+          title: "A deterministic router, for now",
+          detail:
+            "Routing on asset modality is reliable offline and easy to explain. The interfaces for model-driven planning exist, but the heuristic router is the default.",
+        },
+        {
+          title: "Cautious language for SAR",
+          detail:
+            "A high-backscatter region is reported as an observation — a candidate reflective target — never automatically as a building, vehicle or metal object.",
+        },
+        {
+          title: "Agreement is corroboration, not truth",
+          detail:
+            "Optical and SAR agreement is treated as spatial evidence. It is computed on bounding-box envelopes and labelled that way, not as pixel-mask IoU.",
+        },
+        {
+          title: "Confidence is not dressed up",
+          detail:
+            "Deterministic tools return a fixed confidence of 1.0 and model generations a placeholder; no calibrated probability is claimed.",
+        },
+        {
+          title: "Show the work",
+          detail:
+            "Every request produces a five-stage execution trace — tool requested, input validated, execution started, execution completed, result validated — so a judge can see which tool produced each number.",
+        },
+      ],
+      reliability: [
+        "The backend test suite spans unit, integration and regression tests; the README records 54 passed, 1 skipped (a fixture that needs benchmark data) and none failed.",
+        "A pre-flight script checks the environment before a demo, and four flows — single-image VQA, change, SAR and optical + SAR — are documented and verified on generated sample data.",
+        "Deterministic analytics run in under a second. Model interpretation on a CPU takes roughly 60–90 seconds, which is the system's bottleneck.",
+      ],
+      outcome: [
+        "A feature-frozen working prototype: single-image VQA and captioning, bi-temporal change detection, SAR analysis and optical + SAR cross-modal comparison, each answered with evidence and an execution trace.",
+        "A LoRA adapter trained on 500 UCM-Captions samples on a Colab T4 — a development adaptation, not a proxy for the SIH evaluation sets.",
+        "Benchmark adapters for VRSBench, RSVQA and CDVQA are implemented. They have not been run, and no scores are reported.",
+      ],
+      limitations: [
+        "Cross-modal comparison uses bounding-box IoU, not pixel-level mask overlap.",
+        "The SAR demonstration data is semi-synthetic, and the second optical scene carries simulated change.",
+        "Confidence is heuristic, and routing is rule-based rather than open-ended planning.",
+        "Pixel-accurate grounding from the 2B model is limited, and the UCM-Captions licence needs verification before any non-academic use.",
+      ],
+      next: [
+        "Exact pixel-mask cross-modal IoU.",
+        "Evaluation on the official benchmarks and on Sentinel-1 / ISRO data.",
+        "GPU workers for model throughput, and model-driven routing behind the existing interfaces.",
+      ],
+    },
+  },
+
+  {
     slug: "indian-option-pricer",
     title: "Indian Option Pricer",
     tagline: "Three pricing models side by side, using Indian market conventions",
@@ -403,25 +688,6 @@ export const projects: Project[] = [
     links: {
       repo: "https://github.com/TheOneAbovELL/Indian-Option-Pricer",
       demo: "https://indian-option-pricer.vercel.app",
-    },
-  },
-
-  {
-    slug: "satquery",
-    title: "SatQuery",
-    tagline: "Natural-language questions over satellite imagery",
-    summary:
-      "A hackathon prototype that separates measurement from interpretation: deterministic geospatial tools compute the numbers, and a LoRA-tuned vision-language model explains them. Built for a Smart India Hackathon 2026 problem statement.",
-    category: "experiment",
-    status: "prototype",
-    statusNote: "Team hackathon prototype.",
-    featured: false,
-    visible: true,
-    order: 11,
-    year: "2026",
-    stack: ["Python", "FastAPI", "Qwen2-VL", "LoRA", "Rasterio", "Shapely", "Next.js"],
-    links: {
-      repo: "https://github.com/TheOneAbovELL/SATQUERY",
     },
   },
 
@@ -443,26 +709,8 @@ export const projects: Project[] = [
     },
   },
 
-  {
-    slug: "semantic-recommender",
-    title: "Semantic Recommendation Engine",
-    tagline: "Retrieve-then-rank product recommendations",
-    summary:
-      "A two-stage recommender: sentence embeddings with exact FAISS search retrieve candidates, then a weighted multi-signal function ranks them. Includes a Precision / Recall / NDCG evaluation script and a Streamlit interface.",
-    category: "experiment",
-    status: "prototype",
-    featured: false,
-    visible: true,
-    order: 13,
-    year: "2026",
-    stack: ["Python", "Sentence-Transformers", "FAISS", "Pandas", "Streamlit"],
-    links: {
-      repo: "https://github.com/TheOneAbovELL/AMAZON-REC-ENGINE",
-    },
-  },
-
   /* ----------------------------------------------------------------------------------------
-     /projects — programmes 04–10, in sequence. `showcase: true` puts a project there. Every
+     /projects — programmes 06–13, in sequence. `showcase: true` puts a project there. Every
      statement comes from the project's own README; numbers are descriptions, not results.
      ---------------------------------------------------------------------------------------- */
 
@@ -1319,6 +1567,130 @@ export const projects: Project[] = [
         "Unofficial: not affiliated with or endorsed by Formula 1, FOM, the FIA or any team, and subject to OpenF1's terms.",
         "It replays completed races; it is not a live-timing client.",
         "The replay can only be as complete as OpenF1's data — some fields are absent for some sessions.",
+      ],
+    },
+  },
+
+  {
+    slug: "semantic-recommender",
+    title: "Semantic Recommendation Engine",
+    fullTitle: "Aisle — explainable product recommendations",
+    discipline: "AI / Search and ranking",
+    designation: "Hybrid retrieve-then-rank recommender that explains every result",
+    theme: "recommend",
+    brief: {
+      problem:
+        "Shoppers describe what they want in plain language — budgets, product types, use — and a pure embedding search misses the constraints: it returns a laptop bag for \"laptop\" and results over budget. A ranked list with no reasons is also hard to trust.",
+      system:
+        "MiniLM embeddings in FAISS, BM25 and product-type matching retrieve candidates; a ranking function blends relevance, a Bayesian-smoothed rating, popularity, discount and profile fit, and every result shows the signals that ranked it.",
+    },
+    tagline: "Retrieve, then rank — and show the signals behind every result",
+    summary:
+      "A product recommendation engine over a 33,670-product Amazon India catalogue snapshot. Natural-language queries, budgets included, are parsed and answered by hybrid retrieval and a multi-signal ranking with shopper profiles, and each result carries its explanation. Without the Python backend, the web app serves an identical keyword-only pipeline and says so.",
+    category: "engineering",
+    status: "completed",
+    statusNote:
+      "Independent portfolio project, not affiliated with Amazon. Prices and ratings are from a March 2023 snapshot; the public demo currently runs the keyword engine.",
+    featured: false,
+    showcase: true,
+    visible: true,
+    order: 27,
+    year: "2026",
+    role: "Design and implementation",
+    context: "Personal project",
+    stack: ["Python", "Sentence-Transformers", "FAISS", "FastAPI", "Next.js", "Pandas", "scikit-learn", "Streamlit"],
+    figure: "rec-engine",
+    links: {
+      repo: "https://github.com/TheOneAbovELL/AMAZON-REC-ENGINE",
+      demo: "https://amazon-rec-engine.vercel.app",
+    },
+    facts: [
+      { label: "Catalogue", value: "33,670 products, March 2023 snapshot" },
+      { label: "Retrieval", value: "MiniLM + FAISS, BM25, product type" },
+      { label: "Ranking", value: "5 signals, 4 shopper profiles" },
+      { label: "Tests", value: "65 Python, 17 JavaScript, incl. parity" },
+    ],
+    caseStudy: {
+      problem: [
+        "Shoppers say what they want the way they would to a person: \"laptop for AI under 90k\", \"wireless earbuds under 2000\". Embedding similarity alone handles the meaning and misses the constraints — it will return a laptop bag for a laptop, or a result well over budget.",
+        "A ranked list is also only as useful as it is explainable. Aisle is built so that every result shows the signals that put it where it is.",
+      ],
+      approach: [
+        "Queries are parsed first: budgets in their many forms (\"under ₹2,000\", \"between 60k and 1 lakh\", \"around 15000\"), the product type with accessory handling so a laptop is not a laptop bag, and spelling and unit normalisation.",
+        "Retrieval is hybrid. all-MiniLM-L6-v2 sentence embeddings searched with FAISS, BM25 keyword search and product-type matching each propose candidates.",
+        "Ranking then blends five signals — relevance, a Bayesian-smoothed rating, popularity, discount and fit with a declared shopper profile (general, student, AI/ML builder, gamer) — and the explainer records each signal's contribution for the interface.",
+        "If the Python API is not configured or not healthy, the Next.js app answers with a JavaScript engine that mirrors the Python keyword mode exactly, and the interface says which engine answered.",
+      ],
+      architecture: [
+        {
+          title: "Web",
+          detail:
+            "A Next.js application with recommend, similar-items, catalogue and health routes, deployable on Vercel; the catalogue and configuration ship with the functions.",
+        },
+        {
+          title: "Python API",
+          detail:
+            "FastAPI with request validation, readiness that returns 503 while loading, request IDs and a per-IP rate limit; the hybrid engine runs here.",
+        },
+        {
+          title: "Engine",
+          detail:
+            "Query parser, BM25, embeddings, a FAISS vector store, ranking, personalisation, an explainer and an orchestrator, plus item-to-item nearest neighbours for similar products.",
+        },
+        {
+          title: "Keyword fallback",
+          detail: "A JavaScript engine with the same pipeline minus embeddings, used whenever the Python backend is unavailable.",
+        },
+        {
+          title: "Shared configuration",
+          detail: "One engine configuration — ranking weights, query rules, product types, profiles — read by both engines.",
+        },
+        {
+          title: "Data pipeline",
+          detail:
+            "A catalogue build that keeps listings with a price and at least 20 ratings, collapses colour and size variants and balances departments; an index build whose manifest records the catalogue hash.",
+        },
+      ],
+      decisions: [
+        {
+          title: "Retrieve broadly, rank deliberately",
+          detail:
+            "Dense, lexical and type signals find candidates; the decision about order is a separate, configurable function that can be explained term by term.",
+        },
+        {
+          title: "Two engines, one answer",
+          detail:
+            "A parity test runs the Python and JavaScript keyword modes on the same requests and requires identical rankings, scores and explanations.",
+        },
+        {
+          title: "Degrade, and say so",
+          detail:
+            "Without the semantic backend the app still answers — with keyword results, labelled as such in the interface rather than passed off as the full engine.",
+        },
+        {
+          title: "Never serve stale embeddings",
+          detail:
+            "The index manifest records the catalogue hash; a catalogue change forces an embedding rebuild instead of silently mixing old vectors with new products.",
+        },
+        {
+          title: "Queries are personal data",
+          detail: "The optional query log is off by default.",
+        },
+      ],
+      reliability: [
+        "65 Python tests cover the parser, ranking, engine, API contract, JavaScript/Python parity and the real model; 17 JavaScript tests cover the keyword engine and the Next.js routes, including backend fallback.",
+        "Both services are stateless: rollback is redeploying the previous image or commit, and the API image bakes in the model and embeddings so it starts offline.",
+        "No secrets are required to run it.",
+      ],
+      outcome: [
+        "On 32 rule-labelled queries at k = 10 over the full catalogue, the README reports Precision@10 0.969, nDCG@10 0.996 and MRR 1.000 for the hybrid engine, with no results over budget — against 0.875, 0.953 and 0.954 for dense-only retrieval.",
+        "A deployed web app with natural-language search, shopper profiles, similar items and per-result explanations; a CLI and a Streamlit analyst console over the same engine.",
+      ],
+      limitations: [
+        "Relevance labels are regex rules on product name and price — a silver standard. There are no human judgements or online metrics.",
+        "The catalogue is a 2023 snapshot: prices, ratings and availability are not live, and laptops are thin (about 85 listings).",
+        "Personalisation uses declared profiles, not behaviour; there is no history, click feedback or collaborative filtering yet.",
+        "The public demo runs the keyword engine unless a Python backend is configured for it.",
       ],
     },
   },

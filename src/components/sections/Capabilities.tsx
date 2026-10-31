@@ -1,67 +1,102 @@
-import Link from "next/link";
 import { Section } from "@/components/layout/Section";
-import { skills } from "@/content";
+import { projectHref, skills, visibleProjects, type Project } from "@/content";
+import { skillAliases, skillUses } from "@/content/skills";
 import { reveal } from "@/lib/reveal";
-import { CapabilityConsole } from "./CapabilityConsole";
+import { CapabilityConsole, type CapabilityDomainView, type CapabilityUse } from "./CapabilityConsole";
+
+const norm = (value: string) => value.toLowerCase().replace(/[^a-z0-9+#]/g, "");
+
+/** Site order: homepage programmes, then /projects programmes, then the rest. */
+const rankOf = (project: Project) => (project.featured ? 0 : project.showcase ? 100 : 200) + project.order;
+
+/** Where a project sits on the site, as a short tag. */
+function placeOf(project: Project): string {
+  if (project.featured) return "Programme";
+  if (project.showcase) return "Project";
+  return "Garage";
+}
 
 /**
- * Capabilities, always tied to evidence. Wide screens get the interactive console; smaller
- * screens (and no-JavaScript visitors on them) get the same content as a plain sheet.
+ * Resolve every tool of every domain to the places it was used. Hand-written notes in
+ * content/skills.ts come first (they say how); tools named in a project's stack are matched
+ * automatically and described by the project's own tagline. A project that is hidden, or not
+ * yet in content/projects.ts, simply drops out.
+ */
+function buildDomains(): CapabilityDomainView[] {
+  const projects = visibleProjects();
+  const bySlug = new Map(projects.map((project) => [project.slug, project]));
+
+  const usesOf = (item: string): CapabilityUse[] => {
+    const uses: CapabilityUse[] = [];
+    const seen = new Set<string>();
+
+    for (const use of skillUses[item] ?? []) {
+      if (use.slug) {
+        const project = bySlug.get(use.slug);
+        if (!project || seen.has(project.slug)) continue;
+        seen.add(project.slug);
+        uses.push({
+          key: project.slug,
+          title: project.title,
+          href: projectHref(project),
+          note: use.note,
+          place: placeOf(project),
+          rank: rankOf(project),
+        });
+      } else if (use.source) {
+        uses.push({ key: `src:${use.source}`, title: use.source, href: use.href, note: use.note, place: "Experience" });
+      }
+    }
+
+    const names = new Set([item, ...(skillAliases[item] ?? [])].map(norm));
+    for (const project of projects) {
+      if (seen.has(project.slug)) continue;
+      if (!project.stack.some((tech) => names.has(norm(tech)))) continue;
+      seen.add(project.slug);
+      uses.push({
+        key: project.slug,
+        title: project.title,
+        href: projectHref(project),
+        note: project.tagline,
+        place: placeOf(project),
+        rank: rankOf(project),
+      });
+    }
+    return uses;
+  };
+
+  return skills.map((domain) => {
+    const tools = domain.items.map((name) => ({ name, uses: usesOf(name) }));
+    return {
+      id: domain.id,
+      title: domain.title,
+      summary: domain.summary,
+      tools,
+      evidence: domain.evidence.map((e) => ({ key: `ev:${e.source}`, title: e.source, href: e.href, note: e.note, place: "" })),
+    };
+  });
+}
+
+/**
+ * Capabilities, always tied to evidence. An explorer rather than a list: pick a domain, then a
+ * tool, and see every place it was used and how — or switch to the map of domains × projects.
  */
 export function Capabilities() {
+  const domains = buildDomains();
+  const tools = new Set(domains.flatMap((domain) => domain.tools.map((tool) => tool.name)));
+
   return (
     <Section
       id="capabilities"
       label="Capabilities"
       title="What I work with — and the work that proves it."
-      readout={`${String(skills.length).padStart(2, "0")} domains`}
+      readout={`${String(skills.length).padStart(2, "0")} domains · ${tools.size} tools and concepts`}
       tone="teal"
       layout="wide"
     >
-      <div className="hidden lg:block" {...reveal("settle")}>
-        <CapabilityConsole domains={skills} />
-        <p className="label mt-4 text-faint">Select a domain to see where it has been used.</p>
+      <div {...reveal("rise")}>
+        <CapabilityConsole domains={domains} />
       </div>
-
-      <ul className="lg:hidden">
-        {skills.map((domain, index) => (
-          <li key={domain.id} className="border-b border-rule py-7 first:border-t" {...reveal("rise", index % 3)}>
-            <h3 className="display flex items-baseline gap-3 text-[1.375rem]">
-              <span className="label text-signal">{String(index + 1).padStart(2, "0")}</span>
-              {domain.title}
-            </h3>
-            <p className="mt-2 text-[0.9375rem] text-steel">{domain.summary}</p>
-
-            <ul className="mt-4 flex flex-wrap gap-x-2 gap-y-1.5" aria-label={`${domain.title}: tools and concepts`}>
-              {domain.items.map((item, itemIndex) => (
-                <li key={item} className="flex items-center gap-2 text-[1rem] text-bone">
-                  {item}
-                  {itemIndex < domain.items.length - 1 && (
-                    <span aria-hidden="true" className="text-metal-3">
-                      /
-                    </span>
-                  )}
-                </li>
-              ))}
-            </ul>
-
-            <ul className="mt-5 space-y-3 border-l border-signal/50 pl-4" aria-label={`${domain.title}: evidence`}>
-              {domain.evidence.map((item) => (
-                <li key={item.source} className="text-[0.9375rem] leading-snug">
-                  {item.href ? (
-                    <Link href={item.href} className="link-underline font-medium text-bone hover:text-signal">
-                      {item.source}
-                    </Link>
-                  ) : (
-                    <span className="font-medium text-bone">{item.source}</span>
-                  )}
-                  <span className="mt-0.5 block text-steel">{item.note}</span>
-                </li>
-              ))}
-            </ul>
-          </li>
-        ))}
-      </ul>
     </Section>
   );
 }

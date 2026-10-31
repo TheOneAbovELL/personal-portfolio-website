@@ -1,4 +1,5 @@
 import {
+  AdditiveBlending,
   Color,
   DoubleSide,
   type Material,
@@ -49,6 +50,18 @@ export function createSurfaceMaterials(anisotropy: number): SurfaceMaterials {
       roughness: 0.42,
       clearcoat: 1,
       clearcoatRoughness: 0.09,
+      ...offset,
+    }),
+    // Racing red under the same lacquer — the livery's one colour, on the fin and rear
+    // endplates only. A deep base so it reads as paint, not plastic, and holds its hue under
+    // the tone mapping; the clearcoat carries the studio's highlights over it. Same feature set
+    // as the graphite paint, so the two share one shader program.
+    livery: new MeshPhysicalMaterial({
+      color: "#b0141d",
+      metalness: 0.25,
+      roughness: 0.34,
+      clearcoat: 1,
+      clearcoatRoughness: 0.06,
       ...offset,
     }),
     // Bare twill carbon under a satin lacquer. Specular is held down so flat panels never
@@ -150,6 +163,8 @@ export function createFloorMaterial(reflection: Texture, shadow: Texture, centre
       uShadow: { value: shadow },
       uResolution: { value: new Vector2(1, 1) },
       uCentre: { value: new Vector2(centre, 0) },
+      // Where the car is now: the shadow and reflection go with it, the studio's light stays.
+      uCar: { value: new Vector2(centre, 0) },
       uShadowExtent: { value: new Vector2(SHADOW_EXTENT.x, SHADOW_EXTENT.z) },
       uKey: { value: new Color("#c9d6e2") },
       uRim: { value: new Color(COLORS.data) },
@@ -170,6 +185,7 @@ export function createFloorMaterial(reflection: Texture, shadow: Texture, centre
       uniform sampler2D uShadow;
       uniform vec2 uResolution;
       uniform vec2 uCentre;
+      uniform vec2 uCar;
       uniform vec2 uShadowExtent;
       uniform vec3 uKey;
       uniform vec3 uRim;
@@ -188,18 +204,19 @@ export function createFloorMaterial(reflection: Texture, shadow: Texture, centre
 
       void main() {
         vec2 p = vWorld.xz - uCentre;
+        vec2 c = vWorld.xz - uCar;
 
         // Light on the floor: the key's pool under the car, teal behind it, red low in front.
         vec3 light = uKey * 0.034 * pool(p, vec2(0.3, 0.7), vec2(4.4, 2.5));
         light += uRim * 0.02 * pool(p, vec2(-3.4, -2.6), vec2(3.2, 2.2));
-        light += uKicker * 0.014 * pool(p, vec2(3.6, -2.2), vec2(2.6, 1.8));
+        light += uKicker * 0.022 * pool(p, vec2(3.6, -2.2), vec2(2.8, 1.9));
 
-        float shade = texture2D(uShadow, p / (2.0 * uShadowExtent) + 0.5).r;
-        vec2 inside = step(abs(p), uShadowExtent);
+        float shade = texture2D(uShadow, c / (2.0 * uShadowExtent) + 0.5).r;
+        vec2 inside = step(abs(c), uShadowExtent);
         shade *= inside.x * inside.y;
 
         // Reflection: rougher and fainter with distance from the car's footprint.
-        float away = length(max(abs(p) - FOOTPRINT, 0.0));
+        float away = length(max(abs(c) - FOOTPRINT, 0.0));
         vec2 screen = gl_FragCoord.xy / uResolution;
         float level = 2.0 + away * 2.4;
         vec2 smear = vec2(0.0025, 0.006) + away * vec2(0.004, 0.014);
@@ -237,49 +254,35 @@ export function createLineMaterial(): ShaderMaterial {
       uColor: { value: new Color(COLORS.bone) },
       uSignal: { value: new Color(COLORS.signal) },
       uOpacity: { value: 1 },
-      uMorph: { value: 0 },
       uLit: { value: 0 },
       uTime: { value: 0 },
       uPulse: { value: 1 },
     },
     vertexShader: /* glsl */ `
-      attribute vec3 aRelaxed;
       attribute float aAlong;
-      attribute float aSeed;
       attribute float aAlpha;
       attribute float aSignal;
 
-      uniform float uMorph;
-
       varying float vAlong;
-      varying float vSeed;
       varying float vAlpha;
       varying float vSignal;
 
       void main() {
-        // Each stroke relaxes on its own schedule so the form loosens rather than snaps.
-        float t = clamp(uMorph * 1.4 - aSeed * 0.4, 0.0, 1.0);
-        t = t * t * (3.0 - 2.0 * t);
-        vec3 p = mix(position, aRelaxed, t);
-
         vAlong = aAlong;
-        vSeed = aSeed;
         vAlpha = aAlpha;
         vSignal = aSignal;
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
       }
     `,
     fragmentShader: /* glsl */ `
       uniform vec3 uColor;
       uniform vec3 uSignal;
       uniform float uOpacity;
-      uniform float uMorph;
       uniform float uLit;
       uniform float uTime;
       uniform float uPulse;
 
       varying float vAlong;
-      varying float vSeed;
       varying float vAlpha;
       varying float vSignal;
 
@@ -287,7 +290,7 @@ export function createLineMaterial(): ShaderMaterial {
         // A soft band that travels nose → tail every few seconds, like air over the surface.
         float head = fract(uTime / 7.0) * 1.9 - 0.45;
         float d = (vAlong - head) / 0.09;
-        float band = exp(-d * d) * uPulse * (1.0 - uMorph);
+        float band = exp(-d * d) * uPulse;
 
         vec3 color = mix(uColor, uSignal, vSignal);
         color = mix(color, uSignal, band * 0.55);
@@ -296,10 +299,67 @@ export function createLineMaterial(): ShaderMaterial {
         float base = vAlpha * mix(1.0, 0.16, uLit);
         float alpha = mix(base, 0.95, vSignal);
         alpha += band * 0.3;
-        // Traces thin out a little as they relax so the band of lines does not read as a block.
-        alpha *= mix(1.0, 0.55 + 0.45 * vSeed, uMorph);
 
         gl_FragColor = vec4(color, alpha * uOpacity);
+        #include <colorspace_fragment>
+      }
+    `,
+  });
+}
+
+/**
+ * Speed streaks (see buildStreakGeometry): each segment's tail is pulled aft by `uStretch`
+ * metres times its own length factor, and fades from its anchor on the car to nothing.
+ * Additive, so overlapping streaks brighten like light rather than stacking up as paint.
+ */
+export function createStreakMaterial(): ShaderMaterial {
+  return new ShaderMaterial({
+    transparent: true,
+    depthWrite: false,
+    blending: AdditiveBlending,
+    uniforms: {
+      uColor: { value: new Color(COLORS.bone) },
+      uRed: { value: new Color(COLORS.perf) },
+      uStretch: { value: 0 },
+      uOpacity: { value: 0 },
+    },
+    vertexShader: /* glsl */ `
+      attribute float aTail;
+      attribute float aLength;
+      attribute float aSeed;
+      attribute float aRed;
+
+      uniform float uStretch;
+
+      varying float vTail;
+      varying float vSeed;
+      varying float vRed;
+
+      void main() {
+        // Streaks start one after another, not all at once.
+        float grow = clamp(uStretch * 1.5 - aSeed * 0.5, 0.0, 1.0);
+        vec3 p = position;
+        p.x -= aTail * aLength * grow * grow;
+        vTail = aTail;
+        vSeed = aSeed;
+        vRed = aRed;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
+      }
+    `,
+    fragmentShader: /* glsl */ `
+      uniform vec3 uColor;
+      uniform vec3 uRed;
+      uniform float uOpacity;
+
+      varying float vTail;
+      varying float vSeed;
+      varying float vRed;
+
+      void main() {
+        float fade = pow(1.0 - vTail, 1.6);
+        vec3 color = mix(uColor, uRed * 1.6, vRed);
+        float alpha = fade * (0.18 + 0.32 * vSeed) * uOpacity;
+        gl_FragColor = vec4(color, alpha);
         #include <colorspace_fragment>
       }
     `,

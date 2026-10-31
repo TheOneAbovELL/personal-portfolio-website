@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Fragment, useEffect, useId, useRef, useState } from "react";
 import type { CSSProperties, KeyboardEvent, ReactNode, RefObject } from "react";
+import { ASK_EVENT, takePendingQuestion } from "@/components/nav/events";
 import { Icon } from "@/components/ui/Icon";
 import { prepareQuestion } from "@/lib/ask/client";
 import { useAskSession } from "@/lib/ask/session";
@@ -31,7 +32,7 @@ const KEEP_MOVING = [
 
 /** Label gutter + content: every row of the console shares these two columns. */
 const COLUMNS = "md:grid-cols-[11rem_minmax(0,1fr)]";
-const GUTTER = "label px-5 pt-5 text-faint md:border-r md:border-rule md:bg-carbon/25 md:px-6 md:py-5";
+const GUTTER = "label px-5 pt-5 text-faint md:border-r md:border-rule md:px-6 md:py-5";
 const CELL = "min-w-0 px-5 pb-5 pt-2.5 md:px-6 md:py-5";
 
 const pad = (value: number) => String(value).padStart(2, "0");
@@ -428,7 +429,31 @@ export function AskConsole({ groups }: { groups: SuggestionGroup[] }) {
 
   const baseId = useId();
   const headingRef = useRef<HTMLHeadingElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const askRef = useRef(ask);
   const group = groups[topic];
+
+  useEffect(() => {
+    askRef.current = ask;
+  });
+
+  // Questions handed over by the navigator or the floating Ask control: asked at once, or,
+  // with no question, the command line simply takes focus. One may also be waiting from
+  // another page, left there before the visitor was brought here.
+  useEffect(() => {
+    const take = (question: string | undefined) => {
+      if (question && prepareQuestion(question) !== null) askRef.current(question);
+      else inputRef.current?.focus({ preventScroll: true });
+    };
+    const pending = takePendingQuestion();
+    const frame = pending ? requestAnimationFrame(() => take(pending)) : 0;
+    const onAsk = (event: Event) => take((event as CustomEvent<{ question?: string }>).detail?.question);
+    window.addEventListener(ASK_EVENT, onAsk);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener(ASK_EVENT, onAsk);
+    };
+  }, []);
   const earlier = exchanges.filter((exchange) => exchange !== active);
   const numberOf = (exchange: Exchange) => exchanges.indexOf(exchange) + 1;
   const tabId = (index: number) => `${baseId}-tab-${index}`;
@@ -469,7 +494,7 @@ export function AskConsole({ groups }: { groups: SuggestionGroup[] }) {
           setValue("");
         }}
       >
-        <label htmlFor={`${baseId}-input`} className="label hidden items-center border-r border-rule bg-carbon/25 px-6 text-data md:flex">
+        <label htmlFor={`${baseId}-input`} className="label hidden items-center border-r border-rule px-6 text-data md:flex">
           Ask
         </label>
         <div className="flex min-w-0 items-stretch">
@@ -477,6 +502,7 @@ export function AskConsole({ groups }: { groups: SuggestionGroup[] }) {
             ›
           </span>
           <input
+            ref={inputRef}
             id={`${baseId}-input`}
             type="text"
             value={value}

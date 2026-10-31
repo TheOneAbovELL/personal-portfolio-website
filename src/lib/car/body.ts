@@ -114,7 +114,7 @@ export function sidepods(): Part[] {
   });
 }
 
-/** The engine-cover fin. Its top edge carries the drawing's accent line on from the airbox. */
+/** The engine-cover fin, in the livery's red. Its top edge carries the drawing's accent line on from the airbox. */
 export function fin(): Part {
   const top: Vec2[] = [
     [-0.6, 0.93],
@@ -130,7 +130,7 @@ export function fin(): Part {
       { points: [top[1], foot].map(([x, y]): Vec3 => [x, y, 0]), role: "edge" },
     ],
     solids: [
-      slab([top[0], top[1], [-1.9, 0.44], [-1.3, 0.6], [-0.6, 0.8]], 0.008, "carbon", upright(0)),
+      slab([top[0], top[1], [-1.9, 0.44], [-1.3, 0.6], [-0.6, 0.8]], 0.008, "livery", upright(0)),
     ],
     elevation: {
       layer: LAYER.spine,

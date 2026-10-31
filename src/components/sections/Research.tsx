@@ -29,7 +29,7 @@ export function ResearchDirection() {
 
       <div className="mt-[clamp(2rem,4vw,3.25rem)] grid gap-x-10 gap-y-10 lg:grid-cols-12">
         <div className="lg:col-span-4">
-          <h3 className="display text-[clamp(1.75rem,3vw,2.5rem)]" {...reveal("mask")}>
+          <h3 className="display text-[clamp(1.5rem,1.1rem+1.4vw,2.125rem)]" {...reveal("mask")}>
             <span className="mask">Where the work is heading.</span>
           </h3>
           <p className="mt-5 text-[0.9875rem] leading-relaxed text-steel" {...reveal("rise", 1)}>

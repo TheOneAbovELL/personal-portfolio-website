@@ -24,6 +24,11 @@ export interface GarageRepo {
   archived: boolean;
   /** Pushed to within the last 90 days (as of the last revalidation). */
   active: boolean;
+  /**
+   * Commits per week over the last 52 weeks, oldest first, from GitHub's participation
+   * statistics. Null when GitHub has not computed them yet (it answers 202) or is unreachable.
+   */
+  activity: number[] | null;
 }
 
 export interface Garage {
@@ -73,7 +78,7 @@ async function verifyDemos(repos: GarageRepo[]): Promise<GarageRepo[]> {
 
 const ACTIVE_WINDOW_MS = 90 * 24 * 60 * 60 * 1000;
 
-function curate(raw: Omit<GarageRepo, "title" | "category" | "active">[]): GarageRepo[] {
+function curate(raw: Omit<GarageRepo, "title" | "category" | "active" | "activity">[]): GarageRepo[] {
   const now = Date.now();
   const hidden = new Set(GARAGE_HIDDEN.map((name) => name.toLowerCase()));
   return raw
@@ -87,12 +92,35 @@ function curate(raw: Omit<GarageRepo, "title" | "category" | "active">[]): Garag
         description: override.description ?? repo.description,
         category: override.category ?? "Other",
         active: !repo.archived && now - Date.parse(repo.pushedAt) < ACTIVE_WINDOW_MS,
+        activity: null,
       };
     })
     .sort((a, b) => {
       const priority = (GARAGE_OVERRIDES[b.name]?.priority ?? 0) - (GARAGE_OVERRIDES[a.name]?.priority ?? 0);
       return priority !== 0 ? priority : b.pushedAt.localeCompare(a.pushedAt);
     });
+}
+
+/**
+ * Weekly commit counts for the last year. GitHub computes these lazily: the first request can
+ * answer 202 with no body while it works, so anything but a full 52-week array is treated as
+ * "not available" and the row simply shows no trace. Cached with the rest of the Garage data.
+ */
+async function participation(name: string, headers: HeadersInit): Promise<number[] | null> {
+  try {
+    const response = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${name}/stats/participation`, {
+      headers,
+      next: { revalidate: SIX_HOURS },
+      signal: AbortSignal.timeout(5000),
+    });
+    if (response.status !== 200) return null;
+    const body = (await response.json()) as { all?: unknown };
+    const weeks = body.all;
+    if (!Array.isArray(weeks) || weeks.length !== 52 || !weeks.every((n) => typeof n === "number")) return null;
+    return weeks as number[];
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -105,14 +133,15 @@ function curate(raw: Omit<GarageRepo, "title" | "category" | "active">[]): Garag
 export async function getGarage(): Promise<Garage> {
   try {
     const token = process.env.GITHUB_TOKEN;
+    const headers = {
+      Accept: "application/vnd.github+json",
+      "User-Agent": "omjee-portfolio",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    };
     const response = await fetch(
       `https://api.github.com/users/${GITHUB_USER}/repos?per_page=100&sort=pushed&type=owner`,
       {
-        headers: {
-          Accept: "application/vnd.github+json",
-          "User-Agent": "omjee-portfolio",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
+        headers,
         next: { revalidate: SIX_HOURS },
         signal: AbortSignal.timeout(6000),
       },
@@ -136,7 +165,11 @@ export async function getGarage(): Promise<Garage> {
           archived: Boolean(repo.archived),
         })),
     );
-    return { repos: await verifyDemos(repos), live: true };
+    const [verified, activity] = await Promise.all([
+      verifyDemos(repos),
+      Promise.all(repos.map((repo) => participation(repo.name, headers))),
+    ]);
+    return { repos: verified.map((repo, i) => ({ ...repo, activity: activity[i] })), live: true };
   } catch {
     const repos = curate(
       GARAGE_SNAPSHOT.map((repo) => ({

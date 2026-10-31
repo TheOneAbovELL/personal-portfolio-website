@@ -1,12 +1,12 @@
 import { MeshBuilder } from "./mesh";
 import { box, level, slab, upright, type Placement } from "./primitives";
 import { flat, LAYER, mirrorPoint } from "./spec";
-import type { Part, Solid, Stroke, Vec2, Vec3 } from "./types";
+import type { MaterialId, Part, Solid, Stroke, Vec2, Vec3 } from "./types";
 
 /**
  * Aerodynamic surfaces: front and rear wings, the floor and its diffuser. Wing elements are
  * real sections with thickness and camber, stacked with slot gaps between them; everything
- * flat is a panel of real thickness. All of it is bare carbon.
+ * flat is a panel of real thickness. All of it is bare carbon except the rear endplates.
  */
 
 interface WingSection {
@@ -79,12 +79,19 @@ function wingElement(
   return { id, strokes, solids: [mesh.build("carbon")] };
 }
 
-/** An endplate, pylon or strake: a carbon panel standing along the car, drawn as its outline. */
-function panel(id: string, outline: Vec2[], z: number, thickness: number, layer?: number): Part {
+/** An endplate, pylon or strake: a panel standing along the car, drawn as its outline. Carbon unless painted. */
+function panel(
+  id: string,
+  outline: Vec2[],
+  z: number,
+  thickness: number,
+  layer?: number,
+  material: MaterialId = "carbon",
+): Part {
   return {
     id,
     strokes: [{ points: outline.map(([x, y]): Vec3 => [x, y, z]), role: "edge", closed: true }],
-    solids: [slab(outline, thickness, "carbon", upright(z))],
+    solids: [slab(outline, thickness, material, upright(z))],
     elevation:
       layer === undefined
         ? undefined
@@ -151,8 +158,9 @@ export function rearWing(): Part[] {
     [-2.0, 0.66],
   ];
   const thickness = 0.01;
-  const right = panel("rear-endplate-r", outline, halfSpan + thickness / 2, thickness, LAYER.rearWing);
-  const left = panel("rear-endplate-l", outline, -(halfSpan + thickness / 2), thickness);
+  // The rear endplates carry the livery's red: the last thing a following car sees.
+  const right = panel("rear-endplate-r", outline, halfSpan + thickness / 2, thickness, LAYER.rearWing, "livery");
+  const left = panel("rear-endplate-l", outline, -(halfSpan + thickness / 2), thickness, undefined, "livery");
 
   // Where each element meets the endplate its section shows on the outside — a line of
   // fasteners on the real thing. It also gives the side elevation its wing sections, which

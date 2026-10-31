@@ -8,33 +8,54 @@ import { getGarage } from "@/lib/github";
 
 const enter = (index: number) => ({ "--enter-index": index }) as React.CSSProperties;
 
-const SOCIAL_ICON: Partial<Record<string, IconName>> = { github: "github", linkedin: "linkedin" };
+const SOCIAL_ICON: Partial<Record<string, IconName>> = { github: "github", linkedin: "linkedin", email: "mail" };
+const HERO_SOCIALS = ["github", "linkedin", "instagram"];
+
+/** Instagram's glyph, drawn to the same 24-unit grid and stroke as the site's other icons. */
+function InstagramGlyph({ size = 15 }: { size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.75}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <rect x="3.5" y="3.5" width="17" height="17" rx="4.75" />
+      <circle cx="12" cy="12" r="3.9" />
+      <circle cx="17.1" cy="6.9" r="0.6" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
 
 /**
- * The hero plays as a short power-up sequence (all CSS, none of it blocks content):
- *   1  system readout switches on, line by line
- *   2  the drawing of the car draws itself; the studio comes up (HeroStage)
- *   3  the name unmasks
- *   4  discipline, statement and actions follow
- *   5  the instrument row — real counts that link into the page — settles last
+ * The hero is the car's room. Type is kept to the edges of the frame and set small enough
+ * that the car, not the copy, is the picture:
+ *
+ *   top-left      discipline and the name — the one place the name appears (the start
+ *                 sequence hands its own lettering into this heading, see components/loader)
+ *   bottom-left   statement and the two actions
+ *   bottom-right  where to find me, three counts that link into the page, and the caption
+ *
+ * Entrances play in that order, after the drawing of the car has begun to draw itself.
  */
 export async function Hero() {
   const garage = await getGarage();
   const links = [
-    ...profile.socials.filter((social) => social.id === "github" || social.id === "linkedin"),
+    ...HERO_SOCIALS.flatMap((id) => profile.socials.filter((social) => social.id === id)),
     { id: "email", label: "Email", href: `mailto:${profile.email}` },
-  ];
-
-  const system = [
-    { key: "System", value: "Online" },
-    { key: "Profile", value: profile.name },
   ];
 
   // Every number here is counted from content and links to the section it describes.
   const instruments = [
     { label: "Domains", value: skills.length, href: "#capabilities" },
     { label: "Systems", value: featuredProjects().length, href: "#work" },
-    { label: "Garage", value: garage.repos.length, href: "#garage" },
+    { label: "Repositories", value: garage.repos.length, href: "#garage" },
   ];
 
   return (
@@ -42,65 +63,78 @@ export async function Hero() {
       id="top"
       aria-labelledby="hero-title"
       data-race-zone="hero"
-      className="relative flex min-h-[min(100svh,68rem)] flex-col"
+      className="hero relative flex min-h-[min(100svh,68rem)] flex-col"
     >
       <HeroStage>
         <CarElevation className="block h-auto w-full" />
       </HeroStage>
 
-      <div className="shell relative z-10 flex flex-1 flex-col pb-6 pt-[calc(var(--header-h)+clamp(1.25rem,4vh,3rem))]">
-        <div className="relative">
+      <div className="shell relative z-10 flex flex-1 flex-col pb-[clamp(1.75rem,5vh,3rem)] pt-[calc(var(--header-h)+clamp(1.75rem,7vh,4.5rem))]">
+        <div className="flex items-start justify-between gap-8">
           <div>
-            <p className="label enter flex flex-wrap gap-x-3 gap-y-1 text-steel" style={enter(5)}>
+            <p className="label enter flex flex-wrap gap-x-3 gap-y-1 text-faint" style={enter(1)}>
               {profile.roles.map((role, index) => (
                 <span key={role} className="flex items-center gap-3">
-                  {index > 0 && <span aria-hidden="true" className="h-px w-4 bg-metal-3" />}
+                  {index > 0 && <span aria-hidden="true" className="h-px w-3 bg-metal-3" />}
                   {role}
                 </span>
               ))}
             </p>
-            <h1
-              id="hero-title"
-              className="display enter-mask mt-4 text-[clamp(3.25rem,16.5vw,6.5rem)] uppercase md:mt-5 md:text-[clamp(4rem,9.1vw,9.5rem)]"
-              style={enter(3)}
-            >
+            <h1 id="hero-title" className="hero-name display enter-mask mt-4 md:mt-5" style={enter(2)}>
               {profile.firstName}
               <br className="md:hidden" /> R Giri
             </h1>
           </div>
 
-          {/* System readout — decorative restatement of the heading, so hidden from assistive tech. */}
-          <div aria-hidden="true" className="label absolute right-0 top-0 hidden text-right text-faint xl:block">
-            {system.map((line, index) => (
-              <p key={line.key} className="enter-step flex justify-end gap-2 leading-[1.9]" style={enter(index)}>
-                <span>{line.key}</span>
-                <span className="text-metal-3">/</span>
-                <span className={index === 0 ? "flex items-center gap-1.5 text-signal" : "text-steel"}>
-                  {index === 0 && <span className="pulse-dot size-1 rounded-full bg-signal" />}
-                  {line.value}
-                </span>
-              </p>
-            ))}
-          </div>
+          {profile.availability.open && (
+            <p className="label enter-fade mt-0.5 hidden shrink-0 items-center gap-2 text-steel md:inline-flex" style={enter(4)}>
+              <span aria-hidden="true" className="pulse-dot size-1.5 rounded-full bg-signal" />
+              {profile.availability.label}
+            </p>
+          )}
         </div>
 
-        <div className="mt-6 flex flex-1 flex-col justify-between gap-10 md:mt-auto md:flex-none md:flex-row md:items-end">
-          <div className="max-w-[30rem]">
-            <p className="prose-body enter text-bone/90" style={enter(7)}>
+        <div className="mt-8 flex flex-col gap-6 md:mt-auto md:flex-row md:items-end md:justify-between md:gap-10">
+          <div className="max-w-[27rem]">
+            <p className="hero-statement enter text-bone/85" style={enter(5)}>
               {profile.statement}
             </p>
-            <div className="enter mt-7 flex flex-wrap items-center gap-3" style={enter(8)}>
+            <div className="enter mt-7 flex flex-wrap items-center gap-x-7 gap-y-3" style={enter(6)}>
               <ButtonLink href="#work" icon="arrow-down">
                 Explore work
               </ButtonLink>
-              <ButtonLink href={profile.resume.href} variant="secondary" icon="arrow-up-right">
+              <ButtonLink href={profile.resume.href} variant="ghost" icon="arrow-up-right" className="hover:text-bone">
                 Résumé
               </ButtonLink>
             </div>
-            <ul className="enter mt-5 flex flex-wrap gap-x-6" style={enter(9)}>
+            {profile.availability.open && (
+              <p className="label enter-fade mt-6 inline-flex items-center gap-2 text-steel md:hidden" style={enter(7)}>
+                <span aria-hidden="true" className="pulse-dot size-1.5 rounded-full bg-signal" />
+                {profile.availability.label}
+              </p>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-5 md:items-end">
+            <ul className="enter-fade hidden gap-8 md:flex" style={enter(8)}>
+              {instruments.map((item) => (
+                <li key={item.label}>
+                  <Link
+                    href={item.href}
+                    className="group inline-flex min-h-11 items-baseline gap-2 text-faint transition-colors duration-[var(--dur-fast)] hover:text-bone"
+                  >
+                    <span className="readout text-[0.9375rem] text-bone transition-colors duration-[var(--dur-fast)] group-hover:text-signal">
+                      {String(item.value).padStart(2, "0")}
+                    </span>
+                    <span className="label">{item.label}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+            <ul aria-label="Elsewhere" className="enter-fade flex flex-wrap gap-x-6 md:justify-end" style={enter(9)}>
               {links.map((link) => {
-                const icon = SOCIAL_ICON[link.id] ?? "mail";
                 const external = !link.href.startsWith("mailto:");
+                const icon = SOCIAL_ICON[link.id];
                 return (
                   <li key={link.id}>
                     <a
@@ -108,45 +142,16 @@ export async function Hero() {
                       {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
                       className="label inline-flex min-h-11 items-center gap-2 text-steel transition-colors duration-[var(--dur-fast)] hover:text-bone"
                     >
-                      <Icon name={icon} size={15} />
+                      {icon ? <Icon name={icon} size={14} /> : <InstagramGlyph size={14} />}
                       {link.label}
                     </a>
                   </li>
                 );
               })}
             </ul>
-          </div>
-
-          <div className="flex flex-col items-start gap-4 md:items-end">
-            {/* Instrument row */}
-            <ul className="enter-fade hidden border border-rule bg-carbon/40 backdrop-blur-sm md:flex" style={enter(11)}>
-              {instruments.map((item) => (
-                <li key={item.label} className="border-l border-rule first:border-l-0">
-                  <Link
-                    href={item.href}
-                    className="group flex min-h-11 items-baseline gap-2.5 px-3.5 py-2.5 transition-colors duration-[var(--dur-fast)] hover:bg-graphite-2"
-                  >
-                    <span className="label text-faint transition-colors duration-[var(--dur-fast)] group-hover:text-steel">
-                      {item.label}
-                    </span>
-                    <span className="readout text-[0.9375rem] text-bone transition-colors duration-[var(--dur-fast)] group-hover:text-signal">
-                      {String(item.value).padStart(2, "0")}
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-            <div className="enter-fade flex flex-wrap items-center gap-x-6 gap-y-2 md:justify-end" style={enter(12)}>
-              <p className="label hidden text-faint md:block">
-                <span className="text-steel">Fig. 01</span> — Original single-seater, modelled in code
-              </p>
-              {profile.availability.open && (
-                <p className="label inline-flex shrink-0 items-center gap-2 text-steel">
-                  <span aria-hidden="true" className="pulse-dot size-1.5 rounded-full bg-signal" />
-                  {profile.availability.label}
-                </p>
-              )}
-            </div>
+            <p className="label enter-fade hidden text-faint/80 md:block" style={enter(10)}>
+              Fig. 01 — Original single-seater, modelled in code
+            </p>
           </div>
         </div>
       </div>

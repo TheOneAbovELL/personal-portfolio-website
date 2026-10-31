@@ -21,6 +21,7 @@ export interface Stroke {
  * Surface finishes. The renderer maps each to a physically based material.
  *
  *   paint    metallic graphite under clearcoat — upper bodywork
+ *   livery   racing red under clearcoat — a few accents only: fin, rear endplates
  *   carbon   bare twill-weave carbon fibre — wings, floor, lower bodywork, suspension
  *   rubber   tyre compound
  *   rim      dark anodised wheel cover, turned on a lathe
@@ -33,6 +34,7 @@ export interface Stroke {
  */
 export type MaterialId =
   | "paint"
+  | "livery"
   | "carbon"
   | "rubber"
   | "rim"

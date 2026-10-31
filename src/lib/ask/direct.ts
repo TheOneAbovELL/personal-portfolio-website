@@ -22,11 +22,13 @@ import {
 } from "@/content";
 import type { Evidence, Experience, Project, SkillDomain, TitledNote } from "@/content";
 
-import type { Intent } from "./intents";
+import { resume } from "@/content/resume";
+
+import type { Intent, ResumeSection } from "./intents";
 import type { GarageRepo } from "@/lib/github";
 
 import type { Entity, KnowledgeBase } from "./knowledge";
-import { CASE_SECTIONS, codeforcesSentence, educationSentence, projectEntityId, sectionLines, statusLine } from "./knowledge";
+import { CASE_SECTIONS, cgpaSentence, codeforcesSentence, educationSentence, projectEntityId, sectionLines, statusLine } from "./knowledge";
 import type { CaseSection } from "./knowledge";
 import { ACTIONS, MAX_CARDS, experienceCard, projectAction, projectCard, relatedFrom, repoCard, skillCard, stat } from "./present";
 import { generalFollowUps, getSuggestions, projectFollowUps } from "./suggestions";
@@ -37,6 +39,7 @@ import {
   joinList,
   lowerFirst,
   mentions,
+  normalize,
   splitSentences,
   stemTokens,
   stripTrailingPeriod,
@@ -711,14 +714,92 @@ function composeExperience(roleId: string | null): Composed {
   };
 }
 
-function composeEducation(): Composed {
+const ASKS_GRADES = /\b(c?gpa|grades?|marks|score|cumulative)\b/i;
+
+function composeEducation(question = ""): Composed {
+  const degrees = education.map((item, index) => educationSentence(item, index === 0 ? "Omjee" : "He", index > 0)).join(" ");
+  const grades = cgpaSentence();
+  const leadWithGrades = ASKS_GRADES.test(question);
   return {
-    answer: education.map((item, index) => educationSentence(item, index === 0 ? "Omjee" : "He", index > 0)).join(" ") || NOT_DOCUMENTED,
-    sourceIds: education.map((item) => `education:${item.id}`),
+    answer: degrees ? (leadWithGrades ? paragraphs(grades, degrees) : paragraphs(degrees, grades)) : NOT_DOCUMENTED,
+    sourceIds: leadWithGrades
+      ? ["resume:education", ...education.map((item) => `education:${item.id}`)]
+      : [...education.map((item) => `education:${item.id}`), "resume:education"],
     cards: [],
-    followUps: ["What experience does he have?", "What technologies does he work with?", `What is ${profile.firstName} researching?`],
-    actions: [ACTIONS.experience],
+    followUps: ["What skills does he list on his résumé?", "What experience does he have?", `What is ${profile.firstName} researching?`],
+    stats: resume.education.map((item) => ({ value: item.cgpa.replace(/\/10$/, ""), label: `CGPA · ${item.short}` })),
+    actions: [ACTIONS.resume, ACTIONS.experience],
   };
+}
+
+/** One part of the résumé, as the PDF states it. */
+function composeResumeSection(section: ResumeSection): Composed {
+  const resumeAction = ACTIONS.resume;
+  switch (section) {
+    case "education":
+      return composeEducation("cgpa");
+    case "summary":
+      return {
+        answer: paragraphs(`The summary at the top of Omjee's résumé reads: "${resume.summary}"`),
+        sourceIds: ["resume:summary"],
+        cards: [],
+        followUps: ["What skills does he list on his résumé?", "What is his CGPA?", "What experience does he have?"],
+        actions: [resumeAction, ACTIONS.about],
+      };
+    case "skills": {
+      const count = new Set(resume.skills.flatMap((group) => group.items)).size;
+      return {
+        answer: paragraphs(
+          `His résumé lists technical skills in ${plural(resume.skills.length, "group")}.`,
+          resume.skills.map((group) => `${group.group}: ${group.items.join(", ")}.`).join(" "),
+        ),
+        sourceIds: ["resume:skills", ...skills.slice(0, 2).map((domain) => `skill:${domain.id}`)],
+        cards: [],
+        followUps: ["What technologies does he work with?", "What is his CGPA?", "What projects are on his résumé?"],
+        stats: [stat(resume.skills.length, "Skill groups"), stat(count, "Skills listed")],
+        actions: [resumeAction, ACTIONS.capabilities],
+      };
+    }
+    case "experience":
+      return {
+        answer: paragraphs(
+          `His résumé lists ${plural(resume.experience.length, "role")}.`,
+          ...resume.experience.map((role) => `${role.role}, ${role.organization} (${role.period}). ${role.bullets[0]}`),
+        ),
+        sourceIds: resume.experience.map((role) => `resume:experience:${normalize(role.short).replace(/ /g, "-")}`),
+        cards: experience.slice(0, MAX_CARDS).map(experienceCard),
+        followUps: ["What experience does he have?", "What is his CGPA?", "What skills does he list on his résumé?"],
+        stats: [stat(resume.experience.length, "Roles on the résumé")],
+        actions: [resumeAction, ACTIONS.experience],
+      };
+    case "projects": {
+      const linked = resume.projects
+        .map((entry) => (entry.slug ? findProject(entry.slug) : undefined))
+        .filter((project): project is Project => project !== undefined);
+      return {
+        answer: paragraphs(
+          `His résumé describes ${plural(resume.projects.length, "project")}: ${joinList(resume.projects.map((entry) => entry.short))}.`,
+          fitToBudget(
+            resume.projects.map((entry) => `${entry.short}: ${stripTrailingPeriod(entry.bullets[0])}.`),
+            BUDGET - 25,
+          ).kept.join(" "),
+        ),
+        sourceIds: resume.projects.map((entry) => `resume:project:${entry.slug ?? normalize(entry.short).replace(/ /g, "-")}`),
+        cards: linked.slice(0, MAX_CARDS).map(projectCard),
+        followUps: linked.slice(0, 2).map((project) => `Explain ${project.title}`).concat("What skills does he list on his résumé?"),
+        stats: [stat(resume.projects.length, "Projects on the résumé")],
+        actions: [resumeAction, ACTIONS.work],
+      };
+    }
+    case "achievements":
+      return {
+        answer: paragraphs(`His résumé lists ${plural(resume.achievements.length, "achievement")}.`, resume.achievements.join(" ")),
+        sourceIds: ["resume:achievements", "achievement:codeforces"],
+        cards: [],
+        followUps: ["Tell me about his Codeforces rating", "What experience does he have?", "What is his CGPA?"],
+        actions: [resumeAction, ACTIONS.experience],
+      };
+  }
 }
 
 function availabilitySentence(): string {
@@ -809,10 +890,11 @@ function composeAchievements(kb: KnowledgeBase): Composed {
   return {
     answer: paragraphs(
       codeforcesSentence(codeforces),
+      `His résumé lists: "${resume.achievements[0].replace(/,\s*codeforces\.com\S*$/i, ".")}"`,
       ...achievements.map((achievement) => `${achievement.title}: ${achievement.detail}`),
       leetcode ? `He also keeps a LeetCode profile (${leetcode.handle}).` : null,
     ),
-    sourceIds: ["achievement:codeforces", ...achievements.map((achievement) => `achievement:${achievement.id}`)],
+    sourceIds: ["achievement:codeforces", "resume:achievements", ...achievements.map((achievement) => `achievement:${achievement.id}`)],
     cards: [],
     followUps: ["What experience does he have?", "What technologies does he work with?", ...generalFollowUps()],
     // Fetched from Codeforces with the rest of the page data (or its committed snapshot).
@@ -868,7 +950,9 @@ export function composeDirect(intent: Intent, kb: KnowledgeBase, question: strin
     case "experience":
       return composeExperience(intent.roleId);
     case "education":
-      return composeEducation();
+      return composeEducation(question);
+    case "resume-section":
+      return composeResumeSection(intent.section);
     case "contact":
       return composeContact();
     case "contact-unlisted":
