@@ -32,7 +32,7 @@ export function ResearchDirection() {
           <h3 className="display text-[clamp(1.75rem,1.2rem+1.8vw,2.75rem)] tracking-[-0.04em]" {...reveal("mask")}>
             <span className="mask">Where the work is heading.</span>
           </h3>
-          <p className="mt-5 text-[0.9875rem] leading-relaxed text-steel" {...reveal("rise", 1)}>
+          <p className="measure mt-5 text-[0.9875rem] leading-relaxed text-steel" {...reveal("rise", 1)}>
             {research.intro}
           </p>
         </div>

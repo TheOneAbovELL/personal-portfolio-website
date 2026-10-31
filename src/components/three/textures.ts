@@ -1,5 +1,6 @@
 import { CanvasTexture, NoColorSpace, RepeatWrapping, SRGBColorSpace, type Texture } from "three";
 import type { Footprint } from "@/lib/car/footprint";
+import type { Yield } from "./yield";
 
 /**
  * Surface detail, painted to small canvases at runtime — no image assets.
@@ -197,7 +198,7 @@ export const SHADOW_EXTENT = { x: 4, z: 2 } as const;
  * dense tight one under the floor (which runs a few centimetres off the ground), and a small
  * hard-edged patch where each tyre actually touches. Together they are what plant the car.
  */
-export function createShadowMap(footprint: Footprint): Texture {
+export async function createShadowMap(footprint: Footprint, yieldNow: Yield): Promise<Texture> {
   const width = 512;
   const height = 256;
   const canvas = document.createElement("canvas");
@@ -228,13 +229,17 @@ export function createShadowMap(footprint: Footprint): Texture {
     }
   };
 
+  // One layer per task: each is a rasterisation and three blur passes over the map.
   const ambient = layer(polygons([...footprint.low, ...footprint.high]), 0.34);
+  await yieldNow();
   const under = layer(polygons(footprint.low), 0.07);
+  await yieldNow();
   const contact = layer(() => {
     for (const [x, z, halfLength, halfWidth] of footprint.patches) {
       ctx.fillRect(toX(x - halfLength), toY(z - halfWidth), 2 * halfLength * perMetre, 2 * halfWidth * perMetre);
     }
   }, 0.02);
+  await yieldNow();
 
   const image = ctx.createImageData(width, height);
   for (let i = 0; i < ambient.length; i++) {

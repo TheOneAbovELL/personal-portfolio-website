@@ -37,7 +37,6 @@ export const mixPose = (a: Pose, b: Pose, t: number): Pose => ({
 export const TARGET = new Vector3((CAR.noseX + CAR.tailX) / 2, 0.42, 0);
 
 const RAD = Math.PI / 180;
-const aim = new Vector3();
 
 export function applyPose(
   camera: PerspectiveCamera,
@@ -45,9 +44,13 @@ export function applyPose(
   framing: Framing,
   width: number,
   height: number,
-  /** Metres to move the aim point forward along the car's axis (the exit's camera follow). */
-  aimX = 0,
-): void {
+  /**
+   * Where the camera looks. Its position is always taken from TARGET (the car's resting
+   * centre), so during the exit the camera stands still, trackside, and only turns its head
+   * to follow the car coming at it.
+   */
+  aim: Vector3 = TARGET,
+): number {
   const aspect = width / height;
   // Distance is derived from the lens so the car keeps the same size on screen as the
   // field of view changes — the drawing gains perspective without growing or shrinking.
@@ -59,10 +62,8 @@ export function applyPose(
   camera.aspect = aspect;
   camera.near = Math.max(0.1, distance - 12);
   camera.far = distance + 30;
-  aim.copy(TARGET);
-  aim.x += aimX;
   camera.position.set(
-    aim.x + distance * Math.cos(el) * Math.sin(az),
+    TARGET.x + distance * Math.cos(el) * Math.sin(az),
     TARGET.y + distance * Math.sin(el),
     TARGET.z + distance * Math.cos(el) * Math.cos(az),
   );
@@ -70,4 +71,5 @@ export function applyPose(
   // Shift the principal point so the car sits at (cx, cy) instead of the viewport centre.
   camera.setViewOffset(width, height, (0.5 - framing.cx) * width, (0.5 - framing.cy) * height, width, height);
   camera.updateProjectionMatrix();
+  return distance;
 }

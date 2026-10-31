@@ -1,4 +1,5 @@
 import {
+  GARAGE_DEFAULT_CATEGORY,
   GARAGE_HIDDEN,
   GARAGE_OVERRIDES,
   GARAGE_SNAPSHOT,
@@ -24,11 +25,6 @@ export interface GarageRepo {
   archived: boolean;
   /** Pushed to within the last 90 days (as of the last revalidation). */
   active: boolean;
-  /**
-   * Commits per week over the last 52 weeks, oldest first, from GitHub's participation
-   * statistics. Null when GitHub has not computed them yet (it answers 202) or is unreachable.
-   */
-  activity: number[] | null;
 }
 
 export interface Garage {
@@ -78,7 +74,7 @@ async function verifyDemos(repos: GarageRepo[]): Promise<GarageRepo[]> {
 
 const ACTIVE_WINDOW_MS = 90 * 24 * 60 * 60 * 1000;
 
-function curate(raw: Omit<GarageRepo, "title" | "category" | "active" | "activity">[]): GarageRepo[] {
+function curate(raw: Omit<GarageRepo, "title" | "category" | "active">[]): GarageRepo[] {
   const now = Date.now();
   const hidden = new Set(GARAGE_HIDDEN.map((name) => name.toLowerCase()));
   return raw
@@ -90,9 +86,8 @@ function curate(raw: Omit<GarageRepo, "title" | "category" | "active" | "activit
         ...repo,
         title: override.title ?? presentable(repo.name),
         description: override.description ?? repo.description,
-        category: override.category ?? "Other",
+        category: override.category ?? GARAGE_DEFAULT_CATEGORY,
         active: !repo.archived && now - Date.parse(repo.pushedAt) < ACTIVE_WINDOW_MS,
-        activity: null,
       };
     })
     .sort((a, b) => {
@@ -102,33 +97,12 @@ function curate(raw: Omit<GarageRepo, "title" | "category" | "active" | "activit
 }
 
 /**
- * Weekly commit counts for the last year. GitHub computes these lazily: the first request can
- * answer 202 with no body while it works, so anything but a full 52-week array is treated as
- * "not available" and the row simply shows no trace. Cached with the rest of the Garage data.
- */
-async function participation(name: string, headers: HeadersInit): Promise<number[] | null> {
-  try {
-    const response = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${name}/stats/participation`, {
-      headers,
-      next: { revalidate: SIX_HOURS },
-      signal: AbortSignal.timeout(5000),
-    });
-    if (response.status !== 200) return null;
-    const body = (await response.json()) as { all?: unknown };
-    const weeks = body.all;
-    if (!Array.isArray(weeks) || weeks.length !== 52 || !weeks.every((n) => typeof n === "number")) return null;
-    return weeks as number[];
-  } catch {
-    return null;
-  }
-}
-
-/**
  * Public repositories for the Garage.
  *
  * Fetched on the server and cached for six hours (ISR), so visitors never wait on GitHub and
  * no token reaches the browser. `GITHUB_TOKEN` is optional — it only raises the rate limit.
- * Only public repository metadata is requested. Any failure falls back to a committed snapshot.
+ * One list request per revalidation, plus one HEAD-style check per declared homepage; only
+ * public repository metadata is requested. Any failure falls back to a committed snapshot.
  */
 export async function getGarage(): Promise<Garage> {
   try {
@@ -165,11 +139,7 @@ export async function getGarage(): Promise<Garage> {
           archived: Boolean(repo.archived),
         })),
     );
-    const [verified, activity] = await Promise.all([
-      verifyDemos(repos),
-      Promise.all(repos.map((repo) => participation(repo.name, headers))),
-    ]);
-    return { repos: verified.map((repo, i) => ({ ...repo, activity: activity[i] })), live: true };
+    return { repos: await verifyDemos(repos), live: true };
   } catch {
     const repos = curate(
       GARAGE_SNAPSHOT.map((repo) => ({

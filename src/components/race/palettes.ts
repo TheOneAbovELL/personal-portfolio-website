@@ -219,17 +219,20 @@ export const accentOf = (atmosphere: Atmosphere): Rgb => [
 ];
 
 const triplet = (v: Atmosphere, at: number) => `${Math.round(v[at])} ${Math.round(v[at + 1])} ${Math.round(v[at + 2])}`;
-const percent = (value: number) => `${value.toFixed(1)}%`;
+/* Each write repaints the full-viewport gradient layer, so values are quantised to the smallest
+   step the eye can tell apart: half a percent of position, 0.002 of alpha (of ~0.05). */
+const percent = (value: number) => `${(Math.round(value * 2) / 2).toFixed(1)}%`;
+const alpha = (value: number) => (Math.round(value * 500) / 500).toFixed(3);
 
 const PROPERTIES: readonly [name: string, format: (v: Atmosphere) => string][] = [
   ["--env-base", (v) => `rgb(${triplet(v, BASE)})`],
   ["--env-deep", (v) => `rgb(${triplet(v, DEEP)})`],
   ["--env-glow-a", (v) => triplet(v, A_RGB)],
-  ["--env-glow-a-alpha", (v) => v[A_ALPHA].toFixed(3)],
+  ["--env-glow-a-alpha", (v) => alpha(v[A_ALPHA])],
   ["--env-glow-a-x", (v) => percent(v[A_X])],
   ["--env-glow-a-y", (v) => percent(v[A_Y])],
   ["--env-glow-b", (v) => triplet(v, B_RGB)],
-  ["--env-glow-b-alpha", (v) => v[B_ALPHA].toFixed(3)],
+  ["--env-glow-b-alpha", (v) => alpha(v[B_ALPHA])],
   ["--env-glow-b-x", (v) => percent(v[B_X])],
   ["--env-glow-b-y", (v) => percent(v[B_Y])],
 ];

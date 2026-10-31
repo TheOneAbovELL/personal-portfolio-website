@@ -3,15 +3,13 @@ import { CarElevation } from "@/components/figures/CarElevation";
 import { HeroStage } from "@/components/three/HeroStage";
 import { ButtonLink } from "@/components/ui/Button";
 import { Icon, type IconName } from "@/components/ui/Icon";
-import { featuredProjects, profile, projects, skills } from "@/content";
+import { featuredProjects, profile, skills } from "@/content";
 import { getGarage } from "@/lib/github";
 
 const enter = (index: number) => ({ "--enter-index": index }) as React.CSSProperties;
 
 const SOCIAL_ICON: Partial<Record<string, IconName>> = { github: "github", linkedin: "linkedin", email: "mail" };
 const HERO_SOCIALS = ["github", "linkedin", "instagram"];
-/** The programmes in progress, shown on the "now building" line. */
-const BUILDING = ["ripple", "satquery"];
 
 /** Instagram's glyph, drawn to the same 24-unit grid and stroke as the site's other icons. */
 function InstagramGlyph({ size = 15 }: { size?: number }) {
@@ -42,8 +40,7 @@ function InstagramGlyph({ size = 15 }: { size?: number }) {
  *   upper left    availability, discipline and the name (the loader hands its own lettering
  *                 into this heading, see components/loader)
  *   lower left    statement and the two actions
- *   base line     what is being built now, three counts that link into the page, and where
- *                 to find me
+ *   base line     three counts that link into the page, and where to find me
  *
  * Entrances play in that order as the loader lifts (they wait under `intro-hold`).
  */
@@ -61,11 +58,6 @@ export async function Hero() {
     { label: "Repositories", value: garage.repos.length, href: "#garage" },
   ];
 
-  const building = BUILDING.flatMap((slug) => projects.filter((project) => project.slug === slug)).map((project) => ({
-    title: project.title,
-    note: project.designation,
-    href: project.caseStudy ? `/work/${project.slug}` : "#work",
-  }));
 
   return (
     <section
@@ -95,8 +87,7 @@ export async function Hero() {
             ))}
           </p>
           <h1 id="hero-title" className="hero-name display enter-mask mt-3 md:mt-4" style={enter(2)}>
-            {profile.firstName}
-            <br /> R Giri
+            {profile.name}
           </h1>
         </div>
 
@@ -117,28 +108,6 @@ export async function Hero() {
         </div>
 
         <div className="hero-base enter-fade" style={enter(7)}>
-          {building.length > 0 && (
-            <p className="hero-now">
-              <span className="label hero-now-label">
-                <span aria-hidden="true" className="hero-now-dot" />
-                Now building
-              </span>
-              <span className="hero-now-items">
-                {building.map((item, index) => (
-                  <Link
-                    key={item.title}
-                    href={item.href}
-                    className="hero-now-item"
-                    style={{ "--i": index, "--n": building.length } as React.CSSProperties}
-                  >
-                    <span className="hero-now-title">{item.title}</span>
-                    <span className="hero-now-note">{item.note}</span>
-                  </Link>
-                ))}
-              </span>
-            </p>
-          )}
-
           <ul className="hero-instruments">
             {instruments.map((item) => (
               <li key={item.label}>

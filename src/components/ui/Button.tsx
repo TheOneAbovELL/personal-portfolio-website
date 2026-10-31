@@ -4,8 +4,9 @@ import { Icon, type IconName } from "./Icon";
 
 type Variant = "primary" | "secondary" | "ghost";
 
+/* Colour eases over 300 ms; the press itself is quick and precise (scale 0.98 in 120 ms). */
 const BASE =
-  "group/btn inline-flex min-h-11 items-center justify-center gap-2 whitespace-nowrap rounded-pill px-5.5 text-[0.9375rem] font-medium tracking-[-0.01em] transition-[background-color,border-color,color,transform] duration-300 ease-[var(--ease-soft)] active:scale-[0.98]";
+  "group/btn inline-flex min-h-11 items-center justify-center gap-2 whitespace-nowrap rounded-pill px-5.5 text-[0.9375rem] font-medium tracking-[-0.01em] transition-[background-color,border-color,color,transform] [transition-duration:300ms,300ms,300ms,120ms] ease-[var(--ease-soft)] active:scale-[0.98] active:[transition-duration:300ms,300ms,300ms,80ms]";
 
 const VARIANT: Record<Variant, string> = {
   primary: "bg-bone text-carbon hover:bg-white",
@@ -33,7 +34,7 @@ export function ButtonLink({ href, variant = "primary", icon, className = "", ch
         <Icon
           name={icon}
           size={14}
-          className="transition-transform duration-[var(--dur-fast)] ease-out group-hover/btn:translate-x-0.5"
+          className="transition-transform duration-[var(--dur-fast)] ease-[var(--ease-snap)] group-hover/btn:translate-x-0.5 group-active/btn:translate-x-1"
         />
       )}
     </>

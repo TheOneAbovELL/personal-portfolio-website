@@ -116,7 +116,7 @@ export function CapabilityConsole({ domains }: { domains: CapabilityDomainView[]
               type="button"
               aria-pressed={view === v}
               onClick={() => setView(v)}
-              className={`min-h-10 rounded-pill px-4 text-[0.875rem] font-medium tracking-[-0.01em] transition-[background-color,color] duration-300 ease-[var(--ease-soft)] ${view === v ? "bg-bone/[0.12] text-bone shadow-[inset_0_1px_0_rgb(239_235_228/0.08)]" : "text-steel hover:text-bone"}`}
+              className={`min-h-10 rounded-pill px-4 text-[0.875rem] font-medium tracking-[-0.01em] transition-[background-color,color,transform] [transition-duration:300ms,300ms,120ms] ease-[var(--ease-soft)] active:scale-[0.98] ${view === v ? "bg-bone/[0.12] text-bone shadow-[inset_0_1px_0_rgb(239_235_228/0.08)]" : "text-steel hover:text-bone"}`}
             >
               {v === "explore" ? "Explore by domain" : "Map of the work"}
             </button>
@@ -158,7 +158,7 @@ export function CapabilityConsole({ domains }: { domains: CapabilityDomainView[]
                     choose(next);
                     document.getElementById(`${baseId}-tab-${domains[next].id}`)?.focus();
                   }}
-                  className="group relative shrink-0 rounded-pill px-4 py-2.5 text-left transition-colors duration-[var(--dur-base)] lg:rounded-md lg:px-4 lg:py-3"
+                  className="group relative shrink-0 rounded-pill px-4 py-2.5 text-left transition-[color,transform] [transition-duration:480ms,120ms] active:scale-[0.985] lg:rounded-md lg:px-4 lg:py-3"
                 >
                   <span
                     aria-hidden="true"
@@ -183,7 +183,7 @@ export function CapabilityConsole({ domains }: { domains: CapabilityDomainView[]
           </div>
 
           {/* Tools and concepts of the selected domain */}
-          <div role="tabpanel" id={`${baseId}-panel`} aria-labelledby={`${baseId}-tab-${domain.id}`} className="lg:col-span-4">
+          <div role="tabpanel" id={`${baseId}-panel`} aria-labelledby={`${baseId}-tab-${domain.id}`} className="lg:col-span-4 lg:min-h-[18rem]">
             <p key={`s-${domain.id}`} className="swap-in text-[1.0625rem] leading-snug text-bone">
               {domain.summary}
             </p>
@@ -198,7 +198,7 @@ export function CapabilityConsole({ domains }: { domains: CapabilityDomainView[]
                       aria-pressed={on}
                       aria-controls={`${baseId}-detail`}
                       onClick={() => pick(on ? null : t.name)}
-                      className={`group/t inline-flex min-h-9 items-baseline gap-1.5 rounded-pill px-3 py-1.5 text-[0.9375rem] transition-[background-color,color] duration-[var(--dur-base)] ease-[var(--ease-out)] ${
+                      className={`group/t inline-flex min-h-9 items-baseline gap-1.5 rounded-pill px-3 py-1.5 text-[0.9375rem] transition-[background-color,color,transform] [transition-duration:480ms,480ms,120ms] ease-[var(--ease-out)] active:scale-[0.97] ${
                         on
                           ? "bg-rosso/25 text-bone shadow-[inset_0_0_0_1px_rgb(255_74_85/0.35)]"
                           : count

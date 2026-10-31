@@ -12,6 +12,7 @@ import {
 } from "three";
 import type { MaterialId } from "@/lib/car/types";
 import { createCarbonMaps, createRubberMaps, createTurnedMaps, SHADOW_EXTENT } from "./textures";
+import type { Yield } from "./yield";
 
 /**
  * The scene's palette (see the tokens in app/globals.css): Ferrari-led — warm carbon, ivory
@@ -92,12 +93,19 @@ function withSweep<T extends MeshPhysicalMaterial>(material: T): T {
   return material;
 }
 
-/** Physically based finishes for each part of the car. `anisotropy` is the renderer's limit. */
-export function createSurfaceMaterials(anisotropy: number): SurfaceMaterials {
+/**
+ * Physically based finishes for each part of the car. `anisotropy` is the renderer's limit.
+ * Each procedural map is painted in its own task (`yieldNow` between them).
+ */
+export async function createSurfaceMaterials(anisotropy: number, yieldNow: Yield): Promise<SurfaceMaterials> {
   const carbon = createCarbonMaps(anisotropy);
+  await yieldNow();
   const lacquered = createCarbonMaps(anisotropy, 0.62);
+  await yieldNow();
   const rubber = createRubberMaps(anisotropy);
+  await yieldNow();
   const turned = createTurnedMaps(anisotropy);
+  await yieldNow();
 
   return {
     // Lacquered carbon: the weave under a deep gloss clearcoat. The base is satin, so the
@@ -234,6 +242,8 @@ export function createFloorMaterial(reflection: Texture, shadow: Texture, centre
       uCentre: { value: new Vector2(centre, 0) },
       // Where the car is now: the shadow and reflection go with it, the studio's light stays.
       uCar: { value: new Vector2(centre, 0) },
+      /** The car's heading (radians about the vertical): the shadow turns with it on the exit. */
+      uCarYaw: { value: 0 },
       uShadowExtent: { value: new Vector2(SHADOW_EXTENT.x, SHADOW_EXTENT.z) },
       uKey: { value: new Color(COLORS.key) },
       uRim: { value: new Color(COLORS.warm) },
@@ -255,6 +265,7 @@ export function createFloorMaterial(reflection: Texture, shadow: Texture, centre
       uniform vec2 uResolution;
       uniform vec2 uCentre;
       uniform vec2 uCar;
+      uniform float uCarYaw;
       uniform vec2 uShadowExtent;
       uniform vec3 uKey;
       uniform vec3 uRim;
@@ -273,7 +284,11 @@ export function createFloorMaterial(reflection: Texture, shadow: Texture, centre
 
       void main() {
         vec2 p = vWorld.xz - uCentre;
+        // Into the car's own frame: offset to where it is, turned to where it points.
         vec2 c = vWorld.xz - uCar;
+        float cy = cos(uCarYaw);
+        float sy = sin(uCarYaw);
+        c = vec2(c.x * cy - c.y * sy, c.x * sy + c.y * cy);
 
         // Light on the floor: the key's pool under the car, warm spill from the rim behind
         // it, and the faintest rosso glow thrown down by the paint itself.

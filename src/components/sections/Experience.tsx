@@ -198,7 +198,7 @@ export async function Experience() {
         </div>
 
         {/* Competitive programming — real, self-updating telemetry, on a soft card. */}
-        <article className="surface self-start rounded-lg p-5 sm:p-7 lg:col-span-5" {...reveal("settle", 1)}>
+        <article className="surface self-start rounded-lg p-5 sm:p-7 lg:col-span-5" data-float="" {...reveal("settle", 1)}>
           <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-4 border-b border-rule pb-5">
             <div>
               <p className="label text-faint">Codeforces</p>

@@ -30,6 +30,8 @@ export function SmoothScroll() {
       wheelMultiplier: 1,
     });
     lenisRef.current = lenis;
+    // Development tooling (scroll sweeps, stills) drives the page through the same instance.
+    if (process.env.NODE_ENV !== "production") (window as Window & { __lenis?: Lenis }).__lenis = lenis;
     return () => {
       lenis.destroy();
       lenisRef.current = null;

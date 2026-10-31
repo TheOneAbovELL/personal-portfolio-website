@@ -2,8 +2,8 @@ import { profile } from "@/content";
 import { LABELS, LAP, LAP2, SECTORS, START, TICKS, VIEWBOX } from "./circuit";
 import { IntroGate } from "./IntroGate";
 
-/** The comet's tail: stacked dashes ending at the light, each a little longer and fainter. */
-const TAIL = [14, 30, 52, 80, 116];
+/** The trail: stacked dashes ending at the light, each longer and fainter, scaled by its speed. */
+const TAIL = [10, 22, 40, 66, 100, 145, 200];
 const SECTOR_SPANS: [number, number][] = [
   [0, SECTORS[0]],
   [SECTORS[0], SECTORS[1]],
@@ -27,21 +27,23 @@ function Chequer() {
  * re-render then): a qualifying lap. A thin circuit draws itself on, and a small red light laps it
  * while the page really loads — each sector is a real loading stage (boot.ts), lit with its real
  * split when the light crosses its line, and the light may not cross a line before that stage is
- * done. When the lap is in, the circuit zooms away, the curtain lifts from the car, and the name
- * becomes the hero's heading.
+ * done. The timing strip is live: the lap clock counts, the sector in progress counts, the trail
+ * stretches with speed, and a simulated speed/throttle readout keeps the strip breathing. When
+ * the lap is in, the line flashes, the circuit zooms away, the curtain lifts from the car, and
+ * the name becomes the hero's heading.
  *
  * The name mirrors #hero-title (Hero.tsx): same `.display .hero-name` settings (only the size
- * differs), same words, the same line break below md, so the hand-off is a pure translate + scale.
+ * differs), the same words on one line, so the hand-off is a pure translate + scale.
  * The timeline lives in boot.ts (inlined in the head); the styles, including the no-script
  * failsafe, in styles/loader.css; the circuit geometry in circuit.ts.
  */
 export function Intro() {
-  const [first, ...rest] = profile.name.split(" ");
   return (
     <IntroGate>
       <div id="intro" className="intro" aria-hidden="true" suppressHydrationWarning>
         <div className="intro-backdrop" suppressHydrationWarning />
         <div className="intro-vignette" suppressHydrationWarning />
+        <div className="intro-wash" suppressHydrationWarning />
         <div className="intro-stage" suppressHydrationWarning>
           <div className="intro-circuit" suppressHydrationWarning>
             <svg viewBox={VIEWBOX} className="intro-svg" focusable="false">
@@ -52,6 +54,18 @@ export function Intro() {
                   key={index}
                   className="ic-sector"
                   data-sector={index}
+                  d={LAP}
+                  pathLength={1000}
+                  strokeDasharray={`${(to - from).toFixed(2)} 2000`}
+                  strokeDashoffset={(-from).toFixed(2)}
+                  suppressHydrationWarning
+                />
+              ))}
+              {/* The same spans again, bright: each flashes once as its line is crossed (boot.ts). */}
+              {SECTOR_SPANS.map(([from, to], index) => (
+                <path
+                  key={index}
+                  className="ic-flash"
                   d={LAP}
                   pathLength={1000}
                   strokeDasharray={`${(to - from).toFixed(2)} 2000`}
@@ -70,6 +84,8 @@ export function Intro() {
                   </text>
                 ))}
               </g>
+              {/* The finish line, flashed rosso as the lap comes in. */}
+              <line className="ic-finish" x1={START[0]} y1={START[1] - 9} x2={START[0]} y2={START[1] + 9} suppressHydrationWarning />
               <g className="ic-light" suppressHydrationWarning>
                 {TAIL.map((length) => (
                   <path
@@ -91,11 +107,12 @@ export function Intro() {
           <div className="intro-card" suppressHydrationWarning>
             <div className="intro-id">
               <p className="intro-name display hero-name" suppressHydrationWarning>
-                {first}
-                <br className="md:hidden" /> {rest.join(" ")}
+                {profile.name}
               </p>
               <p className="intro-status">
-                Qualifying <span aria-hidden="true">·</span> <span className="intro-stage-text" suppressHydrationWarning>Warming up</span>
+                <span className="intro-stage-text" suppressHydrationWarning>
+                  Out lap · loading fonts
+                </span>
               </p>
             </div>
             <p className="intro-lap">
@@ -107,23 +124,42 @@ export function Intro() {
             <ol className="intro-sectors">
               {SECTOR_SPANS.map((_, index) => (
                 <li key={index} className="intro-sector" data-sector={index} suppressHydrationWarning>
+                  <span className="intro-sector-flash" suppressHydrationWarning />
                   <span className="intro-sector-bar">
                     <span className="intro-sector-fill" suppressHydrationWarning />
                   </span>
                   <span className="intro-sector-tag">S{index + 1}</span>
+                  {/* Rendered with its text so boot.ts only ever changes it (never adds a node: hydration). */}
+                  <span className="intro-sector-chip" suppressHydrationWarning>
+                    Split
+                  </span>
                   <span className="intro-sector-time" suppressHydrationWarning>
                     0.000
                   </span>
                 </li>
               ))}
             </ol>
+            {/* Instrumentation: a simulated speed and throttle for the light (boot.ts). */}
+            <p className="intro-telemetry" suppressHydrationWarning>
+              <span className="intro-speed">
+                <span className="intro-telemetry-label">Spd</span>
+                <span className="intro-speed-value" suppressHydrationWarning>
+                  0
+                </span>
+              </span>
+              <span className="intro-throttle">
+                <span className="intro-telemetry-label">Thr</span>
+                <span className="intro-throttle-bar">
+                  <span className="intro-throttle-fill" suppressHydrationWarning />
+                </span>
+              </span>
+            </p>
           </div>
         </div>
         {/* The name at the heading's own size, for the hand-off (boot.ts scales it down to the
             card's name, then glides it to scale 1 on the heading). Invisible until then. */}
         <p className="intro-ghost display hero-name" suppressHydrationWarning>
-          {first}
-          <br className="md:hidden" /> {rest.join(" ")}
+          {profile.name}
         </p>
       </div>
     </IntroGate>

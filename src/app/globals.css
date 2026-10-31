@@ -88,7 +88,7 @@
 
   /* Type scale, tuned for Geist. Apple-like hierarchy: a few large, confident statements and
      quiet small text, with little in between. Display is Geist 600 at tight negative tracking. */
-  --type-title: clamp(2rem, 1.05rem + 3vw, 3.75rem); /* section titles */
+  --type-title: clamp(2.125rem, 1rem + 3.4vw, 4.25rem); /* section titles: 34px -> 68px */
   --type-subtitle: clamp(1.375rem, 1.05rem + 1vw, 2rem); /* sub-section titles */
   --type-lead: clamp(1.125rem, 1rem + 0.45vw, 1.3125rem); /* lead paragraphs */
   --type-body: clamp(1rem, 0.96rem + 0.18vw, 1.0625rem); /* 16 -> 17px */
@@ -180,7 +180,17 @@ body::after {
   font-size: var(--type-title);
   font-weight: 600;
   line-height: 1.04;
-  letter-spacing: -0.038em;
+  letter-spacing: -0.04em;
+  /* Larger sizes carry tighter tracking: the optical correction Geist's display cut expects. */
+  @media (min-width: 64rem) {
+    line-height: 1.02;
+    letter-spacing: -0.046em;
+  }
+}
+
+/* Running text never runs wider than a comfortable measure. */
+@utility measure {
+  max-width: 65ch;
 }
 
 @utility shell {
@@ -366,23 +376,32 @@ body::after {
    Content is visible by default; `html.js` is set before first paint by an inline script,
    so nothing here applies without JavaScript. Elements opt in with data-reveal="<behaviour>":
 
-     rise    body copy — soft, slightly blurred, decelerating           (default)
-     mask    large type — clipped from below, accelerates then settles
+     rise    body copy — a short lift, decelerating                       (default)
+     mask    large type — clipped from below, line by line (lib/reveal.ts splits the lines)
      snap    small instrumentation — fast, mechanical, from the left
      trace   lines — drawn left to right
      settle  figures and panels — arrive slightly large, settle with inertia
+     tick    a timing beat — a sector number lighting rosso for a moment, then its own colour
+
+   Everything animates opacity, transform or clip-path only: nothing here rasterises per frame
+   (no blur, no shadows in motion), so a page full of reveals costs the compositor, not the CPU.
+
+   Timing is composed from three custom properties, all inherited, so a section can shape its own
+   arrival without new selectors:
+     --reveal-index   sibling order (× --stagger)
+     --reveal-delay   a fixed offset — a heading waits for its sector line, body copy for the heading
+     --tempo          the section's speed: discovery is unhurried, engineering precise
    ------------------------------------------------------------------------------------------ */
 html.js [data-reveal] {
-  transition-delay: calc(var(--reveal-index, 0) * var(--stagger));
+  transition-delay: calc(var(--reveal-delay, 0ms) + var(--reveal-index, 0) * var(--stagger));
 }
 
 html.js [data-reveal=""],
 html.js [data-reveal="rise"] {
   opacity: 0;
-  transform: translate3d(0, 22px, 0);
-  filter: blur(6px);
-  transition-property: opacity, transform, filter;
-  transition-duration: calc(1100ms * var(--tempo, 1)), calc(1500ms * var(--tempo, 1)), calc(950ms * var(--tempo, 1));
+  transform: translate3d(0, 18px, 0);
+  transition-property: opacity, transform;
+  transition-duration: calc(760ms * var(--tempo, 1)), calc(1100ms * var(--tempo, 1));
   transition-timing-function: var(--ease-soft);
 }
 
@@ -393,9 +412,9 @@ html.js [data-reveal="mask"] > .mask {
   clip-path: inset(0 0 100% 0);
   transform: translate3d(0, 0.35em, 0);
   transition-property: clip-path, transform;
-  transition-duration: calc(950ms * var(--tempo, 1)), calc(1200ms * var(--tempo, 1));
-  transition-timing-function: var(--ease-ramp), var(--ease-out);
-  transition-delay: calc(var(--reveal-index, 0) * var(--stagger));
+  transition-duration: calc(900ms * var(--tempo, 1)), calc(1100ms * var(--tempo, 1));
+  transition-timing-function: var(--ease-ramp), var(--ease-soft);
+  transition-delay: calc(var(--reveal-delay, 0ms) + var(--reveal-index, 0) * var(--stagger));
 }
 
 html.js [data-reveal="mask"][data-revealed] > .mask {
@@ -403,43 +422,109 @@ html.js [data-reveal="mask"][data-revealed] > .mask {
   transform: none;
 }
 
+/* Line by line. Once the observer has split a heading into its rendered lines (each a
+   .mask-line holding a .mask-line-in), the wrapper stops clipping and every line rises out of
+   its own clip, 70 ms after the one above — the way titles land in a cut, not a fade. The split
+   is undone when the last line has landed, so text wraps naturally again from then on. */
+html.js [data-reveal="mask"] > .mask[data-split] {
+  clip-path: none;
+  transform: none;
+  transition: none;
+}
+
+html.js .mask-line {
+  display: block;
+  clip-path: inset(-0.12em 0 -0.08em 0);
+}
+
+html.js .mask-line-in {
+  display: block;
+  transform: translate3d(0, 110%, 0);
+  transition: transform calc(1000ms * var(--tempo, 1)) var(--ease-soft);
+  transition-delay: calc(var(--reveal-delay, 0ms) + var(--reveal-index, 0) * var(--stagger) + var(--line, 0) * 70ms);
+}
+
+html.js [data-reveal="mask"][data-revealed] .mask-line-in {
+  transform: none;
+}
+
 html.js [data-reveal="snap"] {
   opacity: 0;
   transform: translate3d(-8px, 0, 0);
   transition-property: opacity, transform;
-  transition-duration: 420ms, 620ms;
+  transition-duration: 360ms, 560ms;
   transition-timing-function: var(--ease-soft);
 }
 
 html.js [data-reveal="trace"] {
   transform: scaleX(0);
   transform-origin: left;
-  transition: transform calc(1300ms * var(--tempo, 1)) var(--ease-ramp);
+  transition: transform calc(1000ms * var(--tempo, 1)) var(--ease-ramp);
 }
 
 html.js [data-reveal="settle"] {
   opacity: 0;
-  transform: translate3d(0, 18px, 0) scale(0.985);
+  transform: translate3d(0, 16px, 0) scale(0.985);
   transition-property: opacity, transform;
-  transition-duration: calc(1100ms * var(--tempo, 1)), calc(1700ms * var(--tempo, 1));
+  transition-duration: calc(800ms * var(--tempo, 1)), calc(1300ms * var(--tempo, 1));
   transition-timing-function: var(--ease-soft);
+}
+
+/* The beat: a readout that switches on (no fade), lit in rosso for a sixth of a second. */
+html.js [data-reveal="tick"] {
+  opacity: 0;
+}
+
+html.js [data-reveal="tick"][data-revealed] {
+  animation: tick 640ms steps(1, end) both;
+  animation-delay: calc(var(--reveal-delay, 0ms) + var(--reveal-index, 0) * var(--stagger));
+}
+
+@keyframes tick {
+  0% {
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+    color: var(--color-rosso-bright);
+  }
+  32% {
+    opacity: 1;
+    color: var(--tick-rest, var(--color-champagne));
+  }
+  100% {
+    opacity: 1;
+    color: var(--tick-rest, var(--color-champagne));
+  }
 }
 
 html.js [data-reveal][data-revealed] {
   opacity: 1;
   transform: none;
-  filter: none;
 }
 
 /* Scroll you can feel. Section titles drift a little slower than the page as they pass, tied
    to scroll position rather than time (a view timeline), so the motion follows the hand. Uses
-   the independent `translate` property, so it composes with the reveal transforms. */
+   the independent `translate` property, so it composes with the reveal transforms. Panels and
+   cards carry data-float: the same idea at a smaller amplitude, so a surface settles into place
+   under the hand rather than scrolling past at page speed. Firefox simply gets the static state. */
 @supports (animation-timeline: view()) {
   @media (prefers-reduced-motion: no-preference) {
     html.js [data-drift] {
       animation: drift linear both;
       animation-timeline: view();
       animation-range: entry 0% exit 100%;
+    }
+
+    html.js [data-float] {
+      --drift: 0.75rem;
+      animation: drift linear both;
+      animation-timeline: view();
+      animation-range: entry 0% exit 100%;
+    }
+
+    html.js [data-float="deep"] {
+      --drift: 1.5rem;
     }
   }
 }
@@ -453,15 +538,18 @@ html.js [data-reveal][data-revealed] {
   }
 }
 
-/* Swapped-in content in interactive panels (filters, explorers): a short, soft arrival. */
+/* Swapped-in content in interactive panels (filters, explorers): a short cross-fade and lift. */
 @utility swap-in {
-  animation: rise 560ms var(--ease-soft) both;
-  animation-delay: calc(var(--i, 0) * 32ms);
+  animation: rise 420ms var(--ease-soft) both;
+  animation-delay: calc(var(--i, 0) * 28ms);
 }
 
-/* Route change — see app/template.tsx. Opacity only, so fixed children stay fixed. */
+/* Route change — see app/template.tsx. Opacity only, so fixed children stay fixed. The new page
+   comes up under the route veil (styles/loader.css) rather than before it, so the two read as one
+   movement; its own entrances (.enter*) start as the veil clears. */
 @utility page-enter {
-  animation: fade 520ms var(--ease-out) both;
+  animation: fade 560ms var(--ease-out) both;
+  animation-delay: 40ms;
 }
 
 @keyframes rise {
@@ -559,6 +647,21 @@ html.js [data-reveal][data-revealed] {
   animation: flow 3.6s var(--ease-in-out) infinite;
 }
 
+/* Quiet link: the underline draws in from the left on hover and focus, and leaves the same way. */
+@utility link-draw {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-position: 0 100%;
+  background-repeat: no-repeat;
+  background-size: 0% 1px;
+  transition:
+    background-size 260ms var(--ease-out),
+    color var(--dur-fast) linear;
+  &:hover,
+  &:focus-visible {
+    background-size: 100% 1px;
+  }
+}
+
 /* Mechanical link: the underline redraws from the other side. */
 @utility link-underline {
   background-image: linear-gradient(currentColor, currentColor);
@@ -580,12 +683,14 @@ html.js [data-reveal][data-revealed] {
   }
 
   html.js [data-reveal],
-  html.js [data-reveal="mask"] > .mask {
+  html.js [data-reveal="mask"] > .mask,
+  html.js .mask-line,
+  html.js .mask-line-in {
     opacity: 1;
     transform: none;
-    filter: none;
     clip-path: none;
     transition: none;
+    animation: none;
   }
 
   *,

@@ -50,6 +50,7 @@ function navData(): NavData {
     ),
     pages: site.routes.map(({ href, label, note }) => ({ href, label, note })),
     headerPages: site.headerPages.map(({ href, label }) => ({ href, label })),
+    pillPages: site.pillPages.map(({ href, label, after }) => ({ href, label, after })),
     programmes: [
       ...featured.map((project, index) => programme(project, index, "home")),
       ...showcase.map((project, index) => programme(project, featured.length + index, "projects")),

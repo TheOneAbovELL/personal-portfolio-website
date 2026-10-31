@@ -142,18 +142,23 @@ html:has(#intro) .hero-poster {
   translate: calc(var(--px, 0) * -7px) calc(var(--py, 0) * -4px);
 }
 
+/* The name is one line, always: sized to the viewport so it never wraps, from a 360px phone
+   (where it fills the gutter) to a wide desktop (where it stops short of the car). The loader
+   measures this element at hand-off (components/loader), so its font settings live here only. */
 .hero-name {
-  font-size: clamp(3.25rem, 15vw, 4.25rem);
+  font-size: clamp(2.5rem, 16.4vw, 4.25rem);
   font-weight: 600;
   letter-spacing: -0.048em;
   line-height: 0.9;
+  white-space: nowrap;
+  text-wrap: nowrap;
   /* Optical alignment: the O's curve sits proud of the left edge otherwise. */
   margin-left: -0.045em;
 }
 
 @media (min-width: 48rem) {
   .hero-name {
-    font-size: clamp(4.5rem, 7.4vw, 8.25rem);
+    font-size: clamp(4rem, 7.1vw, 8rem);
   }
 }
 
@@ -187,7 +192,7 @@ html:has(#intro) .hero-poster {
   text-wrap: pretty;
 }
 
-/* Base line: now building · counts · elsewhere, over one hairline. */
+/* Base line: counts · elsewhere, over one hairline. */
 .hero-base {
   display: flex;
   flex-wrap: wrap;
@@ -248,144 +253,8 @@ html:has(#intro) .hero-poster {
   transform: translateY(-1px);
 }
 
-/* "Now building": the programmes in progress take turns on one line. */
-.hero-now {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  min-height: 2.75rem;
-  min-width: 0;
-}
-
-.hero-now-label {
-  display: inline-flex;
-  flex-shrink: 0;
-  align-items: center;
-  gap: 0.55rem;
-  color: var(--color-faint);
-}
-
-.hero-now-dot {
-  position: relative;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--color-rosso-bright);
-}
-
-.hero-now-dot::after {
-  content: "";
-  position: absolute;
-  inset: -4px;
-  border-radius: 50%;
-  border: 1px solid var(--color-rosso-bright);
-  opacity: 0;
-  animation: hero-ping 2.6s var(--ease-out) infinite;
-}
-
-.hero-now-items {
-  display: grid;
-  min-width: 0;
-}
-
-.hero-now-item {
-  grid-area: 1 / 1;
-  display: inline-flex;
-  align-items: baseline;
-  gap: 0.6rem;
-  min-width: 0;
-  white-space: nowrap;
-  animation: hero-turn 9s var(--ease-in-out) infinite both;
-  animation-delay: calc(var(--i, 0) * 4.5s);
-}
-
-.hero-now:hover .hero-now-item,
-.hero-now:focus-within .hero-now-item {
-  animation-play-state: paused;
-}
-
-.hero-now-title {
-  color: var(--color-bone);
-  font-size: 0.9375rem;
-  font-weight: 500;
-  letter-spacing: -0.01em;
-  transition: color var(--dur-fast) linear;
-}
-
-.hero-now-item:hover .hero-now-title {
-  color: var(--color-rosso-bright);
-}
-
-.hero-now-note {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  color: var(--color-faint);
-  font-size: 0.875rem;
-}
-
-@media (max-width: 47.99rem) {
-  .hero-now-note {
-    display: none;
-  }
-}
-
-@keyframes hero-turn {
-  0% {
-    opacity: 0;
-    visibility: hidden;
-    transform: translate3d(0, 0.5rem, 0);
-  }
-  6%,
-  44% {
-    opacity: 1;
-    visibility: visible;
-    transform: none;
-  }
-  50% {
-    opacity: 0;
-    transform: translate3d(0, -0.5rem, 0);
-    visibility: visible;
-  }
-  50.01%,
-  100% {
-    opacity: 0;
-    visibility: hidden;
-  }
-}
-
-@keyframes hero-ping {
-  0% {
-    opacity: 0.7;
-    transform: scale(0.6);
-  }
-  70%,
-  100% {
-    opacity: 0;
-    transform: scale(1.5);
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .hero-copy {
     translate: none;
-  }
-
-  .hero-now-items {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.25rem 1rem;
-  }
-
-  .hero-now-item {
-    grid-area: auto;
-    animation: none;
-  }
-
-  .hero-now-note {
-    display: none;
-  }
-
-  .hero-now-dot::after {
-    animation: none;
   }
 }

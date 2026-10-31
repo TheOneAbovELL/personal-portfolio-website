@@ -1,6 +1,7 @@
 import { BufferGeometry, Float32BufferAttribute } from "three";
 import type { MaterialId } from "@/lib/car/types";
 import type { CarModel } from "@/lib/car/model";
+import type { Yield } from "./yield";
 
 // Small deterministic hash so per-stroke variation is stable between renders.
 const hash = (i: number) => {
@@ -64,8 +65,9 @@ export function buildStreakGeometry(model: CarModel): BufferGeometry {
 /**
  * Every surface with a given finish, merged into one geometry (one draw call each).
  * Normals are averaged per vertex, so each solid is smooth exactly where it shares vertices.
+ * One finish per task: `yieldNow` is awaited between them.
  */
-export function buildSolidGeometries(model: CarModel): Map<MaterialId, BufferGeometry> {
+export async function buildSolidGeometries(model: CarModel, yieldNow: Yield): Promise<Map<MaterialId, BufferGeometry>> {
   const buckets = new Map<MaterialId, { position: number[]; uv: number[]; index: number[] }>();
   for (const part of model.parts) {
     for (const solid of part.solids ?? []) {
@@ -86,6 +88,7 @@ export function buildSolidGeometries(model: CarModel): Map<MaterialId, BufferGeo
     geometry.setIndex(index);
     geometry.computeVertexNormals();
     geometries.set(material, geometry);
+    await yieldNow();
   }
   return geometries;
 }

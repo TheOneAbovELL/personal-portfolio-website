@@ -196,20 +196,23 @@ export function HeroStage({ children }: { children: React.ReactNode }) {
       await nextFrame();
       if (cancelled) return;
 
-      const created = createHeroScene({
+      // The build yields between its steps and compiles every shader in parallel, so the
+      // loader keeps animating over it; nothing is drawn until it resolves.
+      const created = await createHeroScene({
         canvas,
         stage,
         getProgress,
         motion,
         onContextLost: () => setLive(false),
+        onStage: (stage) => {
+          if (!cancelled) emitStage(stage);
+        },
       });
+      if (cancelled) {
+        created.dispose();
+        return;
+      }
       scene = created;
-      emitStage("geometry");
-
-      // Nothing is drawn until the shaders are ready, so the first frame cannot stall.
-      await created.ready;
-      if (cancelled) return;
-      emitStage("shaders");
 
       // Dev-only: `?hero=0.5` renders one settled frame at that scroll progress and stops, which
       // makes the scene screenshot-testable in a headless browser; `&sweep=0.4` adds the light.

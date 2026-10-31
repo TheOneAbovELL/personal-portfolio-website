@@ -6,15 +6,17 @@ import {
   LineSegments,
   Mesh,
   NeutralToneMapping,
+  type Object3D,
   PerspectiveCamera,
   PlaneGeometry,
   Scene,
   Vector2,
+  Vector3,
   WebGLRenderer,
   WebGLRenderTarget,
 } from "three";
 import { footprint } from "@/lib/car/footprint";
-import { buildCar } from "@/lib/car/model";
+import { buildCarAsync, CAR } from "@/lib/car/model";
 import { clamp01, easeInOutCubic, lerp, smoothstep } from "@/lib/motion";
 import { applyPose, mixPose, POSES, TARGET, type Framing } from "./camera";
 import { buildSolidGeometries, buildStreakGeometry } from "./geometry";
@@ -28,6 +30,7 @@ import {
 } from "./materials";
 import { createStudioEnvironment, createStudioLights } from "./studio";
 import { createShadowMap } from "./textures";
+import { yieldToMain } from "./yield";
 
 export interface HeroSceneOptions {
   canvas: HTMLCanvasElement;
@@ -38,16 +41,12 @@ export interface HeroSceneOptions {
   /** Idle life: drift, pointer parallax, the recurring light sweep. Off for reduced motion. */
   motion: boolean;
   onContextLost: () => void;
+  /** Build milestones, in order: the geometry is complete; every shader is compiled. */
+  onStage?: (stage: "geometry" | "shaders") => void;
 }
 
 export interface HeroScene {
-  /**
-   * Resolves once every shader is compiled. Compilation runs off the main thread where the
-   * browser supports it (KHR_parallel_shader_compile); nothing is drawn before it resolves,
-   * so the first frame never stalls the page.
-   */
-  ready: Promise<void>;
-  /** Draw one settled frame now (after `ready`): the frame the page is revealed on. */
+  /** Draw one settled frame now: the frame the page is revealed on. */
   renderNow: () => void;
   start: () => void;
   stop: () => void;
@@ -77,8 +76,12 @@ const EXPOSURE = 1.05;
 const REFLECTION_SCALE = 0.5;
 /** Idle drift of the resting camera, in degrees and radians per second. Barely perceptible by design. */
 const DRIFT = { azimuth: 0.6, elevation: 0.22, rate: 0.13 };
-/** How quickly the exit follows the scroll position (per second). Lenis already smooths the wheel. */
-const FOLLOW_RATE = 9;
+/**
+ * How quickly the exit follows the scroll position (per second). Lenis already smooths the
+ * wheel (lerp 0.09, a ~175 ms time constant); this only rounds off the last of it, so it is
+ * fast enough never to read as lag.
+ */
+const FOLLOW_RATE = 16;
 /**
  * The arrival: as the page is revealed the camera settles the last few degrees into place,
  * and a light passes over the bodywork. Then the light comes round again, slowly, now and then.
@@ -97,21 +100,31 @@ const SWEEP = {
   level: 0.6,
 };
 /**
- * The exit. As the hero scrolls away the car pulls away: it accelerates forward out of frame,
- * trailing speed streaks drawn from its own lines, while the camera swings lower and wider and
- * lags behind, as a trackside camera does. All of it is a pure function of scroll progress, so
- * it plays backward exactly as it plays forward.
+ * The exit. As the hero scrolls away the car launches at the viewer: it pulls out of the shot
+ * along its own nose, bends onto the camera's axis and comes straight down the lens — growing,
+ * nose first, speed streaks drawn from its own lines — until it passes just beside the camera
+ * and is gone. The camera stands its ground trackside, dropping low and widening its lens,
+ * and only turns its head. All of it is a pure function of scroll progress, so it plays
+ * backward exactly as it plays forward.
  */
 const EXIT = {
-  /** Metres travelled by the time the hero has gone. */
-  distance: 7.5,
-  /** How far the camera's aim follows the car, as a fraction of the distance it has travelled. */
-  follow: 0.22,
-  /** Where the camera ends up. */
-  pose: { azimuth: 20, elevation: 5.5, fov: 22 },
-  /** Fraction of the resting framing span the car shrinks to as the camera pulls back. */
-  pullBack: 0.86,
+  /** Where the camera ends up: low, wide, ahead of the car. */
+  pose: { azimuth: 66, elevation: 3.2, fov: 34 },
+  /** Metres to the camera's right of its own position: the car passes on that side, close. */
+  pass: 1.45,
+  /** Metres the car's centre carries on past the camera by the end (the fade covers the rest). */
+  beyond: 1,
+  /** How much the camera's aim follows the car, as a fraction of its displacement. */
+  follow: 0.18,
+  /** Scroll progress at which the car launches; before it only the camera moves. */
+  launchAt: 0.06,
+  /** Distance travelled grows with this power of time since the launch (2 = constant acceleration). */
+  power: 2.3,
+  /** Scroll progress over which the car is faded out as it passes the lens, so nothing is ever clipped. */
+  fade: { from: 0.87, to: 0.975 },
 };
+/** Fraction of the rest framing span the car shrinks to as the camera widens its lens. */
+const EXIT_PULL_BACK = 0.92;
 
 function readFraming(stage: HTMLElement): Framing {
   const style = getComputedStyle(stage);
@@ -132,9 +145,15 @@ const passLevel = (t: number) => Math.max(0, Math.sin(Math.PI * clamp01(t))) ** 
 /**
  * The hero scene: the car on a satin studio floor, lit like a photograph. Scroll drives the
  * exit (see EXIT); time drives only the idle life — drift, parallax, the light sweep.
+ *
+ * Building it is seconds of work on a cold machine — the environment's and the car's shaders
+ * above all — and it happens under the loader, whose own animation must keep running. So the
+ * build is spread over many short tasks (one part, one texture, one geometry at a time) and
+ * every shader is compiled in parallel, off the main thread, before it is first used. Nothing
+ * is drawn until the promise resolves, so the first frame never stalls the page.
  */
-export function createHeroScene(options: HeroSceneOptions): HeroScene {
-  const { canvas, stage, getProgress, motion } = options;
+export async function createHeroScene(options: HeroSceneOptions): Promise<HeroScene> {
+  const { canvas, stage, getProgress, motion, onStage } = options;
 
   const renderer = new WebGLRenderer({
     canvas,
@@ -148,19 +167,21 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
 
   const scene = new Scene();
   const camera = new PerspectiveCamera();
+  await yieldToMain();
 
-  const environment = createStudioEnvironment(renderer);
+  const environment = await createStudioEnvironment(renderer, yieldToMain);
   scene.environment = environment.texture;
   scene.environmentIntensity = ENVIRONMENT_INTENSITY;
   const lights = createStudioLights(scene);
   lights.setLevel(1);
+  await yieldToMain();
 
-  const model = buildCar();
+  const model = await buildCarAsync(yieldToMain);
   const anisotropy = Math.min(MAX_ANISOTROPY, renderer.capabilities.getMaxAnisotropy());
-  const surfaceMaterials = createSurfaceMaterials(anisotropy);
+  const surfaceMaterials = await createSurfaceMaterials(anisotropy, yieldToMain);
   lightSurfaces(surfaceMaterials, 1);
   const surfaces = new Group();
-  const solidGeometries = buildSolidGeometries(model);
+  const solidGeometries = await buildSolidGeometries(model, yieldToMain);
   for (const [id, geometry] of solidGeometries) surfaces.add(new Mesh(geometry, surfaceMaterials[id]));
 
   const streakMaterial = createStreakMaterial();
@@ -186,8 +207,9 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
     generateMipmaps: true,
   });
 
-  const shadowMap = createShadowMap(footprint());
-  const floorGeometry = new PlaneGeometry(22, 16);
+  const shadowMap = await createShadowMap(footprint(), yieldToMain);
+  // Wide enough for the car to drive the whole way to the camera over it, on any aspect ratio.
+  const floorGeometry = new PlaneGeometry(56, 40);
   const floorMaterial = createFloorMaterial(reflectionTarget.texture, shadowMap, TARGET.x);
   floorMaterial.uniforms.uLit.value = 1;
   const floor = new Mesh(floorGeometry, floorMaterial);
@@ -222,6 +244,7 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
   const resizeObserver = new ResizeObserver(resize);
   resizeObserver.observe(stage);
   resize();
+  onStage?.("geometry");
 
   // Compile every program up front, in parallel where supported. The shaders are the single
   // largest start-up cost (seconds, on some Windows GPUs, if compiled on first draw).
@@ -230,15 +253,52 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
   applyPose(camera, POSES.hero, framing, width, height);
   // compileAsync only visits visible objects: the streaks (hidden at rest) must be included,
   // or their program links mid-scroll, on the first frame of the exit.
+  // One compileAsync per mesh, issued a task apart: each program's first-use bookkeeping
+  // (uniform and attribute look-ups, every one a round trip to the GPU process) then lands
+  // in its own task, and the linking itself runs in parallel off the main thread.
   streaks.visible = true;
+  const meshes = [...surfaces.children, streaks, floor];
+  const pending: Promise<unknown>[] = [];
   renderer.setRenderTarget(reflectionTarget);
   reflection.visible = true;
-  const reflectionReady = renderer.compileAsync(reflection, camera, scene);
+  for (const mesh of reflection.children) pending.push(renderer.compileAsync(mesh, camera, scene));
   reflection.visible = false;
   renderer.setRenderTarget(null);
-  const ready = Promise.all([reflectionReady, renderer.compileAsync(scene, camera)])
-    .catch(() => undefined)
-    .then(() => undefined);
+  await yieldToMain();
+  for (const mesh of meshes) {
+    pending.push(renderer.compileAsync(mesh, camera, scene));
+    await yieldToMain();
+  }
+  try {
+    await Promise.all(pending);
+  } catch {
+    // A program that failed to compile reports itself on first draw; the rest still run.
+  }
+
+  // Direct3D finishes a program on its first draw, so draw each one once, alone, a task
+  // apart — rather than all of them in the first frame the page is revealed on.
+  const warm = async (members: Object3D[], target: WebGLRenderTarget | null) => {
+    for (const member of members) member.visible = false;
+    for (const member of members) {
+      member.visible = true;
+      renderer.setRenderTarget(target);
+      renderer.render(scene, camera);
+      renderer.setRenderTarget(null);
+      member.visible = false;
+      await yieldToMain();
+    }
+    for (const member of members) member.visible = true;
+  };
+  car.visible = floor.visible = false;
+  reflection.visible = true;
+  await warm([...reflection.children], reflectionTarget);
+  reflection.visible = false;
+  car.visible = true;
+  await warm([...surfaces.children, streaks, floor], null);
+  streaks.visible = false;
+  renderer.setRenderTarget(null);
+  renderer.clear();
+  onStage?.("shaders");
 
   // Pointer parallax — a few degrees, fine pointers only.
   const pointer = { x: 0, y: 0, tx: 0, ty: 0 };
@@ -302,15 +362,33 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
     return { angle: lerp(SWEEP.from, SWEEP.to, easeInOutCubic(k)), level: SWEEP.level * passLevel(k) };
   }
 
+  // Scratch for the exit path (allocated once; draw runs every frame).
+  const aim = new Vector3();
+  const view = new Vector2();
+  const pass = new Vector2();
+  const bend = new Vector2();
+  const carAt = new Vector2();
+  const heading = new Vector2();
+  let faded = 1;
+
+  /** Fade the car's finishes together: 1 is opaque (and the materials stay opaque). */
+  function fadeCar(k: number) {
+    if (k === faded) return;
+    faded = k;
+    for (const material of Object.values(surfaceMaterials)) {
+      material.transparent = k < 1;
+      material.opacity = k;
+    }
+  }
+
   function draw(now: number, still = false) {
     lastDrawAt = now;
 
     // Exit: the camera starts to move at once, the car a beat later, and it keeps
-    // accelerating: distance grows with the square of time, as it would from a standing start.
+    // accelerating: distance grows with a power of time, as it would from a standing start.
     const swing = smoothstep(0, 0.9, progress);
-    const launch = smoothstep(0.08, 1, progress);
-    const travel = EXIT.distance * launch * launch;
-    const speed = smoothstep(0.1, 0.75, progress);
+    const launch = clamp01((progress - EXIT.launchAt) / (1 - EXIT.launchAt)) ** EXIT.power;
+    const speed = smoothstep(0.1, 0.8, progress);
 
     // Arrival: 0 → 1 over ARRIVAL.ms after the reveal; settled (1) before it and on stills.
     const arrival = still || arrivedAt < 0 || !motion ? 1 : easeInOutCubic(clamp01((now - arrivedAt) / ARRIVAL.ms));
@@ -329,12 +407,55 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
     }
     framed.cx = framing.cx;
     framed.cy = framing.cy;
-    framed.span = framing.span * lerp(ARRIVAL.pullBack, 1, arrival) * lerp(1, EXIT.pullBack, swing);
-    applyPose(camera, pose, framed, width, height, travel * EXIT.follow);
+    framed.span = framing.span * lerp(ARRIVAL.pullBack, 1, arrival) * lerp(1, EXIT_PULL_BACK, swing);
+    // Place the camera first (aimed at rest), then lay the car's path out from where it stands.
+    const distance = applyPose(camera, pose, framed, width, height);
 
-    car.position.x = travel;
-    reflection.position.x = travel;
-    (floorMaterial.uniforms.uCar.value as Vector2).x = TARGET.x + travel;
+    // The path, in plan: the car leaves along its nose, bends onto the camera's axis and runs
+    // down it to a point just beside the lens — one quadratic curve whose control point sits
+    // on the car's own centreline, so it starts straight and arrives straight.
+    view.set(camera.position.x - TARGET.x, camera.position.z - TARGET.z).normalize();
+    // The camera's right-hand side, on the floor.
+    pass.set(view.y, -view.x).multiplyScalar(EXIT.pass);
+    pass.x += camera.position.x - TARGET.x;
+    pass.y += camera.position.z - TARGET.z;
+    const run = pass.y / view.y;
+    bend.set(Math.max(0.5, pass.x - view.x * run), 0);
+    const curveLength = bend.x + run;
+    const travel = launch * (curveLength + EXIT.beyond);
+
+    let yaw: number;
+    if (travel < curveLength) {
+      const t = travel / curveLength;
+      const u = 1 - t;
+      // Quadratic Bézier from the rest (origin) through `bend` to `pass`, and its tangent.
+      carAt.set(2 * u * t * bend.x + t * t * pass.x, 2 * u * t * bend.y + t * t * pass.y);
+      heading.set(2 * u * bend.x + 2 * t * (pass.x - bend.x), 2 * t * (pass.y - bend.y));
+      yaw = Math.atan2(-heading.y, heading.x);
+    } else {
+      carAt.copy(view).multiplyScalar(travel - curveLength).add(pass);
+      yaw = Math.atan2(-view.y, view.x);
+    }
+    // Rest to world (the path is laid out from the car's resting centre).
+    carAt.x += TARGET.x;
+    carAt.y += TARGET.z;
+
+    car.position.set(carAt.x, 0, carAt.y);
+    car.rotation.y = yaw;
+    reflection.position.copy(car.position);
+    reflection.rotation.y = yaw;
+    (floorMaterial.uniforms.uCar.value as Vector2).copy(carAt);
+    floorMaterial.uniforms.uCarYaw.value = yaw;
+
+    // The camera turns its head after the car, a little; its feet stay put.
+    aim.set(TARGET.x + (carAt.x - TARGET.x) * EXIT.follow, TARGET.y, TARGET.z + (carAt.y - TARGET.z) * EXIT.follow);
+    camera.lookAt(aim);
+    // As the car nears the lens the near plane comes in with it, so nothing is ever cut; it
+    // is faded out over the last of the pass rather than clipped.
+    const carDistance = Math.hypot(camera.position.x - carAt.x, camera.position.z - carAt.y);
+    camera.near = Math.min(Math.max(0.1, distance - 12), Math.max(0.08, carDistance - CAR.length));
+    camera.updateProjectionMatrix();
+    fadeCar(1 - smoothstep(EXIT.fade.from, EXIT.fade.to, progress));
 
     const light = sweepAt(now);
     sweep.uSweepAngle.value = light.angle;
@@ -343,7 +464,7 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
     renderReflection();
 
     streakMaterial.uniforms.uStretch.value = speed;
-    streakMaterial.uniforms.uOpacity.value = smoothstep(0.02, 0.25, progress);
+    streakMaterial.uniforms.uOpacity.value = smoothstep(0.02, 0.25, progress) * faded;
     // Drawn (invisibly) on the first frame too, so the program's first use — which blocks on
     // the driver — happens under the loader, not on the first frame of a scroll.
     streaks.visible = speed > 0.001 || !warmed;
@@ -420,5 +541,5 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
     renderer.dispose();
   }
 
-  return { ready, renderNow, start, stop, setCadence, reveal, dispose, renderStill };
+  return { renderNow, start, stop, setCadence, reveal, dispose, renderStill };
 }

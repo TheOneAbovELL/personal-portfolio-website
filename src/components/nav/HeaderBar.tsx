@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { MouseEvent as ReactMouseEvent, RefObject } from "react";
 import { initialRaceState, race } from "@/components/race/store";
 import { Icon } from "@/components/ui/Icon";
 import { Navigator } from "./Navigator";
 import { NAVIGATOR_EVENT, isTypingTarget, type NavigatorRequest } from "./events";
+import { scrollFrame } from "./frame";
 import { scrollToSection } from "./scroll";
 import type { NavData, NavSector } from "./types";
 import "./navigator.css";
@@ -21,16 +22,17 @@ const getZone = () => race.getState().zone;
 const getServerZone = () => initialRaceState.zone;
 
 function subscribeToScroll(onChange: () => void) {
-  window.addEventListener("scroll", onChange, { passive: true });
-  const unsubscribe = race.subscribe(onChange);
+  const unsubscribeFrame = scrollFrame.subscribe(onChange);
+  const unsubscribeRace = race.subscribe(onChange);
   return () => {
-    window.removeEventListener("scroll", onChange);
-    unsubscribe();
+    unsubscribeFrame();
+    unsubscribeRace();
   };
 }
-// The window's own offset answers before the environment has loaded; the store also covers
-// development stills, where the page is held mid-lap without the window scrolling.
-const getScrolled = () => window.scrollY > 16 || race.getState().pageProgress > 0.002;
+// The frame's cached offset answers before the environment has loaded; the store also covers
+// development stills, where the page is held mid-lap without the window scrolling. Neither
+// read touches layout, so a burst of scroll events costs nothing here.
+const getScrolled = () => scrollFrame.getY() > 16 || race.getState().pageProgress > 0.002;
 const getServerScrolled = () => false;
 
 const useIsomorphicLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
@@ -63,18 +65,17 @@ function useHeroPassed(route: Route): boolean {
 
 /**
  * The header tucks in while the visitor reads down the page and opens out again the moment
- * they scroll back up. Written straight to the element, so scrolling never re-renders React.
+ * they scroll back up. Written straight to the element from the frame's cached offset, so
+ * scrolling never re-renders React and never forces layout.
  */
 function useCompactOnScroll(header: RefObject<HTMLElement | null>) {
   useEffect(() => {
     const element = header.current;
     if (!element) return;
-    let last = window.scrollY;
-    let frame = 0;
     let compact = false;
+    let last = 0;
     const update = () => {
-      frame = 0;
-      const y = window.scrollY;
+      const y = scrollFrame.getY();
       const delta = y - last;
       if (Math.abs(delta) < 6) return;
       const next = y > 160 && delta > 0;
@@ -85,14 +86,9 @@ function useCompactOnScroll(header: RefObject<HTMLElement | null>) {
         else delete element.dataset.compact;
       }
     };
-    const onScroll = () => {
-      if (!frame) frame = requestAnimationFrame(update);
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      if (frame) cancelAnimationFrame(frame);
-    };
+    const unsubscribe = scrollFrame.subscribe(update);
+    last = scrollFrame.getY();
+    return unsubscribe;
   }, [header]);
 }
 
@@ -104,6 +100,8 @@ interface PillItem {
   section: string | null;
   /** Position in `site.sections`, for the progress fill. */
   sectorIndex: number;
+  /** A page set among the homepage's sector toggles: marked, never current from scrolling. */
+  inset: boolean;
 }
 
 /**
@@ -129,36 +127,62 @@ function SectorPill({
   const capsuleRef = useRef<HTMLSpanElement>(null);
   const fillRef = useRef<HTMLElement>(null);
   const placed = useRef(false);
+  /** Each toggle's left edge and width inside the list: measured when the pill's layout changes, not on every move. */
+  const slots = useRef(new Map<string, { left: number; width: number }>());
 
-  // Move the capsule under the active toggle; re-measure when the pill resizes (fonts, viewport).
+  const settle = (capsule: HTMLElement, slot: { left: number; width: number }) => {
+    capsule.style.transform = `translate3d(${slot.left}px, 0, 0)`;
+    capsule.style.width = `${slot.width}px`;
+  };
+
+  // Measure every toggle at once, only when the pill's layout changes (fonts, viewport, its contents).
   useIsomorphicLayoutEffect(() => {
     const list = listRef.current;
-    const capsule = capsuleRef.current;
-    if (!list || !capsule) return;
-
-    const place = () => {
-      const target = activeKey ? list.querySelector<HTMLElement>(`[data-pill="${activeKey}"]`) : null;
-      if (!target) {
-        capsule.dataset.hidden = "";
-        return;
+    if (!list) return;
+    const measure = () => {
+      const next = new Map<string, { left: number; width: number }>();
+      for (const toggle of list.querySelectorAll<HTMLElement>("[data-pill]")) {
+        next.set(toggle.dataset.pill ?? "", { left: toggle.offsetLeft, width: toggle.offsetWidth });
       }
-      const first = !placed.current || capsule.dataset.hidden !== undefined;
-      if (first) capsule.style.transition = "none";
-      capsule.style.transform = `translate3d(${target.offsetLeft}px, 0, 0)`;
-      capsule.style.width = `${target.offsetWidth}px`;
-      delete capsule.dataset.hidden;
-      if (first) {
+      slots.current = next;
+      // The toggle under the capsule may have moved: put the capsule back on it, without the glide.
+      const capsule = capsuleRef.current;
+      const slot = capsule?.dataset.pill ? next.get(capsule.dataset.pill) : null;
+      if (capsule && slot) {
+        capsule.style.transition = "none";
+        settle(capsule, slot);
         void capsule.offsetWidth;
         capsule.style.transition = "";
       }
-      placed.current = true;
     };
-
-    place();
-    const observer = new ResizeObserver(place);
+    measure();
+    const observer = new ResizeObserver(measure);
     observer.observe(list);
     return () => observer.disconnect();
-  }, [activeKey]);
+  }, [items]);
+
+  // Glide the capsule to the active toggle from the cached slots: no layout read on the way, and
+  // a page set among the toggles is simply passed over.
+  useIsomorphicLayoutEffect(() => {
+    const capsule = capsuleRef.current;
+    if (!capsule) return;
+    const slot = activeKey ? slots.current.get(activeKey) : null;
+    if (!slot || !activeKey) {
+      capsule.dataset.hidden = "";
+      delete capsule.dataset.pill;
+      return;
+    }
+    const first = !placed.current || capsule.dataset.hidden !== undefined;
+    if (first) capsule.style.transition = "none";
+    settle(capsule, slot);
+    capsule.dataset.pill = activeKey;
+    delete capsule.dataset.hidden;
+    if (first) {
+      void capsule.offsetWidth;
+      capsule.style.transition = "";
+    }
+    placed.current = true;
+  }, [activeKey, items]);
 
   // The fill is written from the store, never through React.
   useEffect(() => {
@@ -203,7 +227,20 @@ function SectorPill({
           const className = "hdr-pill-item";
           return (
             <li key={item.key}>
-              {item.section && route === "home" ? (
+              {item.inset ? (
+                <Link
+                  href={item.href}
+                  data-pill={item.key}
+                  data-kind="page"
+                  aria-current={pathname === item.href ? "page" : undefined}
+                  className={className}
+                >
+                  <span aria-hidden="true" className="hdr-pill-mark">
+                    /
+                  </span>
+                  {item.label}
+                </Link>
+              ) : item.section && route === "home" ? (
                 <a
                   href={item.href}
                   data-pill={item.key}
@@ -278,24 +315,43 @@ export function HeaderBar({ data }: { data: NavData }) {
   /* ------------------------------------------------------------ the pill's toggles */
 
   const sectorIndex = (sector: NavSector) => Number(sector.number) - 1;
-  const items: PillItem[] =
-    route === "home"
-      ? data.sectors
-          .filter((sector) => sector.pill)
-          .map((sector) => ({
-            key: sector.id,
-            href: sector.href,
-            label: sector.label,
-            section: sector.id,
-            sectorIndex: sectorIndex(sector),
-          }))
-      : data.headerPages.map((page) => ({
-          key: page.href,
-          href: page.href,
-          label: page.label,
-          section: null,
-          sectorIndex: -1,
-        }));
+  const items: PillItem[] = useMemo(() => {
+    if (route !== "home") {
+      return data.headerPages.map((page) => ({
+        key: page.href,
+        href: page.href,
+        label: page.label,
+        section: null,
+        sectorIndex: -1,
+        inset: false,
+      }));
+    }
+    // The sector toggles, each followed by the pages that name it (site.pillPages); a page naming
+    // a sector without a toggle goes last. The order is declared in one place: site.ts.
+    const toggles = data.sectors.filter((sector) => sector.pill);
+    const pageItem = (page: NavData["pillPages"][number]): PillItem => ({
+      key: page.href,
+      href: page.href,
+      label: page.label,
+      section: null,
+      sectorIndex: -1,
+      inset: true,
+    });
+    const list: PillItem[] = [];
+    for (const sector of toggles) {
+      list.push({
+        key: sector.id,
+        href: sector.href,
+        label: sector.label,
+        section: sector.id,
+        sectorIndex: Number(sector.number) - 1,
+        inset: false,
+      });
+      list.push(...data.pillPages.filter((page) => page.after === sector.id).map(pageItem));
+    }
+    list.push(...data.pillPages.filter((page) => !toggles.some((sector) => sector.id === page.after)).map(pageItem));
+    return list;
+  }, [route, data]);
 
   // On the homepage the current toggle is the zone's — or, in a sector without one (Ask), the
   // toggle before it, dimmed. Elsewhere it is the page's.

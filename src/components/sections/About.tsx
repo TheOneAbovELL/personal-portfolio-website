@@ -9,7 +9,7 @@ export function About() {
     <Section id="about" label="Engineering philosophy" title={about.lead} readout="Operating principle" tone="teal">
       <div className="grid gap-x-12 gap-y-6 md:grid-cols-2">
         {about.paragraphs.map((paragraph, index) => (
-          <p key={index} className="prose-body text-steel" {...reveal("rise", index)}>
+          <p key={index} className="prose-body measure text-steel" {...reveal("rise", index)}>
             {paragraph}
           </p>
         ))}
@@ -65,7 +65,7 @@ export function About() {
 
       <dl className="mt-[clamp(3.5rem,7vw,6rem)] grid gap-3 md:grid-cols-3">
         {principles.map((principle, index) => (
-          <div key={principle.title} className="surface rounded-lg p-6" {...reveal("rise", index)}>
+          <div key={principle.title} className="surface rounded-lg p-6" data-float="" {...reveal("settle", index)}>
             <dt className="label text-bone">
               <span className="text-champagne">{String.fromCharCode(65 + index)}</span>
               <span aria-hidden="true" className="mx-2 text-metal-3">

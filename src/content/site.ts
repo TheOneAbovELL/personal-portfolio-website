@@ -25,7 +25,8 @@ export const site = {
   /**
    * Homepage sections, in order. `id` is the anchor; `nav` lists it in the navigator; `pill`
    * gives it a toggle in the header's sector pill; `note` is the one line the navigator shows
-   * beside it.
+   * beside it. Contact has no toggle: it is the last stop of the lap and stays in the hero,
+   * the navigator and the footer, where it is one tap away.
    */
   sections: [
     { id: "about", label: "About", nav: true, pill: true, note: "Background, and how the work gets done" },
@@ -34,8 +35,15 @@ export const site = {
     { id: "work", label: "Work", nav: true, pill: true, note: "The homepage programmes" },
     { id: "experience", label: "Experience", nav: true, pill: true, note: "Research, open source, education" },
     { id: "garage", label: "Garage", nav: true, pill: true, note: "Every public repository, synced from GitHub" },
-    { id: "contact", label: "Contact", nav: true, pill: true, note: "Email and profiles" },
+    { id: "contact", label: "Contact", nav: true, pill: false, note: "Email and profiles" },
   ],
+
+  /**
+   * Pages that sit inside the homepage pill, among the sector toggles: a direct way to a page
+   * from the top of the lap. `after` names the sector toggle each one follows. They read as
+   * pages, not sectors — no number, no progress fill, never "current" from scrolling.
+   */
+  pillPages: [{ href: "/projects", label: "Projects", after: "work" }],
 
   /** The header pill away from the homepage: the pages, and the way back. */
   headerPages: [

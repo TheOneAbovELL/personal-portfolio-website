@@ -6,12 +6,17 @@ import {
   HemisphereLight,
   Mesh,
   MeshBasicMaterial,
+  NoToneMapping,
+  PerspectiveCamera,
+  PlaneGeometry,
   PMREMGenerator,
   Scene,
+  ShaderMaterial,
   type WebGLRenderer,
   type WebGLRenderTarget,
 } from "three";
 import { COLORS } from "./materials";
+import type { Yield } from "./yield";
 
 /**
  * The studio: what the car reflects, and what lights it.
@@ -56,8 +61,100 @@ const SOFTBOXES: Softbox[] = [
   { position: [0, -0.4, 0.6], size: [9, 0.1, 5], colour: "#86888a", power: 0.1 },
 ];
 
-/** Render the softbox room once into a prefiltered environment map. */
-export function createStudioEnvironment(renderer: WebGLRenderer): WebGLRenderTarget {
+/** Resolution of the prefiltered environment (PMREMGenerator's default). */
+const ENVIRONMENT_SIZE = 256;
+
+/**
+ * The parts of PMREMGenerator (three r186) that are reached into to prepare its programs.
+ * Each is checked before use; without them the environment is simply built the slow way.
+ */
+interface PMREMInternals {
+  _setSize?(size: number): void;
+  _allocateTargets?(): WebGLRenderTarget;
+  _blurMaterial?: ShaderMaterial | null;
+  _ggxMaterial?: ShaderMaterial | null;
+}
+
+/**
+ * PMREMGenerator's convolution shaders loop over a compile-time sample count (256 for the
+ * GGX filter). Direct3D's compiler unrolls such loops in full, and that takes over a second
+ * on a cold machine — the single largest stall in the page's start-up. Reading the same
+ * count from a uniform leaves the loop rolled and the compile quick; the samples, and so the
+ * result, are identical. Leaves the material alone if its source is not the one expected.
+ */
+function rollLoop(material: ShaderMaterial, token: string): void {
+  const count = material.defines?.[token];
+  const declaration = "uniform float mipInt;";
+  if (typeof count !== "number" || !material.fragmentShader.includes(declaration)) return;
+  const bounds = new RegExp(`\\b(uint\\(|float\\(\\s*|<\\s*)${token}\\b`, "g");
+  if (!bounds.test(material.fragmentShader)) return;
+  material.fragmentShader = material.fragmentShader
+    .replace(declaration, `${declaration}\n\t\t\tuniform int uSampleCount;`)
+    .replace(bounds, "$1uSampleCount");
+  material.uniforms.uSampleCount = { value: count };
+}
+
+/**
+ * Compile the environment's programs before `fromScene` needs them: the room's two (front
+ * and back faces) and the generator's blur and GGX convolutions. Linking runs in parallel
+ * off the main thread (compileAsync, KHR_parallel_shader_compile); the first draw of each —
+ * where Direct3D finishes its compile — is then made one program per task, so the loader
+ * keeps animating between them. The program cache keys on the render state at compile
+ * time, so the environment's own kind of target is bound and tone mapping is off, exactly
+ * as `fromScene` renders.
+ */
+async function precompile(renderer: WebGLRenderer, pmrem: PMREMGenerator, room: Scene, yieldNow: Yield): Promise<void> {
+  const internals = pmrem as unknown as PMREMInternals;
+  if (typeof internals._setSize !== "function" || typeof internals._allocateTargets !== "function") return;
+  internals._setSize(ENVIRONMENT_SIZE);
+  const target = internals._allocateTargets();
+  if (internals._ggxMaterial) rollLoop(internals._ggxMaterial, "GGX_SAMPLES");
+  if (internals._blurMaterial) rollLoop(internals._blurMaterial, "SAMPLES");
+
+  const camera = new PerspectiveCamera();
+  const plane = new PlaneGeometry(1, 1);
+  const passes: Scene[] = [room];
+  for (const material of [internals._blurMaterial, internals._ggxMaterial]) {
+    if (!material) continue;
+    const pass = new Scene();
+    pass.add(new Mesh(plane, material));
+    passes.push(pass);
+  }
+
+  const previousTarget = renderer.getRenderTarget();
+  const previousToneMapping = renderer.toneMapping;
+  const bind = () => {
+    renderer.setRenderTarget(target);
+    renderer.toneMapping = NoToneMapping;
+  };
+  const unbind = () => {
+    renderer.setRenderTarget(previousTarget);
+    renderer.toneMapping = previousToneMapping;
+  };
+
+  bind();
+  const pending = passes.map((pass) => renderer.compileAsync(pass, camera));
+  unbind();
+  try {
+    await Promise.all(pending);
+  } catch {
+    // Compilation errors surface again, properly, in fromScene.
+  }
+  for (const pass of passes) {
+    bind();
+    renderer.render(pass, camera);
+    unbind();
+    await yieldNow();
+  }
+  plane.dispose();
+  target.dispose();
+}
+
+/**
+ * Render the softbox room once into a prefiltered environment map. Asynchronous only so the
+ * shader compilation can run in parallel (see precompile); the render itself is quick.
+ */
+export async function createStudioEnvironment(renderer: WebGLRenderer, yieldNow: Yield): Promise<WebGLRenderTarget> {
   const room = new Scene();
   const unit = new BoxGeometry();
   const materials: MeshBasicMaterial[] = [];
@@ -77,7 +174,8 @@ export function createStudioEnvironment(renderer: WebGLRenderer): WebGLRenderTar
   for (const softbox of SOFTBOXES) add(softbox);
 
   const pmrem = new PMREMGenerator(renderer);
-  const environment = pmrem.fromScene(room, 0.03, 0.1, 60);
+  await precompile(renderer, pmrem, room, yieldNow);
+  const environment = pmrem.fromScene(room, 0.03, 0.1, 60, { size: ENVIRONMENT_SIZE });
   pmrem.dispose();
   unit.dispose();
   for (const material of materials) material.dispose();

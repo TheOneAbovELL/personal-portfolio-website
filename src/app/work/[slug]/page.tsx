@@ -29,15 +29,20 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 /** One titled block of the case study. Renders nothing when it has no content. */
 function Block({ index, title, children }: { index: number; title: string; children: React.ReactNode }) {
   return (
-    <section className="grid gap-x-10 gap-y-5 border-t border-rule py-[clamp(2.5rem,5vw,4rem)] lg:grid-cols-12" data-reveal="rise">
-      <h2 className="label text-steel lg:col-span-3">
-        <span className="text-signal">{String(index).padStart(2, "0")}</span>
+    <section className="relative grid gap-x-10 gap-y-5 py-[clamp(2.5rem,5vw,4rem)] lg:grid-cols-12">
+      <span aria-hidden="true" className="absolute inset-x-0 top-0 h-px bg-rule-strong" data-reveal="trace" />
+      <h2 className="label text-steel lg:col-span-3" data-reveal="snap">
+        <span className="text-champagne" data-reveal="tick">
+          {String(index).padStart(2, "0")}
+        </span>
         <span aria-hidden="true" className="mx-2 text-metal-3">
           /
         </span>
         {title}
       </h2>
-      <div className="lg:col-span-8">{children}</div>
+      <div className="lg:col-span-8" data-reveal="rise" style={{ "--reveal-index": 1 } as React.CSSProperties}>
+        {children}
+      </div>
     </section>
   );
 }
@@ -45,7 +50,7 @@ function Block({ index, title, children }: { index: number; title: string; child
 const Paragraphs = ({ items }: { items: string[] }) => (
   <div className="space-y-5">
     {items.map((text, i) => (
-      <p key={i} className={`prose-body ${i === 0 ? "text-bone" : "text-steel"}`}>
+      <p key={i} className={`prose-body measure ${i === 0 ? "text-bone" : "text-steel"}`}>
         {text}
       </p>
     ))}
@@ -55,7 +60,7 @@ const Paragraphs = ({ items }: { items: string[] }) => (
 const Bullets = ({ items }: { items: string[] }) => (
   <ul className="space-y-4">
     {items.map((text, i) => (
-      <li key={i} className="prose-body grid grid-cols-[1.25rem_1fr] text-bone/90">
+      <li key={i} className="prose-body measure grid grid-cols-[1.25rem_1fr] text-bone/90">
         <span aria-hidden="true" className="mt-[0.8em] h-px w-2.5 bg-signal" />
         <span>{text}</span>
       </li>
@@ -108,40 +113,59 @@ export default async function CaseStudyPage({ params }: { params: Promise<{ slug
 
   return (
     <article className="section" data-tone="teal" {...programmeScope(project.theme)}>
-      <div className="shell pb-[clamp(4rem,8vw,7rem)] pt-[calc(var(--header-h)+clamp(2rem,5vw,4rem))]">
+      <div
+        className="shell pb-[clamp(4rem,8vw,7rem)] pt-[calc(var(--header-h)+clamp(2rem,5vw,4rem))]"
+        style={{ "--enter-base": "200ms" } as React.CSSProperties}
+      >
       <Link
         href="/work"
-        className="label inline-flex min-h-11 items-center gap-2 text-steel transition-colors duration-[var(--dur-fast)] hover:text-rosso-bright"
+        className="group label enter-fade inline-flex min-h-11 items-center gap-2 text-steel transition-colors duration-[var(--dur-fast)] hover:text-rosso-bright"
       >
-        <Icon name="arrow-left" size={14} />
+        <Icon
+          name="arrow-left"
+          size={14}
+          className="transition-transform duration-[var(--dur-fast)] ease-[var(--ease-snap)] group-hover:-translate-x-0.5"
+        />
         All work
       </Link>
 
+      {/* The first viewport is one timed entrance under the route veil: status, title, tagline,
+          then the facts — the same order a sector arrives in on the homepage. */}
       <header className="mt-6 pb-[clamp(2.5rem,5vw,4rem)]">
         <div className="enter flex flex-wrap items-center gap-x-6 gap-y-2">
           <StatusBadge status={project.status} />
           <p className="label text-faint">{project.discipline ?? "Case study"}</p>
         </div>
         <h1
-          className="display enter-mask mt-5 text-[clamp(2.375rem,6vw,5.25rem)]"
+          className="display enter-mask mt-5 max-w-[14ch] text-[clamp(2.375rem,6vw,5.25rem)] tracking-[-0.045em]"
           style={{ "--enter-index": 1 } as React.CSSProperties}
         >
           {project.title}
         </h1>
-        {project.fullTitle && <p className="label mt-4 max-w-[40rem] text-steel">{project.fullTitle}</p>}
+        {project.fullTitle && (
+          <p className="label enter mt-4 max-w-[40rem] text-steel" style={{ "--enter-index": 2 } as React.CSSProperties}>
+            {project.fullTitle}
+          </p>
+        )}
         <p
-          className="enter mt-6 max-w-[44rem] text-[clamp(1.125rem,1.8vw,1.5rem)] leading-snug text-bone"
+          className="enter mt-6 max-w-[44rem] text-[clamp(1.125rem,1.8vw,1.5rem)] leading-snug tracking-[-0.015em] text-bone"
           style={{ "--enter-index": 2 } as React.CSSProperties}
         >
           {project.tagline}
         </p>
         {project.statusNote && (
-          <p className="mt-6 max-w-[40rem] border-l border-signal pl-4 text-[0.9375rem] leading-snug text-steel">
+          <p
+            className="enter mt-6 max-w-[40rem] border-l border-champagne pl-4 text-[0.9375rem] leading-snug text-steel"
+            style={{ "--enter-index": 3 } as React.CSSProperties}
+          >
             {project.statusNote}
           </p>
         )}
 
-        <div className="mt-10 grid gap-x-10 gap-y-8 border-t border-rule pt-6 lg:grid-cols-12">
+        <div
+          className="enter mt-10 grid gap-x-10 gap-y-8 border-t border-rule pt-6 lg:grid-cols-12"
+          style={{ "--enter-index": 3 } as React.CSSProperties}
+        >
           <dl className="grid grid-cols-[5.5rem_1fr] content-start gap-y-2 lg:col-span-5">
             {meta.map((item) => (
               <div key={item.label} className="contents">
@@ -170,9 +194,14 @@ export default async function CaseStudyPage({ params }: { params: Promise<{ slug
         </div>
 
         {project.facts && project.facts.length > 0 && (
-          <dl className="mt-12 grid gap-x-10 gap-y-6 sm:grid-cols-2 lg:grid-cols-4" data-reveal="settle">
-            {project.facts.map((fact) => (
-              <div key={fact.label} className="border-t border-[rgb(var(--prog,233_231_225)/0.45)] pt-3">
+          <dl className="mt-12 grid gap-x-10 gap-y-6 sm:grid-cols-2 lg:grid-cols-4">
+            {project.facts.map((fact, index) => (
+              <div
+                key={fact.label}
+                className="border-t border-[rgb(var(--prog,233_231_225)/0.45)] pt-3"
+                data-reveal="settle"
+                style={{ "--reveal-index": index } as React.CSSProperties}
+              >
                 <dt className="label text-faint">{fact.label}</dt>
                 <dd className="mt-2 text-[0.9875rem] leading-snug text-bone">{fact.value}</dd>
               </div>
@@ -188,17 +217,21 @@ export default async function CaseStudyPage({ params }: { params: Promise<{ slug
       ))}
 
       {next && next.slug !== project.slug && (
-        <nav aria-label="Next case study" className="border-t border-rule-strong pt-8">
-          <p className="label text-faint">Next case study</p>
+        <nav aria-label="Next case study" className="relative pt-8">
+          <span aria-hidden="true" className="absolute inset-x-0 top-0 h-px bg-rule-strong" data-reveal="trace" />
+          <p className="label text-faint" data-reveal="snap">
+            Next case study
+          </p>
           <Link
             href={`/work/${next.slug}`}
             className="group mt-3 inline-flex items-center gap-4 transition-colors duration-[var(--dur-fast)] hover:text-rosso-bright"
+            data-reveal="mask"
           >
-            <span className="display text-[clamp(1.75rem,4vw,3.25rem)]">{next.title}</span>
+            <span className="mask display text-[clamp(1.75rem,4vw,3.25rem)] tracking-[-0.04em]">{next.title}</span>
             <Icon
               name="arrow-right"
               size={32}
-              className="transition-transform duration-[var(--dur-base)] ease-out group-hover:translate-x-2"
+              className="transition-transform duration-[var(--dur-base)] ease-[var(--ease-out)] group-hover:translate-x-2"
             />
           </Link>
         </nav>

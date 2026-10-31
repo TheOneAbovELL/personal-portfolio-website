@@ -11,7 +11,7 @@ export function ProjectRow({ project }: { project: Project }) {
     <li
       id={project.slug}
       className="grid scroll-mt-28 gap-x-10 gap-y-4 border-b border-rule py-8 lg:grid-cols-12"
-      data-reveal=""
+      data-reveal="rise"
     >
       <div className="flex items-baseline justify-between gap-4 lg:col-span-2 lg:block">
         <p className="label text-faint">{project.year}</p>
@@ -23,7 +23,7 @@ export function ProjectRow({ project }: { project: Project }) {
       <div className="lg:col-span-6">
         <h3 className="display text-[1.625rem]">
           {hasCaseStudy ? (
-            <Link href={`/work/${project.slug}`} className="transition-colors duration-[var(--dur-fast)] hover:text-rosso-bright">
+            <Link href={`/work/${project.slug}`} className="link-draw transition-colors duration-[var(--dur-fast)] hover:text-rosso-bright">
               {project.title}
             </Link>
           ) : (
@@ -31,7 +31,7 @@ export function ProjectRow({ project }: { project: Project }) {
           )}
         </h3>
         <p className="mt-2 text-[1.0625rem] text-bone">{project.tagline}</p>
-        <p className="mt-3 text-[0.9375rem] leading-relaxed text-steel">{project.summary}</p>
+        <p className="measure mt-3 text-[0.9375rem] leading-relaxed text-steel">{project.summary}</p>
         {project.statusNote && <p className="mt-3 text-[0.875rem] text-faint">{project.statusNote}</p>}
       </div>
 
@@ -42,11 +42,11 @@ export function ProjectRow({ project }: { project: Project }) {
             <li>
               <Link
                 href={`/work/${project.slug}`}
-                className="label inline-flex min-h-11 items-center gap-2 text-bone transition-colors duration-[var(--dur-fast)] hover:text-rosso-bright"
+                className="group label inline-flex min-h-11 items-center gap-2 text-bone transition-colors duration-[var(--dur-fast)] hover:text-rosso-bright"
                 aria-label={`Read the ${project.title} case study`}
               >
                 Case study
-                <Icon name="arrow-right" size={13} />
+                <Icon name="arrow-right" size={13} className="transition-transform duration-[var(--dur-fast)] ease-[var(--ease-snap)] group-hover:translate-x-0.5" />
               </Link>
             </li>
           )}

@@ -51,6 +51,18 @@ export const archiveProjects = (): Project[] => visibleProjects().filter((p) => 
 
 export const caseStudyProjects = (): Project[] => visibleProjects().filter((p) => p.caseStudy);
 
+/**
+ * Repository names (lower-cased) of every visible project that links to its own GitHub
+ * repository. Anything that derives from the live GitHub list (the Garage, the "From GitHub"
+ * shelf on /projects) checks against this so a programme is never listed twice.
+ */
+export const programmeRepoNames = (): Set<string> =>
+  new Set(
+    visibleProjects()
+      .map((p) => p.links.repo?.match(/github\.com\/[^/]+\/([^/#?]+)/i)?.[1]?.toLowerCase())
+      .filter((name): name is string => Boolean(name)),
+  );
+
 export const getProject = (slug: string): Project | undefined =>
   visibleProjects().find((p) => p.slug === slug);
 

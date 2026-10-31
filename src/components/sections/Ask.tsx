@@ -50,7 +50,7 @@ export async function Ask() {
         {/* Sticky on wide screens: the ground rules stay beside a brief however long it runs. */}
         <div className="lg:sticky lg:top-[calc(var(--header-h)+2rem)] lg:col-span-3 lg:self-start" {...reveal("rise")}>
           <p className="label text-champagne">Ground rules</p>
-          <ul className="surface mt-4 px-4 py-1">
+          <ul className="surface mt-4 px-4 py-1" data-float="">
             {GROUND_RULES.map((rule, index) => (
               <li key={rule} className="grid grid-cols-[2rem_1fr] border-b border-rule py-3 text-[0.9375rem] leading-snug text-steel last:border-b-0">
                 <span aria-hidden="true" className="readout pt-px text-[0.6875rem] text-faint">

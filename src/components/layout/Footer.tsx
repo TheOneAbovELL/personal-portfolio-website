@@ -29,7 +29,7 @@ export function Footer() {
                   {...(link.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
                   className="inline-flex min-h-10 items-center text-[0.9375rem] text-steel transition-colors duration-[var(--dur-fast)] hover:text-bone"
                 >
-                  {link.label}
+                  <span className="link-draw">{link.label}</span>
                 </a>
               </li>
             ))}
@@ -41,12 +41,12 @@ export function Footer() {
           <ul className="mt-3">
             <li>
               <Link href="/work" className="inline-flex min-h-10 items-center text-[0.9375rem] text-steel transition-colors duration-[var(--dur-fast)] hover:text-bone">
-                All case studies
+                <span className="link-draw">All case studies</span>
               </Link>
             </li>
             <li>
               <Link href="/#ask" className="inline-flex min-h-10 items-center text-[0.9375rem] text-steel transition-colors duration-[var(--dur-fast)] hover:text-bone">
-                Ask Omjee
+                <span className="link-draw">Ask Omjee</span>
               </Link>
             </li>
           </ul>

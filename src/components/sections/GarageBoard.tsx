@@ -1,58 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { garageNumber, monthOf } from "@/components/garage/format";
 import { Icon } from "@/components/ui/Icon";
+import { GARAGE_DEFAULT_CATEGORY } from "@/content/garage";
 import type { GarageRepo } from "@/lib/github";
 
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-/** "2026-10-05" → "Oct 2026". Absolute, so server and client always render the same text. */
-const monthOf = (iso: string) => `${MONTHS[Number(iso.slice(5, 7)) - 1] ?? ""} ${iso.slice(0, 4)}`;
-
-const COLUMNS = "lg:grid-cols-[4rem_minmax(0,1fr)_8rem_10.5rem_6rem_1.25rem]";
-
-/**
- * A year of work as a strip of 52 weekly bars — GitHub's own participation statistics, so the
- * column shows how a repository was actually worked on, not just when it was last touched.
- */
-function ActivityTrace({ weeks, active }: { weeks: number[]; active: boolean }) {
-  const max = Math.max(...weeks);
-  const total = weeks.reduce((sum, n) => sum + n, 0);
-  // GitHub reports zeros for history it has not indexed (e.g. a repository pushed in one go),
-  // so an empty year is shown as "no data" rather than claimed as inactivity.
-  if (total === 0) {
-    return (
-      <span className="label text-faint">
-        <span aria-hidden="true">—</span>
-        <span className="sr-only">No weekly commit statistics from GitHub</span>
-      </span>
-    );
-  }
-  return (
-    <span className="flex items-center gap-2.5">
-      <svg viewBox="0 0 104 16" className="h-4 w-[6.5rem] shrink-0 overflow-visible" aria-hidden="true">
-        <line x1="0" x2="104" y1="15.5" y2="15.5" stroke="var(--color-rule-strong)" strokeWidth="1" />
-        {weeks.map((n, i) =>
-          n > 0 ? (
-            <rect
-              key={i}
-              x={i * 2}
-              y={15 - Math.max(1.5, (n / max) * 14)}
-              width="1.5"
-              height={Math.max(1.5, (n / max) * 14)}
-              rx="0.75"
-              fill={active ? "var(--color-champagne)" : "var(--color-steel)"}
-              opacity={0.45 + 0.55 * (i / 51)}
-            />
-          ) : null,
-        )}
-      </svg>
-      <span className="readout text-[0.6875rem] text-faint">{total}</span>
-      <span className="sr-only">
-        {total} commits in the last 52 weeks
-      </span>
-    </span>
-  );
-}
+const COLUMNS = "lg:grid-cols-[4rem_minmax(0,1fr)_8rem_7.5rem_7rem_1.25rem]";
 
 /**
  * The Garage as a timing sheet: one row per repository, filterable by category.
@@ -63,9 +17,10 @@ export function GarageBoard({ repos }: { repos: GarageRepo[] }) {
 
   const counts = new Map<string, number>();
   for (const repo of repos) counts.set(repo.category, (counts.get(repo.category) ?? 0) + 1);
-  const categories = ["All", ...[...counts.keys()].sort((a, b) => (a === "Other" ? 1 : b === "Other" ? -1 : a.localeCompare(b)))];
+  // Alphabetical, with the catch-all bucket for uncategorised repositories last.
+  const last = GARAGE_DEFAULT_CATEGORY;
+  const categories = ["All", ...[...counts.keys()].sort((a, b) => (a === last ? 1 : b === last ? -1 : a.localeCompare(b)))];
   const shown = filter === "All" ? repos : repos.filter((repo) => repo.category === filter);
-  const hasActivity = repos.some((repo) => repo.activity);
 
   return (
     <div>
@@ -102,7 +57,7 @@ export function GarageBoard({ repos }: { repos: GarageRepo[] }) {
         <span>No.</span>
         <span>Repository</span>
         <span>Category</span>
-        <span>{hasActivity ? "Commits · 52 weeks" : "Activity"}</span>
+        <span>Language</span>
         <span>Last push</span>
         <span />
       </div>
@@ -123,7 +78,7 @@ export function GarageBoard({ repos }: { repos: GarageRepo[] }) {
               />
 
               <span className="readout hidden text-[0.75rem] text-faint transition-colors duration-[var(--dur-fast)] group-hover:text-rosso-bright lg:block">
-                G.{String(number).padStart(3, "0")}
+                {garageNumber(number - 1)}
               </span>
 
               <div className="min-w-0">
@@ -153,7 +108,7 @@ export function GarageBoard({ repos }: { repos: GarageRepo[] }) {
                 {repo.description && <p className="mt-1 max-w-[44rem] text-[0.875rem] leading-snug text-steel">{repo.description}</p>}
                 <div className="label mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-2 text-faint lg:hidden">
                   <span>{repo.category}</span>
-                  {repo.activity && <ActivityTrace weeks={repo.activity} active={repo.active} />}
+                  {repo.language && <span className="text-steel">{repo.language}</span>}
                   <span className="flex items-center gap-1.5">
                     <span aria-hidden="true" className={`size-1.5 rounded-full ${repo.active ? "bg-champagne" : "border border-metal-3"}`} />
                     {monthOf(repo.pushedAt)}
@@ -162,11 +117,14 @@ export function GarageBoard({ repos }: { repos: GarageRepo[] }) {
               </div>
 
               <span className="label hidden text-steel lg:block">{repo.category}</span>
-              <span className="hidden lg:block">
-                {repo.activity ? (
-                  <ActivityTrace weeks={repo.activity} active={repo.active} />
-                ) : (
-                  <span className="label text-faint">{repo.active ? "Active" : "Resting"}</span>
+              <span className="label hidden text-steel lg:block">
+                {repo.language ?? (
+                  <>
+                    <span aria-hidden="true" className="text-faint">
+                      —
+                    </span>
+                    <span className="sr-only">No primary language reported</span>
+                  </>
                 )}
               </span>
               <span className="label hidden items-center gap-2 text-steel lg:flex">

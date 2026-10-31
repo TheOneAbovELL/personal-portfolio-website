@@ -20,6 +20,11 @@ export interface NavLink {
   label: string;
 }
 
+/** A page placed inside the homepage pill, after the sector toggle it names. */
+export interface NavPillPage extends NavLink {
+  after: string;
+}
+
 export interface NavPage {
   href: string;
   label: string;
@@ -56,6 +61,7 @@ export interface NavData {
   sectors: NavSector[];
   pages: NavPage[];
   headerPages: NavLink[];
+  pillPages: NavPillPage[];
   programmes: NavProgramme[];
   socials: NavSocial[];
 }

@@ -47,12 +47,9 @@ export async function Garage() {
       <div className="mt-12" {...reveal("rise", 1)}>
         <GarageBoard repos={repos} />
       </div>
-      <p className="label mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 text-faint">
-        <span className="flex items-center gap-2">
-          <span aria-hidden="true" className="size-1.5 rounded-full bg-champagne" />
-          Worked on in the last 90 days
-        </span>
-        {repos.some((repo) => repo.activity) && <span>Bars: commits per week, from GitHub</span>}
+      <p className="label mt-6 flex items-center gap-2 text-faint">
+        <span aria-hidden="true" className="size-1.5 rounded-full bg-champagne" />
+        Worked on in the last 90 days
       </p>
     </Section>
   );

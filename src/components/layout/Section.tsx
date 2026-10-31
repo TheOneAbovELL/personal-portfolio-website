@@ -25,6 +25,16 @@ interface SectionProps {
   children: React.ReactNode;
 }
 
+/**
+ * The arrival of a section is one sequence, timed from the moment its sector line enters:
+ * the line draws (0 ms), the sector number ticks on (120 ms) with its label, the heading
+ * cuts in line by line (220 ms), and the body rises once the heading has landed (the
+ * observer holds body copy that arrives with its heading; see motion/RevealObserver).
+ * Each element still reveals on its own intersection, so a section entered half-way (an
+ * anchor jump) never waits on a part that is already past.
+ */
+export const BEAT = { label: 120, heading: 220 } as const;
+
 /** Two-digit sector number, derived from the section's position in `site.sections`. */
 export function sectorNumber(id: SectionId): string {
   return String(site.sections.findIndex((section) => section.id === id) + 1).padStart(2, "0");
@@ -41,9 +51,14 @@ export function SectorLine({ tone = "yellow" }: { tone?: Tone }) {
 
 export function SectorLabel({ id, label, readout }: { id: SectionId; label: string; readout?: string }) {
   return (
-    <div className="mt-4 flex items-baseline justify-between gap-6">
+    <div
+      className="mt-4 flex items-baseline justify-between gap-6"
+      style={{ "--reveal-delay": `${BEAT.label}ms` } as React.CSSProperties}
+    >
       <p className="label text-steel" data-reveal="snap">
-        <span className="text-champagne">{sectorNumber(id)}</span>
+        <span className="text-champagne" data-reveal="tick">
+          {sectorNumber(id)}
+        </span>
         <span aria-hidden="true" className="mx-2 text-metal-3">
           /
         </span>
@@ -74,7 +89,13 @@ export function Section({
   children,
 }: SectionProps) {
   const heading = (
-    <h2 id={`${id}-title`} className="display title-section max-w-[24ch]" data-reveal="mask" data-drift="">
+    <h2
+      id={`${id}-title`}
+      className="display title-section max-w-[22ch]"
+      data-reveal="mask"
+      data-drift=""
+      style={{ "--reveal-delay": `${BEAT.heading}ms` } as React.CSSProperties}
+    >
       <span className="mask">{title}</span>
     </h2>
   );

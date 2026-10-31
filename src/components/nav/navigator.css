@@ -236,11 +236,30 @@
   color: var(--color-bone);
 }
 
-/* Contact joins the pill once there is room for it. */
+/* Six toggles have to fit beside the wordmark and the actions on a laptop: a little less air each. */
 @media (max-width: 79.99rem) {
-  .hdr-pill-list li:has([data-pill="contact"]) {
-    display: none;
+  .hdr-pill-item {
+    padding-inline: 0.75rem;
   }
+}
+
+/* A page set among the sectors (Projects): its slash says it leaves the lap. It takes no
+   capsule and no fill; it is only ever "current" on its own page. */
+.hdr-pill-item[data-kind="page"] {
+  gap: 0.3125rem;
+}
+
+.hdr-pill-mark {
+  font-size: 0.75rem;
+  font-weight: 450;
+  color: var(--nav-rosso-bright, var(--nav-rosso));
+  opacity: 0.8;
+  transform: translateY(-0.5px);
+  transition: opacity 240ms linear;
+}
+
+.hdr-pill-item[data-kind="page"]:hover .hdr-pill-mark {
+  opacity: 1;
 }
 
 /* The highlight. Its place is measured and written as a transform; the curve overshoots a

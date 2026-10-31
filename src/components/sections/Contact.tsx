@@ -49,11 +49,11 @@ export function Contact() {
                 className="shrink-0 transition-transform duration-[320ms] ease-[var(--ease-out)] group-hover:-translate-y-1 group-hover:translate-x-1"
               />
             </a>
-            <p className="prose-body mt-6 max-w-[34rem] text-steel">{profile.availability.note}</p>
+            <p className="prose-body measure mt-6 text-steel">{profile.availability.note}</p>
           </div>
 
-          <nav aria-label="Elsewhere" className="lg:col-span-4 lg:col-start-9" {...reveal("rise", 1)}>
-            <ul className="surface overflow-hidden rounded-lg p-1.5">
+          <nav aria-label="Elsewhere" className="lg:col-span-4 lg:col-start-9" {...reveal("settle", 1)}>
+            <ul className="surface overflow-hidden rounded-lg p-1.5" data-float="">
               {links.map((link) => (
                 <li key={link.label}>
                   <a
