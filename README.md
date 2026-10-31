@@ -20,7 +20,7 @@ these changes touch layout code.
 
 | I want to… | Edit |
 |---|---|
-| Replace my résumé | Overwrite `public/resume.pdf` |
+| Replace my résumé | Replace the PDF in the shared Drive folder (see `src/lib/resume.ts`); `public/resume-fallback.pdf` is the offline copy |
 | Add a project | Append an object to `src/content/projects.ts` |
 | Feature / un-feature a project on the homepage | `featured: true \| false` on that project |
 | Hide a project without deleting it | `visible: false` |

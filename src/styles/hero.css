@@ -85,3 +85,39 @@
 .hero-stage[data-still] > * {
   transition: none;
 }
+
+/* ------------------------------------------------------------------------------------------
+   Start sequence hand-off (components/loader, styles/loader.css).
+
+   The intro car lands on the stage's car geometry, so it uses the same three variables at the
+   same breakpoint — keep these in step with .hero-stage above.
+   ------------------------------------------------------------------------------------------ */
+.intro-frame {
+  --car-cx: 0.5;
+  --car-cy: 0.845;
+  --car-span: 0.94;
+}
+
+@media (min-width: 48rem) {
+  .intro-frame {
+    --car-cx: 0.57;
+    --car-cy: 0.55;
+    --car-span: 0.64;
+  }
+}
+
+/* Under the curtain the hero's drawing is already complete: the curtain lifts onto a finished
+   drawing that matches the one which just landed on it. */
+html:has(#intro) .hero-poster {
+  --draw-base: -10s;
+}
+
+/* The drawing → object cross-fade waits until the curtain is up, so the hand-off always lands
+   on the drawing; the WebGL car then arrives exactly as it does without the intro. */
+html:has(#intro:not([data-state="done"])) .hero-stage .hero-poster {
+  opacity: 1;
+}
+
+html:has(#intro:not([data-state="done"])) .hero-stage .hero-canvas {
+  opacity: 0;
+}

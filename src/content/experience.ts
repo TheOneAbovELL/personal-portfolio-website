@@ -39,7 +39,7 @@ export const experience: Experience[] = [
     role: "Open-source contributor",
     kind: "open-source",
     start: "2026-05",
-    end: null,
+    end: "2026-08",
     summary:
       "Contributed reliability and validation features to the AI layer of an open-source legal platform. Seven pull requests merged.",
     highlights: [

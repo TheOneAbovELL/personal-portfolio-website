@@ -18,7 +18,18 @@ export type ProjectStatus =
 export type ProjectCategory = "research" | "engineering" | "experiment";
 
 /** Which bespoke figure (if any) illustrates a project. */
-export type ProjectFigure = "pipeline" | "risk" | "montage";
+export type ProjectFigure =
+  | "pipeline"
+  | "risk"
+  | "montage"
+  // The /projects programmes (components/figures/builds).
+  | "agent-trace"
+  | "run-compare"
+  | "context-window"
+  | "head-circuit"
+  | "attention-masks"
+  | "chess-board"
+  | "race-replay";
 
 /**
  * A featured programme's identity within the master palette — what the work is about, not a
@@ -28,6 +39,21 @@ export type ProjectFigure = "pipeline" | "risk" | "montage";
  *   market    market data, quantitative signals
  */
 export type ProgrammeTheme = "evidence" | "signal" | "market";
+
+/**
+ * The identities of the programmes on /projects, which continue the homepage sequence.
+ *   trace      agent runs, tool calls, graded steps
+ *   bench      evaluation runs compared metric by metric
+ *   context    token sequences, context windows, positional encodings
+ *   circuit    layers, heads and the paths between them
+ *   attention  attention patterns and their cost curves
+ *   chess      the board, the engine, the evaluation
+ *   telemetry  car positions, laps, the timing tower
+ */
+export type ShowcaseTheme = "trace" | "bench" | "context" | "circuit" | "attention" | "chess" | "telemetry";
+
+/** Any programme identity — homepage or /projects. */
+export type ProjectTheme = ProgrammeTheme | ShowcaseTheme;
 
 /**
  * The scannable brief shown with a programme on the homepage. Each field is one or two
@@ -81,9 +107,12 @@ export interface Project {
   discipline?: string;
   /** One line naming the kind of system, set under the programme title. Restates the tagline. */
   designation?: string;
-  /** Featured programmes only: the identity that tints its numeral, rules, figure and transition. */
-  theme?: ProgrammeTheme;
-  /** Featured programmes only: the homepage brief. */
+  /**
+   * Programmes only (featured or showcase): the identity that tints its numeral, rules, figure
+   * and transition. Homepage programmes use a `ProgrammeTheme`, /projects ones a `ShowcaseTheme`.
+   */
+  theme?: ProjectTheme;
+  /** Programmes only: the brief shown beside the figure. */
   brief?: ProgrammeBrief;
   /** One-line positioning. */
   tagline: string;
@@ -95,6 +124,8 @@ export interface Project {
   statusNote?: string;
   /** Featured projects appear on the homepage and get a full case study. */
   featured: boolean;
+  /** Showcase projects appear as programmes on /projects, numbered on from the featured ones. */
+  showcase?: boolean;
   /** Set to false to hide a project everywhere without deleting it. */
   visible: boolean;
   /** Sort key within its tier; lower comes first. */
@@ -114,6 +145,12 @@ export interface Project {
   facts?: Fact[];
   caseStudy?: CaseStudy;
 }
+
+/** A homepage programme: featured, and carrying one of the three homepage identities (or none). */
+export type FeaturedProject = Project & { theme?: ProgrammeTheme };
+
+/** A /projects programme: showcased, and carrying one of the /projects identities (or none). */
+export type ShowcaseProject = Project & { theme?: ShowcaseTheme };
 
 export type ExperienceKind =
   | "research"

@@ -9,7 +9,7 @@
 
 export const GITHUB_USER = "TheOneAbovELL";
 
-export const GARAGE_CATEGORIES = ["AI / ML", "Systems", "Quant", "Problem solving", "Web", "Other"] as const;
+export const GARAGE_CATEGORIES = ["AI / ML", "Research", "Systems", "Quant", "Problem solving", "Web", "Other"] as const;
 export type GarageCategory = (typeof GARAGE_CATEGORIES)[number];
 
 export interface GarageOverride {
@@ -35,9 +35,89 @@ export const GARAGE_HIDDEN: string[] = [
   "Agentic-Precision-Psychiatry-System",
   // README currently contains placeholder badges and plain-text demo credentials; hidden until cleaned up.
   "RESUME-ANALYZER",
+  // This site itself; listing it in its own Garage is self-reference.
+  "personal-portfolio-website",
+  // Empty repository (no commits) as of 2026-10-31.
+  "RIPPLE",
+  // A keystroke-replay utility whose README has to argue it is not for cheating; the optics are not worth it.
+  "Autotype-Script",
 ];
 
 export const GARAGE_OVERRIDES: Record<string, GarageOverride> = {
+  // --- October 2026 additions. Descriptions are checked against each README; attributions are kept.
+  "AI-Agent-Evaluation": {
+    title: "TraceGrade",
+    description:
+      "An evaluation workbench for tool-using LangChain agents: runs scenarios, records tool calls and traces, and scores runs with deterministic checks plus LLM-as-judge metrics — with an offline rule-based model so it works without API keys.",
+    category: "AI / ML",
+    priority: 4,
+  },
+  "RAG-evaluation": {
+    title: "RAG Evaluation Workbench",
+    description:
+      "Runs a question-answering pipeline over a dataset, stores every answer beside its retrieved context in SQLite, and compares runs with bootstrap confidence intervals; fully offline BM25 baseline with optional LLM judges.",
+    category: "AI / ML",
+    priority: 4,
+  },
+  "Research-Agent---LangGraph": {
+    title: "Research Agent (LangGraph)",
+    description:
+      "A LangGraph research assistant with analyst personas, a human-approval pause, parallel web-grounded interviews and a cited Markdown report. Reworked from the LangChain Academy research-assistant pattern with tests, budgets and claim verification added.",
+    category: "AI / ML",
+    priority: 2,
+  },
+  "The-Context-Illusion": {
+    title: "The Context Illusion",
+    description:
+      "A CPU-only study of how small decoder-only Transformers lose access to relevant information as context grows, comparing six positional encodings on controlled retrieval tasks with causal interventions.",
+    category: "Research",
+    priority: 4,
+  },
+  "Inside-the-Transformers": {
+    title: "Inside the Transformers",
+    description:
+      "A mechanistic-interpretability lab: trains small Transformers on algorithmic tasks and tests preregistered circuit hypotheses with ablation, activation patching and path interventions across seeds.",
+    category: "Research",
+    priority: 4,
+  },
+  "Beyond-Quadratic-Attention": {
+    title: "Beyond Quadratic Attention",
+    description:
+      "A CPU-first benchmark comparing eight attention implementations — naive, SDPA, tiled online-softmax, local-window, block-sparse, linear and more — on arithmetic, memory, numerical accuracy and wall-clock as sequence length grows.",
+    category: "Research",
+    priority: 3,
+  },
+  "Chess-Engine": {
+    title: "ChessLab",
+    description:
+      "A local chess analysis app: Stockfish analysis and play over WebSocket, Chess.com and Lichess game import, automated move-by-move review, plus an educational UCI engine written from scratch in Python.",
+    category: "Systems",
+    priority: 3,
+  },
+  F1_dashboard: {
+    title: "F1 Replay Dashboard",
+    description:
+      "An unofficial race-replay dashboard that loads a completed race from OpenF1, derives the circuit outline from car-location data, and streams replay state to a React interface over Socket.IO.",
+    category: "Web",
+    priority: 3,
+  },
+  "Gravity-Simulator": {
+    title: "Gravity Simulator",
+    description:
+      "An interactive 3D N-body simulator with symplectic leapfrog integration, direct-sum and Barnes-Hut solvers, J2000 solar-system initial conditions and a live energy-error readout. Extended from Gerrit Fritz's Barnes-Hut simulation, which is credited in the repository.",
+    category: "Systems",
+    priority: 1,
+  },
+  "Orbit-Simulator": {
+    title: "Orbit Simulator",
+    description: "A 2D Pygame gravity sandbox with fixed-step Verlet integration, merging collisions and headless tests.",
+    category: "Systems",
+  },
+  "lyrics-video-maker": {
+    title: "Lyrics Video Maker",
+    description: "A single-file, browser-based tool that syncs lyrics to a track and renders an animated lyric video locally.",
+    category: "Other",
+  },
   "Indian-Option-Pricer": {
     title: "Indian Option Pricer",
     description:

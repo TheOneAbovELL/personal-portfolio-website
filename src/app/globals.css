@@ -5,6 +5,7 @@
 @import "../styles/hero.css";
 @import "../styles/ask.css";
 @import "../styles/work.css";
+@import "../styles/loader.css";
 
 /* ------------------------------------------------------------------------------------------
    Design tokens — the Omjee engineering palette
@@ -466,33 +467,34 @@ html.js [data-reveal][data-revealed] {
   }
 }
 
-/* Entrance sequences (hero, page headers). --enter-index orders the phases. */
+/* Entrance sequences (hero, page headers). --enter-index orders the phases; --enter-base (80ms)
+   is when the first phase starts — the start sequence (styles/loader.css) moves it to its curtain. */
 @utility enter {
   animation: rise var(--dur-slow) var(--ease-out) both;
-  animation-delay: calc(var(--enter-index, 0) * 110ms + 80ms);
+  animation-delay: calc(var(--enter-index, 0) * 110ms + var(--enter-base, 80ms));
 }
 
 @utility enter-mask {
   animation: unmask 1100ms var(--ease-ramp) both;
-  animation-delay: calc(var(--enter-index, 0) * 110ms + 80ms);
+  animation-delay: calc(var(--enter-index, 0) * 110ms + var(--enter-base, 80ms));
 }
 
 @utility enter-fade {
   animation: fade var(--dur-slow) var(--ease-out) both;
-  animation-delay: calc(var(--enter-index, 0) * 110ms + 80ms);
+  animation-delay: calc(var(--enter-index, 0) * 110ms + var(--enter-base, 80ms));
 }
 
 /* System readout lines switch on one after another, like instruments powering up. */
 @utility enter-step {
   animation: fade 60ms steps(1, end) both;
-  animation-delay: calc(var(--enter-index, 0) * 140ms + 120ms);
+  animation-delay: calc(var(--enter-index, 0) * 140ms + var(--enter-base, 80ms) + 40ms);
 }
 
 /* SVG line draw-on. Paths must set pathLength="1". */
 @utility draw-on {
   stroke-dasharray: 1;
   animation: draw 1400ms var(--ease-in-out) both;
-  animation-delay: calc(var(--draw-index, 0) * 14ms + 150ms);
+  animation-delay: calc(var(--draw-index, 0) * 14ms + var(--draw-base, 150ms));
 }
 
 @utility pulse-dot {

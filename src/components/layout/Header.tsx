@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { Fragment, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { initialRaceState, race, type RaceState } from "@/components/race/store";
 import { Icon } from "@/components/ui/Icon";
 import { profile } from "@/content/profile";
@@ -13,6 +13,10 @@ const SECTORS = site.sections.map((section, index) => ({
   number: String(index + 1).padStart(2, "0"),
 }));
 const NAV = SECTORS.filter((section) => section.nav);
+
+/** Pages beside the sectors (site.routes), keyed by the sector each one follows. */
+const ROUTES_AFTER = new Map<string, (typeof site.routes)[number][]>();
+for (const page of site.routes) ROUTES_AFTER.set(page.after, [...(ROUTES_AFTER.get(page.after) ?? []), page]);
 
 type Route = "home" | "work" | "other";
 
@@ -102,6 +106,44 @@ function SectorBar({ route }: { route: Route }) {
   );
 }
 
+/**
+ * A page link beside the sector links. Same type, lamp and underline as a sector, but no
+ * sector number: a page is not a sector of the lap, so its slot carries a route mark instead.
+ */
+function RouteLink({ href, label, current }: { href: string; label: string; current: boolean }) {
+  return (
+    <Link
+      href={href}
+      aria-current={current ? "page" : undefined}
+      className={`label group relative flex items-baseline gap-1.5 whitespace-nowrap py-2 transition-colors duration-[var(--dur-fast)] hover:text-bone ${
+        current ? "text-bone" : "text-steel"
+      }`}
+    >
+      <span
+        aria-hidden="true"
+        className={`absolute -left-2.5 top-1/2 size-[5px] -translate-y-1/2 bg-signal transition-[opacity,translate] duration-[220ms] ease-[var(--ease-snap)] ${
+          current ? "opacity-100" : "-translate-x-1 opacity-0"
+        }`}
+      />
+      <span
+        aria-hidden="true"
+        className={`text-[0.5625rem] transition-colors duration-[var(--dur-fast)] ${
+          current ? "text-signal" : "text-faint group-hover:text-signal"
+        }`}
+      >
+        /
+      </span>
+      {label}
+      <span
+        aria-hidden="true"
+        className={`absolute -bottom-0.5 -left-2.5 right-0 h-px origin-left bg-signal transition-transform duration-[280ms] ease-[var(--ease-snap)] ${
+          current ? "scale-x-100" : "scale-x-0 group-hover:scale-x-[0.35]"
+        }`}
+      />
+    </Link>
+  );
+}
+
 export function Header() {
   const pathname = usePathname();
   const route: Route = pathname === "/" ? "home" : pathname.startsWith("/work") ? "work" : "other";
@@ -153,39 +195,46 @@ export function Header() {
               {NAV.map((item) => {
                 const current = isCurrent(item.id);
                 return (
-                  <li key={item.id}>
-                    <Link
-                      href={`/#${item.id}`}
-                      aria-current={current ? "location" : undefined}
-                      className={`label group relative flex items-baseline gap-1.5 whitespace-nowrap py-2 transition-colors duration-[var(--dur-fast)] hover:text-bone ${
-                        current ? "text-bone" : "text-steel"
-                      }`}
-                    >
-                      {/* Sector light: a square lamp that snaps on beside the current sector. */}
-                      <span
-                        aria-hidden="true"
-                        className={`absolute -left-2.5 top-1/2 size-[5px] -translate-y-1/2 bg-signal transition-[opacity,translate] duration-[220ms] ease-[var(--ease-snap)] ${
-                          current ? "opacity-100" : "-translate-x-1 opacity-0"
-                        }`}
-                      />
-                      <span
-                        aria-hidden="true"
-                        className={`text-[0.5625rem] transition-colors duration-[var(--dur-fast)] ${
-                          current ? "text-signal" : "text-faint group-hover:text-signal"
+                  <Fragment key={item.id}>
+                    <li>
+                      <Link
+                        href={`/#${item.id}`}
+                        aria-current={current ? "location" : undefined}
+                        className={`label group relative flex items-baseline gap-1.5 whitespace-nowrap py-2 transition-colors duration-[var(--dur-fast)] hover:text-bone ${
+                          current ? "text-bone" : "text-steel"
                         }`}
                       >
-                        {item.number}
-                      </span>
-                      {item.label}
-                      {/* The line snaps in from the lamp under the current item, and previews on hover. */}
-                      <span
-                        aria-hidden="true"
-                        className={`absolute -bottom-0.5 -left-2.5 right-0 h-px origin-left bg-signal transition-transform duration-[280ms] ease-[var(--ease-snap)] ${
-                          current ? "scale-x-100" : "scale-x-0 group-hover:scale-x-[0.35]"
-                        }`}
-                      />
-                    </Link>
-                  </li>
+                        {/* Sector light: a square lamp that snaps on beside the current sector. */}
+                        <span
+                          aria-hidden="true"
+                          className={`absolute -left-2.5 top-1/2 size-[5px] -translate-y-1/2 bg-signal transition-[opacity,translate] duration-[220ms] ease-[var(--ease-snap)] ${
+                            current ? "opacity-100" : "-translate-x-1 opacity-0"
+                          }`}
+                        />
+                        <span
+                          aria-hidden="true"
+                          className={`text-[0.5625rem] transition-colors duration-[var(--dur-fast)] ${
+                            current ? "text-signal" : "text-faint group-hover:text-signal"
+                          }`}
+                        >
+                          {item.number}
+                        </span>
+                        {item.label}
+                        {/* The line snaps in from the lamp under the current item, and previews on hover. */}
+                        <span
+                          aria-hidden="true"
+                          className={`absolute -bottom-0.5 -left-2.5 right-0 h-px origin-left bg-signal transition-transform duration-[280ms] ease-[var(--ease-snap)] ${
+                            current ? "scale-x-100" : "scale-x-0 group-hover:scale-x-[0.35]"
+                          }`}
+                        />
+                      </Link>
+                    </li>
+                    {ROUTES_AFTER.get(item.id)?.map((page) => (
+                      <li key={page.href}>
+                        <RouteLink href={page.href} label={page.label} current={pathname.startsWith(page.href)} />
+                      </li>
+                    ))}
+                  </Fragment>
                 );
               })}
             </ul>
@@ -232,19 +281,41 @@ export function Header() {
               {NAV.map((item, index) => {
                 const current = isCurrent(item.id);
                 return (
-                  <li key={item.id} className="border-b border-rule">
-                    <Link
-                      href={`/#${item.id}`}
-                      aria-current={current ? "location" : undefined}
-                      onClick={() => setOpen(false)}
-                      className="enter flex items-baseline gap-4 py-4"
-                      style={{ "--enter-index": index * 0.4 } as React.CSSProperties}
-                    >
-                      <span className="label w-6 text-signal">{item.number}</span>
-                      <span className="display text-[1.75rem] uppercase">{item.label}</span>
-                      {current && <span aria-hidden="true" className="ml-auto size-1.5 self-center bg-signal" />}
-                    </Link>
-                  </li>
+                  <Fragment key={item.id}>
+                    <li className="border-b border-rule">
+                      <Link
+                        href={`/#${item.id}`}
+                        aria-current={current ? "location" : undefined}
+                        onClick={() => setOpen(false)}
+                        className="enter flex items-baseline gap-4 py-4"
+                        style={{ "--enter-index": index * 0.4 } as React.CSSProperties}
+                      >
+                        <span className="label w-6 text-signal">{item.number}</span>
+                        <span className="display text-[1.75rem] uppercase">{item.label}</span>
+                        {current && <span aria-hidden="true" className="ml-auto size-1.5 self-center bg-signal" />}
+                      </Link>
+                    </li>
+                    {ROUTES_AFTER.get(item.id)?.map((page) => {
+                      const here = pathname.startsWith(page.href);
+                      return (
+                        <li key={page.href} className="border-b border-rule">
+                          <Link
+                            href={page.href}
+                            aria-current={here ? "page" : undefined}
+                            onClick={() => setOpen(false)}
+                            className="enter flex items-baseline gap-4 py-4"
+                            style={{ "--enter-index": (index + 0.5) * 0.4 } as React.CSSProperties}
+                          >
+                            <span aria-hidden="true" className="label w-6 text-metal-3">
+                              /
+                            </span>
+                            <span className="display text-[1.75rem] uppercase">{page.label}</span>
+                            {here && <span aria-hidden="true" className="ml-auto size-1.5 self-center bg-signal" />}
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </Fragment>
                 );
               })}
             </ul>

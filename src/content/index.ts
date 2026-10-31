@@ -1,5 +1,13 @@
 import { projects } from "./projects";
-import type { Project, ProjectCategory, ProjectStatus } from "./types";
+import type {
+  FeaturedProject,
+  ProgrammeTheme,
+  Project,
+  ProjectCategory,
+  ProjectStatus,
+  ShowcaseProject,
+  ShowcaseTheme,
+} from "./types";
 
 export { achievements, codeforcesSnapshot } from "./achievements";
 export { education, experience } from "./experience";
@@ -15,7 +23,28 @@ const byOrder = (a: Project, b: Project) => a.order - b.order;
 
 export const visibleProjects = (): Project[] => projects.filter((p) => p.visible).sort(byOrder);
 
-export const featuredProjects = (): Project[] => visibleProjects().filter((p) => p.featured);
+const HOMEPAGE_THEMES: readonly (ProgrammeTheme | undefined)[] = ["evidence", "signal", "market", undefined];
+
+/** The homepage programmes. A featured project carries a homepage identity (or none). */
+export const featuredProjects = (): FeaturedProject[] =>
+  visibleProjects().filter((p): p is FeaturedProject => p.featured && HOMEPAGE_THEMES.includes(p.theme as ProgrammeTheme));
+
+const SHOWCASE_THEMES: readonly (ShowcaseTheme | undefined)[] = [
+  "trace",
+  "bench",
+  "context",
+  "circuit",
+  "attention",
+  "chess",
+  "telemetry",
+  undefined,
+];
+
+/** The /projects programmes, which continue the homepage sequence. */
+export const showcaseProjects = (): ShowcaseProject[] =>
+  visibleProjects().filter(
+    (p): p is ShowcaseProject => !!p.showcase && !p.featured && SHOWCASE_THEMES.includes(p.theme as ShowcaseTheme),
+  );
 
 export const archiveProjects = (): Project[] => visibleProjects().filter((p) => !p.featured);
 

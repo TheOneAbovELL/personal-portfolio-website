@@ -33,6 +33,11 @@ export const site = {
     { id: "contact", label: "Contact", nav: true },
   ],
 
+  /**
+   * Pages that are not homepage sectors but sit in the header beside them. They take no
+   * sector number and no segment of the sector bar; `after` names the sector they follow.
+   */
+  routes: [{ href: "/projects", label: "Projects", after: "work" }],
 
 } as const;
 

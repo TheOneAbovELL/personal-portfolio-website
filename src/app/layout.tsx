@@ -3,6 +3,8 @@ import { Archivo, IBM_Plex_Mono } from "next/font/google";
 import { AskButton } from "@/components/layout/AskButton";
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
+import { INTRO_BOOT } from "@/components/loader/boot";
+import { Intro } from "@/components/loader/Intro";
 import { RevealObserver } from "@/components/motion/RevealObserver";
 import { RaceEnvironment } from "@/components/race/RaceEnvironment";
 import { SmoothScroll } from "@/components/motion/SmoothScroll";
@@ -55,7 +57,8 @@ export const viewport: Viewport = {
 
 // Marks the document as script-capable before first paint, so reveal styles
 // (which hide content until it scrolls in) never apply when JavaScript is unavailable.
-const JS_FLAG = "document.documentElement.classList.add('js')";
+// Also arms the start sequence's skip, so it works before hydration (components/loader/boot.ts).
+const JS_FLAG = "document.documentElement.classList.add('js');" + INTRO_BOOT;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -69,6 +72,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script dangerouslySetInnerHTML={{ __html: JS_FLAG }} />
       </head>
       <body className="flex min-h-dvh flex-col">
+        <Intro />
         <RaceEnvironment />
         <a
           href="#main"

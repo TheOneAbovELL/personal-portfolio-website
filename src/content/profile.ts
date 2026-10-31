@@ -16,7 +16,7 @@ export const profile = {
     note: "Open to internships in AI/ML engineering, software engineering, data science and quantitative research.",
   },
 
-  /** Replace `public/resume.pdf` to update the résumé; nothing else needs to change. */
+  /** Served by app/resume.pdf/route.ts from the Drive folder in lib/resume.ts; public/resume-fallback.pdf is the offline copy. */
   resume: {
     href: "/resume.pdf",
     fileName: "Omjee_R_Giri_Resume.pdf",
@@ -27,6 +27,7 @@ export const profile = {
     { id: "linkedin", label: "LinkedIn", handle: "omjee-r-giri", href: "https://www.linkedin.com/in/omjee-r-giri/" },
     { id: "codeforces", label: "Codeforces", handle: "The0NEAboveALL", href: "https://codeforces.com/profile/The0NEAboveALL" },
     { id: "leetcode", label: "LeetCode", handle: "TheOneAbovELL", href: "https://leetcode.com/u/TheOneAbovELL/" },
+    { id: "instagram", label: "Instagram", handle: "omjeergiri", href: "https://www.instagram.com/omjeergiri/" },
   ],
 
   about: {
