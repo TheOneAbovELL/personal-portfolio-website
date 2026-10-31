@@ -20,11 +20,14 @@ export function SmoothScroll() {
   useEffect(() => {
     if (prefersReducedMotion() || !window.matchMedia("(pointer: fine)").matches) return;
 
+    // A long, soft glide rather than a quick catch-up: each wheel notch closes ~9% of the gap
+    // per frame (at 60 Hz; Lenis scales it by frame time), so a burst of notches blends into one
+    // continuous move and the page settles without a visible stop.
     const lenis = new Lenis({
       autoRaf: true,
       anchors: true,
-      lerp: 0.11,
-      wheelMultiplier: 0.95,
+      lerp: 0.09,
+      wheelMultiplier: 1,
     });
     lenisRef.current = lenis;
     return () => {

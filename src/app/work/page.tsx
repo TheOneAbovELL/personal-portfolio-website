@@ -42,7 +42,7 @@ export default function WorkPage() {
         </span>
         All work
       </p>
-      <h1 className="display enter-mask mt-5 text-[clamp(2.75rem,8vw,7rem)] uppercase">Work</h1>
+      <h1 className="display enter-mask mt-5 text-[clamp(2.75rem,8vw,7rem)]">Work</h1>
       <p className="prose-body enter mt-6 max-w-[38rem] text-steel" style={{ "--enter-index": 1 } as React.CSSProperties}>
         Everything here is described the way it actually is — active, prototype or research — with links to the code
         wherever it is public.

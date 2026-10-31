@@ -156,6 +156,12 @@ export interface LoftOptions {
    * side: painted upper surfaces over a bare lower tub.
    */
   lower?: { material: MaterialId; drop: number };
+  /**
+   * Panels of another finish on the upper surface, by length: every row of facets whose
+   * midpoint lies between `from` and `to` (x, metres) takes `material` instead. The end caps
+   * follow the panel they close.
+   */
+  accents?: { from: number; to: number; material: MaterialId }[];
   /** Open ends: intakes and inset faces. Ends not listed are closed with a cap. */
   ends?: { nose?: LoftEnd; tail?: LoftEnd };
 }
@@ -201,7 +207,15 @@ export function loft(stations: Station[], options: LoftOptions): Part {
     return k >= facets / 2 + lower.drop && k < facets - lower.drop;
   };
 
-  const surface = (pick: (c: number) => boolean, material: MaterialId): Solid | null => {
+  const rowX = (j: number) => (grid[j][0][0] + grid[j + 1][0][0]) / 2;
+  const finishAt = (x: number): MaterialId =>
+    options.accents?.find((accent) => x >= accent.from && x < accent.to)?.material ?? options.material;
+
+  const surface = (
+    pick: (c: number) => boolean,
+    material: MaterialId,
+    pickRow: (j: number) => boolean = () => true,
+  ): Solid | null => {
     const mesh = new MeshBuilder();
     const seen = new Map<number, number>();
     const vertex = (j: number, c: number) => {
@@ -215,20 +229,23 @@ export function loft(stations: Station[], options: LoftOptions): Part {
     };
     for (let c = 0; c < facets; c++) {
       if (!pick(c)) continue;
-      for (let j = 0; j < samples - 1; j++) mesh.quad(vertex(j, c), vertex(j + 1, c), vertex(j + 1, c + 1), vertex(j, c + 1));
+      for (let j = 0; j < samples - 1; j++) if (pickRow(j)) mesh.quad(vertex(j, c), vertex(j + 1, c), vertex(j + 1, c + 1), vertex(j, c + 1));
     }
     return mesh.count > 0 ? mesh.build(material) : null;
   };
 
   const solids: Solid[] = [];
-  const upper = surface((c) => !isLower(c), options.material);
-  if (upper) solids.push(upper);
+  const finishes = new Set<MaterialId>([options.material, ...(options.accents ?? []).map((a) => a.material)]);
+  for (const finish of finishes) {
+    const upper = surface((c) => !isLower(c), finish, (j) => finishAt(rowX(j)) === finish);
+    if (upper) solids.push(upper);
+  }
   if (lower) {
     const tub = surface(isLower, lower.material);
     if (tub) solids.push(tub);
   }
-  solids.push(...closeEnd(grid[0], 1, options.material, ends.nose));
-  solids.push(...closeEnd(grid[samples - 1], -1, options.material, ends.tail));
+  solids.push(...closeEnd(grid[0], 1, finishAt(grid[0][0][0]), ends.nose));
+  solids.push(...closeEnd(grid[samples - 1], -1, finishAt(grid[samples - 1][0][0]), ends.tail));
 
   // Side elevation: silhouette as the fill, near-side contours as strokes.
   const top = grid.map((row) => row[topIndex]);

@@ -36,11 +36,11 @@ function projectsOf(domain: CapabilityDomainView): CapabilityUse[] {
 
 function UseRow({ use, index }: { use: CapabilityUse; index: number }) {
   const title = use.href ? (
-    <Link href={use.href} className="group/u text-bone transition-colors duration-[var(--dur-fast)] hover:text-signal">
+    <Link href={use.href} className="group/u text-bone transition-colors duration-[var(--dur-fast)] hover:text-champagne-bright">
       {use.title}
       <span
         aria-hidden="true"
-        className="ml-2 inline-block text-faint transition-transform duration-[var(--dur-fast)] ease-[var(--ease-snap)] group-hover/u:translate-x-0.5 group-hover/u:text-signal"
+        className="ml-2 inline-block text-faint transition-transform duration-[var(--dur-fast)] ease-[var(--ease-snap)] group-hover/u:translate-x-0.5 group-hover/u:text-champagne-bright"
       >
         →
       </span>
@@ -49,7 +49,7 @@ function UseRow({ use, index }: { use: CapabilityUse; index: number }) {
     <span className="text-bone">{use.title}</span>
   );
   return (
-    <li className="swap-in grid gap-x-6 gap-y-1 py-3.5 sm:grid-cols-[minmax(0,13rem)_minmax(0,1fr)]" style={stagger(index)}>
+    <li className="swap-in -mx-3 grid gap-x-6 gap-y-1 rounded-md px-3 py-3.5 transition-colors duration-300 hover:bg-bone/[0.035] sm:grid-cols-[minmax(0,13rem)_minmax(0,1fr)]" style={stagger(index)}>
       <p className="text-[0.9375rem] font-medium leading-snug">
         {title}
         {use.place && <span className="label mt-1 block text-[0.625rem] text-faint">{use.place}</span>}
@@ -109,20 +109,16 @@ export function CapabilityConsole({ domains }: { domains: CapabilityDomainView[]
     <div>
       {/* View switch — two words, not a control panel. */}
       <div className="flex flex-wrap items-baseline justify-between gap-x-8 gap-y-3">
-        <div role="group" aria-label="Capabilities view" className="flex gap-6">
+        <div role="group" aria-label="Capabilities view" className="inline-flex gap-1 rounded-pill border border-bone/[0.07] bg-bone/[0.04] p-1">
           {(["explore", "map"] as const).map((v) => (
             <button
               key={v}
               type="button"
               aria-pressed={view === v}
               onClick={() => setView(v)}
-              className={`label relative min-h-11 transition-colors duration-[var(--dur-fast)] ${view === v ? "text-bone" : "text-faint hover:text-steel"}`}
+              className={`min-h-10 rounded-pill px-4 text-[0.875rem] font-medium tracking-[-0.01em] transition-[background-color,color] duration-300 ease-[var(--ease-soft)] ${view === v ? "bg-bone/[0.12] text-bone shadow-[inset_0_1px_0_rgb(239_235_228/0.08)]" : "text-steel hover:text-bone"}`}
             >
               {v === "explore" ? "Explore by domain" : "Map of the work"}
-              <span
-                aria-hidden="true"
-                className={`absolute inset-x-0 bottom-2 h-px origin-left bg-data transition-transform duration-[420ms] ease-[var(--ease-out)] ${view === v ? "scale-x-100" : "scale-x-0"}`}
-              />
             </button>
           ))}
         </div>
@@ -162,18 +158,14 @@ export function CapabilityConsole({ domains }: { domains: CapabilityDomainView[]
                     choose(next);
                     document.getElementById(`${baseId}-tab-${domains[next].id}`)?.focus();
                   }}
-                  className="group relative shrink-0 rounded-full px-4 py-2.5 text-left transition-colors duration-[var(--dur-base)] lg:rounded-none lg:px-0 lg:py-3 lg:pl-5"
+                  className="group relative shrink-0 rounded-pill px-4 py-2.5 text-left transition-colors duration-[var(--dur-base)] lg:rounded-md lg:px-4 lg:py-3"
                 >
                   <span
                     aria-hidden="true"
-                    className={`absolute inset-0 rounded-full bg-bone/[0.07] transition-opacity duration-[var(--dur-base)] lg:hidden ${on ? "opacity-100" : "opacity-0"}`}
-                  />
-                  <span
-                    aria-hidden="true"
-                    className={`absolute inset-y-3 left-0 hidden w-px origin-top bg-data transition-transform duration-[420ms] ease-[var(--ease-out)] lg:block ${on ? "scale-y-100" : "scale-y-0"}`}
+                    className={`absolute inset-0 rounded-[inherit] bg-bone/[0.07] transition-opacity duration-[var(--dur-base)] ease-[var(--ease-soft)] ${on ? "opacity-100" : "opacity-0 group-hover:opacity-40"}`}
                   />
                   <span className="relative flex items-baseline gap-3">
-                    <span className={`label hidden transition-colors duration-[var(--dur-base)] lg:inline ${on ? "text-data" : "text-faint"}`}>{pad(index + 1)}</span>
+                    <span className={`label hidden transition-colors duration-[var(--dur-base)] lg:inline ${on ? "text-rosso-bright" : "text-faint"}`}>{pad(index + 1)}</span>
                     <span
                       className={`whitespace-nowrap text-[0.9375rem] font-medium transition-colors duration-[var(--dur-base)] lg:text-[1.0625rem] ${
                         on ? "text-bone" : "text-steel group-hover:text-bone"
@@ -206,9 +198,9 @@ export function CapabilityConsole({ domains }: { domains: CapabilityDomainView[]
                       aria-pressed={on}
                       aria-controls={`${baseId}-detail`}
                       onClick={() => pick(on ? null : t.name)}
-                      className={`group/t inline-flex min-h-9 items-baseline gap-1.5 rounded-full px-3 py-1.5 text-[0.9375rem] transition-[background-color,color] duration-[var(--dur-base)] ease-[var(--ease-out)] ${
+                      className={`group/t inline-flex min-h-9 items-baseline gap-1.5 rounded-pill px-3 py-1.5 text-[0.9375rem] transition-[background-color,color] duration-[var(--dur-base)] ease-[var(--ease-out)] ${
                         on
-                          ? "bg-data/15 text-bone"
+                          ? "bg-rosso/25 text-bone shadow-[inset_0_0_0_1px_rgb(255_74_85/0.35)]"
                           : count
                             ? "text-bone/85 hover:bg-bone/[0.06] hover:text-bone"
                             : "text-faint hover:bg-bone/[0.04] hover:text-steel"
@@ -216,7 +208,7 @@ export function CapabilityConsole({ domains }: { domains: CapabilityDomainView[]
                     >
                       {t.name}
                       {count > 0 && (
-                        <span className={`readout text-[0.6875rem] transition-colors duration-[var(--dur-base)] ${on ? "text-data" : "text-faint group-hover/t:text-steel"}`}>
+                        <span className={`readout text-[0.6875rem] transition-colors duration-[var(--dur-base)] ${on ? "text-rosso-bright" : "text-faint group-hover/t:text-steel"}`}>
                           {count}
                         </span>
                       )}
@@ -233,13 +225,13 @@ export function CapabilityConsole({ domains }: { domains: CapabilityDomainView[]
               <div key={`t-${active.name}`}>
                 <p className="label swap-in flex items-baseline justify-between gap-4 text-faint">
                   <span>
-                    <span className="text-data">{active.name}</span>
+                    <span className="text-champagne">{active.name}</span>
                     <span aria-hidden="true" className="mx-2 text-metal-3">
                       /
                     </span>
                     {active.uses.length ? `Used in ${active.uses.length} ${active.uses.length === 1 ? "place" : "places"}` : "Not yet in a public project"}
                   </span>
-                  <button type="button" onClick={() => pick(null)} className="min-h-9 text-faint transition-colors duration-[var(--dur-fast)] hover:text-bone">
+                  <button type="button" onClick={() => pick(null)} className="-mr-3 min-h-9 rounded-pill px-3 text-faint transition-colors duration-[var(--dur-fast)] hover:bg-bone/[0.06] hover:text-bone">
                     Clear
                   </button>
                 </p>
@@ -255,7 +247,7 @@ export function CapabilityConsole({ domains }: { domains: CapabilityDomainView[]
                         type="button"
                         aria-expanded={expanded}
                         onClick={() => setExpanded((value) => !value)}
-                        className="label mt-2 min-h-11 text-steel transition-colors duration-[var(--dur-fast)] hover:text-bone"
+                        className="mt-3 min-h-10 rounded-pill border border-bone/[0.1] px-4 text-[0.875rem] font-medium text-steel transition-colors duration-300 hover:border-bone/[0.22] hover:text-bone"
                       >
                         {expanded ? "Show fewer" : `Show ${active.uses.length - SHOWN} more`}
                       </button>
@@ -270,7 +262,7 @@ export function CapabilityConsole({ domains }: { domains: CapabilityDomainView[]
             ) : (
               <div key={`d-${domain.id}`}>
                 <p className="label swap-in text-faint">
-                  <span className="text-data">Evidence</span>
+                  <span className="text-champagne">Evidence</span>
                   <span aria-hidden="true" className="mx-2 text-metal-3">
                     /
                   </span>
@@ -288,7 +280,7 @@ export function CapabilityConsole({ domains }: { domains: CapabilityDomainView[]
                       {domainProjects.slice(0, MORE).map((project, index) => (
                         <span key={project.key}>
                           {project.href ? (
-                            <Link href={project.href} className="text-bone/85 transition-colors duration-[var(--dur-fast)] hover:text-signal">
+                            <Link href={project.href} className="text-bone/85 transition-colors duration-[var(--dur-fast)] hover:text-champagne-bright">
                               {project.title}
                             </Link>
                           ) : (
@@ -329,7 +321,7 @@ export function CapabilityConsole({ domains }: { domains: CapabilityDomainView[]
                   <tr key={row.use.key} className="swap-in group border-t border-rule/70" style={stagger(rowIndex)}>
                     <th scope="row" className="py-2.5 pr-4 font-normal">
                       {row.use.href ? (
-                        <Link href={row.use.href} className="text-[0.9375rem] text-bone/90 transition-colors duration-[var(--dur-fast)] hover:text-signal">
+                        <Link href={row.use.href} className="text-[0.9375rem] text-bone/90 transition-colors duration-[var(--dur-fast)] hover:text-champagne-bright">
                           {row.use.title}
                         </Link>
                       ) : (
@@ -352,11 +344,11 @@ export function CapabilityConsole({ domains }: { domains: CapabilityDomainView[]
                                 pick(names[0]);
                                 setView("explore");
                               }}
-                              className="group/c inline-flex size-10 items-center justify-center rounded-full transition-colors duration-[var(--dur-fast)] hover:bg-bone/[0.06]"
+                              className="group/c inline-flex size-10 items-center justify-center rounded-pill transition-colors duration-[var(--dur-fast)] hover:bg-bone/[0.06]"
                             >
                               <span
                                 aria-hidden="true"
-                                className="rounded-full bg-data/80 transition-transform duration-[var(--dur-base)] ease-[var(--ease-out)] group-hover/c:scale-125"
+                                className="rounded-pill bg-champagne/80 transition-transform duration-[var(--dur-base)] ease-[var(--ease-out)] group-hover/c:scale-125"
                                 style={{ width: size, height: size }}
                               />
                             </button>
@@ -373,13 +365,13 @@ export function CapabilityConsole({ domains }: { domains: CapabilityDomainView[]
           </div>
           <p className="label mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-faint">
             <span className="flex items-center gap-2">
-              <span aria-hidden="true" className="size-1.5 rounded-full bg-data/80" /> 1 tool
+              <span aria-hidden="true" className="size-1.5 rounded-pill bg-champagne/80" /> 1 tool
             </span>
             <span className="flex items-center gap-2">
-              <span aria-hidden="true" className="size-2.5 rounded-full bg-data/80" /> 2–3
+              <span aria-hidden="true" className="size-2.5 rounded-pill bg-champagne/80" /> 2–3
             </span>
             <span className="flex items-center gap-2">
-              <span aria-hidden="true" className="size-3.5 rounded-full bg-data/80" /> 4 or more
+              <span aria-hidden="true" className="size-3.5 rounded-pill bg-champagne/80" /> 4 or more
             </span>
             <span>Select a dot to see which, and how</span>
           </p>

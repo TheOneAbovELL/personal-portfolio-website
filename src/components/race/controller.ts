@@ -107,7 +107,7 @@ export function createRaceController(env: HTMLElement, canvas: HTMLCanvasElement
   };
 
   const readFont = () => {
-    const family = getComputedStyle(document.body).getPropertyValue("--font-plex-mono").trim();
+    const family = getComputedStyle(document.body).getPropertyValue("--font-geist-mono").trim();
     mono = family ? `${family}, ui-monospace, monospace` : "ui-monospace, monospace";
   };
 

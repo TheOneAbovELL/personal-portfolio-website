@@ -8,49 +8,65 @@
 @import "../styles/loader.css";
 
 /* ------------------------------------------------------------------------------------------
-   Design tokens — the Omjee engineering palette
+   Design tokens — Ferrari-led
 
-   Synthesised from the visual principles of motorsport rather than any one team:
-   silver-and-teal precision, navy-and-yellow energy, red intensity. Colour is semantic:
+   A warm graphite room, ivory type, one deep Rosso red as the signature and a thread of
+   champagne for fine detail. Colour is rationed: almost everything is ivory on warm grey;
+   rosso marks what is active or what matters most; champagne picks out small detail.
 
-     carbon / graphite / gunmetal / metal   structure — the physical environment
-     navy                                   the deep technical environment (data rooms, night)
-     bone                                   identity and content
+     carbon / graphite / gunmetal / metal   structure — warm greys, lifted in small steps
+     bone (ivory)                           identity and content
      steel / faint                          supporting information
-     signal  (racing yellow)                the active state: selection, navigation, telemetry
-     data    (technical teal)               intelligence: systems, AI, data, research
-     perf    (performance red)              intensity: performance, major transitions
-     papaya                                 the experimental — used rarely, on purpose
+     rosso                                  THE accent: active states, key highlights. Sparingly.
+     champagne                              fine detail: indices, hairline accents, small marks
 
-   Colour reaches the page mostly as light (see styles/race.css), not as filled blocks.
+   Legacy names stay alive and are re-pointed so nothing breaks:
+     signal → champagne, data → cool silver, perf → rosso, navy → deep warm graphite.
+   Programme palettes (components/work/theme.ts) are separate and unchanged.
    ------------------------------------------------------------------------------------------ */
 @theme {
-  --color-carbon: #07090b;
-  --color-graphite: #0e1317;
-  --color-graphite-2: #11161a;
-  --color-graphite-3: #171e23;
-  --color-gunmetal: #1c2429;
-  --color-metal: #2a3338;
-  --color-metal-2: #3a4348;
-  --color-metal-3: #4d575d;
-  --color-navy: #0a1826;
-  --color-navy-2: #0f2236;
-  --color-rule: #1a2126;
-  --color-rule-strong: #2c363c;
-  --color-bone: #e9e7e1;
-  --color-steel: #8f989e;
-  --color-faint: #7b858b;
-  --color-signal: #f2c230;
-  --color-signal-bright: #ffd75a;
-  --color-data: #3ccfc0;
-  --color-perf: #d7262f;
-  /* Red at text sizes needs more luminance to hold 4.5:1 on carbon. */
-  --color-perf-bright: #f0525a;
-  --color-papaya: #ff7a1a;
-  --color-warn: #f0525a;
+  --color-carbon: #0b0a0a;
+  --color-graphite: #121112;
+  --color-graphite-2: #161415;
+  --color-graphite-3: #1c1a1a;
+  --color-gunmetal: #242120;
+  --color-metal: #34302e;
+  --color-metal-2: #46413e;
+  --color-metal-3: #5c5651;
+  --color-navy: #141212;
+  --color-navy-2: #1a1716;
+  --color-rule: #221f1e;
+  --color-rule-strong: #34302d;
+  --color-bone: #efebe4;
+  --color-steel: #a39c94;
+  --color-faint: #857e77;
 
-  --font-sans: var(--font-archivo), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-mono: var(--font-plex-mono), ui-monospace, "SFMono-Regular", "Cascadia Mono", Menlo, monospace;
+  --color-rosso: #c8102e;
+  /* Rosso at text sizes needs more luminance to hold 4.5:1 on carbon. */
+  --color-rosso-bright: #ff4a55;
+  --color-champagne: #c9a96e;
+  --color-champagne-bright: #e2c792;
+  --color-silver: #cfd3d6;
+
+  --color-signal: #c9a96e;
+  --color-signal-bright: #e2c792;
+  --color-data: #cfd3d6;
+  --color-perf: #c8102e;
+  --color-perf-bright: #ff4a55;
+  --color-papaya: #ff7a1a;
+  --color-warn: #ff4a55;
+
+  --font-sans: var(--font-geist), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SFMono-Regular", "Cascadia Mono", Menlo, monospace;
+
+  /* Radius — continuous and consistent. rounded-{xs,sm,md,lg,xl,pill} map to these. */
+  --radius-xs: 6px; /* chips, tags */
+  --radius-sm: 10px; /* small buttons, inputs */
+  --radius-md: 16px; /* rows, inner cards */
+  --radius-lg: 24px; /* panels, figures */
+  --radius-xl: 32px; /* large surfaces */
+  --radius-2xl: 40px;
+  --radius-pill: 999px; /* primary CTAs, nav pill, toggles */
 
   --breakpoint-xs: 26rem;
 
@@ -70,12 +86,12 @@
 
   --gutter: clamp(1.25rem, 4vw, 4rem);
 
-  /* Type scale. Calm on purpose: section titles lead without shouting, body copy sits at a
-     reading size, and the big moments (the name, the closing line) are the only large type. */
-  --type-title: clamp(1.625rem, 0.95rem + 2.1vw, 2.625rem); /* section titles */
-  --type-subtitle: clamp(1.25rem, 1rem + 0.9vw, 1.75rem); /* sub-section titles */
-  --type-lead: clamp(1.0625rem, 0.95rem + 0.35vw, 1.1875rem); /* lead paragraphs */
-  --type-body: 1rem;
+  /* Type scale, tuned for Geist. Apple-like hierarchy: a few large, confident statements and
+     quiet small text, with little in between. Display is Geist 600 at tight negative tracking. */
+  --type-title: clamp(2rem, 1.05rem + 3vw, 3.75rem); /* section titles */
+  --type-subtitle: clamp(1.375rem, 1.05rem + 1vw, 2rem); /* sub-section titles */
+  --type-lead: clamp(1.125rem, 1rem + 0.45vw, 1.3125rem); /* lead paragraphs */
+  --type-body: clamp(1rem, 0.96rem + 0.18vw, 1.0625rem); /* 16 -> 17px */
   --type-small: 0.875rem;
   --header-h: 4rem;
 
@@ -101,6 +117,7 @@ body {
   font-family: var(--font-sans);
   font-size: var(--type-body);
   line-height: 1.6;
+  letter-spacing: -0.006em;
   text-rendering: optimizeLegibility;
   overflow-x: clip;
 }
@@ -112,58 +129,58 @@ body::after {
   inset: 0;
   z-index: 90;
   pointer-events: none;
-  opacity: 0.07;
+  opacity: 0.05;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.9 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
 ::selection {
-  background: var(--color-signal);
-  color: var(--color-carbon);
+  background: var(--color-rosso);
+  color: var(--color-bone);
 }
 
+/* The ring follows each control's own radius (outlines track border-radius). */
 :focus-visible {
-  outline: 2px solid var(--color-signal);
+  outline: 2px solid var(--color-rosso-bright);
   outline-offset: 3px;
-  border-radius: 1px;
 }
 
 /* ------------------------------------------------------------------------------------------
    Typography roles
    ------------------------------------------------------------------------------------------ */
 
-/* Display — expanded width, tight leading. The name and section titles. */
+/* Display — Geist 600, tight negative tracking, sentence case. The name and big statements. */
 @utility display {
   font-family: var(--font-sans);
-  font-stretch: 125%;
-  font-variation-settings: "wdth" 125;
-  font-weight: 640;
-  letter-spacing: -0.02em;
-  line-height: 0.95;
+  font-weight: 600;
+  letter-spacing: -0.042em;
+  line-height: 0.98;
   text-wrap: balance;
 }
 
-/* Instrumentation — small uppercase mono. Indices, readouts, captions, metadata. */
+/* Instrumentation — small uppercase mono, widely tracked. Indices, readouts, captions,
+   metadata. The only place uppercase is used. */
 @utility label {
   font-family: var(--font-mono);
   font-size: 0.6875rem;
   font-weight: 500;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.14em;
   line-height: 1.4;
   text-transform: uppercase;
 }
 
 @utility prose-body {
   font-size: var(--type-lead);
-  line-height: 1.7;
+  line-height: 1.6;
+  letter-spacing: -0.011em;
   text-wrap: pretty;
 }
 
-/* Section titles: the display face at the calm end of the scale. */
+/* Section titles: the display face, large and quiet. */
 @utility title-section {
   font-size: var(--type-title);
   font-weight: 600;
   line-height: 1.04;
-  letter-spacing: -0.018em;
+  letter-spacing: -0.038em;
 }
 
 @utility shell {
@@ -184,23 +201,42 @@ body::after {
    Materials
    ------------------------------------------------------------------------------------------ */
 
-/* Machined panel: a top-lit gunmetal surface with a metal edge. Opaque, so content on it
-   stays readable whatever the environment behind is doing. */
+/* Soft panel: a lifted warm-graphite surface, a low-alpha hairline and a continuous radius.
+   Opaque, so content on it stays readable whatever the environment behind is doing. */
 @utility panel {
+  --panel-radius: var(--radius-lg);
   position: relative;
-  border: 1px solid var(--color-rule-strong);
+  border: 1px solid rgb(239 235 228 / 0.08);
+  border-radius: var(--panel-radius);
   background:
-    linear-gradient(180deg, rgb(233 231 225 / 0.04), transparent 26%),
+    linear-gradient(180deg, rgb(239 235 228 / 0.035), transparent 30%),
     linear-gradient(180deg, var(--color-graphite-3), var(--color-graphite));
   box-shadow:
-    inset 0 1px 0 rgb(233 231 225 / 0.07),
-    0 28px 70px -34px rgb(0 0 0 / 0.85);
+    inset 0 1px 0 rgb(239 235 228 / 0.05),
+    0 30px 80px -40px rgb(0 0 0 / 0.85);
+
+  /* Edge-to-edge strips inside (captions, headers) follow the panel's corners. */
+  & > :first-child {
+    border-start-start-radius: calc(var(--panel-radius) - 1px);
+    border-start-end-radius: calc(var(--panel-radius) - 1px);
+  }
+  & > :last-child {
+    border-end-start-radius: calc(var(--panel-radius) - 1px);
+    border-end-end-radius: calc(var(--panel-radius) - 1px);
+  }
+}
+
+/* Quiet surface for rows, cards and inner tiles: lighter than a panel, never a hard outline. */
+@utility surface {
+  border: 1px solid rgb(239 235 228 / 0.06);
+  border-radius: var(--radius-md);
+  background: rgb(239 235 228 / 0.028);
 }
 
 /* Carbon weave — used on thin strips only (captions, rails), never as a page texture. */
 @utility weave {
   background-image:
-    repeating-linear-gradient(45deg, rgb(233 231 225 / 0.03) 0 2px, transparent 2px 4px),
+    repeating-linear-gradient(45deg, rgb(239 235 228 / 0.03) 0 2px, transparent 2px 4px),
     repeating-linear-gradient(-45deg, rgb(0 0 0 / 0.28) 0 2px, transparent 2px 4px);
   background-color: var(--color-graphite-2);
 }
@@ -279,7 +315,7 @@ body::after {
    The racing line passes behind it (the sheet is nearly opaque in the middle) and re-emerges
    below. Faint ruled lines and a margin rule give it the feel of a technical document. */
 .section[data-surface="paper"] {
-  --doc: 16 20 23;
+  --doc: 20 18 18;
   background: linear-gradient(
     180deg,
     rgb(var(--doc) / 0) 0,
@@ -298,7 +334,7 @@ body::after {
   background-image: repeating-linear-gradient(
     180deg,
     transparent 0 calc(2rem - 1px),
-    rgb(233 231 225 / 0.018) calc(2rem - 1px) 2rem
+    rgb(239 235 228 / 0.016) calc(2rem - 1px) 2rem
   );
   mask-image: linear-gradient(180deg, transparent, #000 20%, #000 80%, transparent);
 }
@@ -313,15 +349,15 @@ body::after {
   position: absolute;
   inset: 0 0 auto 0;
   height: 1px;
-  background: linear-gradient(90deg, var(--color-signal), var(--color-signal-bright) 30%, transparent 100%);
+  background: linear-gradient(90deg, var(--color-champagne), rgb(201 169 110 / 0.35) 30%, transparent 100%);
 }
 
 .sector-line[data-tone="cyan"] > i {
-  background: linear-gradient(90deg, var(--color-data), transparent 100%);
+  background: linear-gradient(90deg, rgb(207 211 214 / 0.7), transparent 100%);
 }
 
 .sector-line[data-tone="red"] > i {
-  background: linear-gradient(90deg, var(--color-perf), var(--color-perf-bright) 30%, transparent 100%);
+  background: linear-gradient(90deg, var(--color-rosso), rgb(200 16 46 / 0.4) 30%, transparent 100%);
 }
 
 /* ------------------------------------------------------------------------------------------
@@ -343,10 +379,10 @@ html.js [data-reveal] {
 html.js [data-reveal=""],
 html.js [data-reveal="rise"] {
   opacity: 0;
-  transform: translate3d(0, 16px, 0);
-  filter: blur(4px);
+  transform: translate3d(0, 22px, 0);
+  filter: blur(6px);
   transition-property: opacity, transform, filter;
-  transition-duration: calc(1000ms * var(--tempo, 1)), calc(1250ms * var(--tempo, 1)), calc(800ms * var(--tempo, 1));
+  transition-duration: calc(1100ms * var(--tempo, 1)), calc(1500ms * var(--tempo, 1)), calc(950ms * var(--tempo, 1));
   transition-timing-function: var(--ease-soft);
 }
 
@@ -369,10 +405,10 @@ html.js [data-reveal="mask"][data-revealed] > .mask {
 
 html.js [data-reveal="snap"] {
   opacity: 0;
-  transform: translate3d(-12px, 0, 0);
+  transform: translate3d(-8px, 0, 0);
   transition-property: opacity, transform;
-  transition-duration: 140ms, 280ms;
-  transition-timing-function: linear, var(--ease-snap);
+  transition-duration: 420ms, 620ms;
+  transition-timing-function: var(--ease-soft);
 }
 
 html.js [data-reveal="trace"] {
@@ -383,9 +419,9 @@ html.js [data-reveal="trace"] {
 
 html.js [data-reveal="settle"] {
   opacity: 0;
-  transform: scale(1.02);
+  transform: translate3d(0, 18px, 0) scale(0.985);
   transition-property: opacity, transform;
-  transition-duration: calc(1000ms * var(--tempo, 1)), calc(1600ms * var(--tempo, 1));
+  transition-duration: calc(1100ms * var(--tempo, 1)), calc(1700ms * var(--tempo, 1));
   transition-timing-function: var(--ease-soft);
 }
 

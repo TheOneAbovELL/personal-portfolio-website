@@ -164,8 +164,8 @@ export function RiskFigure({ wide = false }: { wide?: boolean }) {
       <dl
         className={
           wide
-            ? "grid grid-cols-2 content-start gap-px self-stretch border border-rule bg-rule xs:grid-cols-3 sm:grid-cols-5 lg:grid-cols-1"
-            : "mt-4 grid grid-cols-2 gap-px border border-rule bg-rule xs:grid-cols-3 sm:grid-cols-5"
+            ? "grid grid-cols-2 content-start gap-px self-stretch overflow-hidden rounded-md border border-rule bg-rule xs:grid-cols-3 sm:grid-cols-5 lg:grid-cols-1"
+            : "mt-4 grid grid-cols-2 gap-px overflow-hidden rounded-md border border-rule bg-rule xs:grid-cols-3 sm:grid-cols-5"
         }
       >
         {stats.map((stat) => (

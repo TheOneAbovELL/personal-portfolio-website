@@ -50,7 +50,7 @@ export const PROGRAMME_PALETTE: Record<ProjectTheme, ProgrammePalette> = {
 };
 
 /** Where the last programme's colour goes: back to the structure of the page. */
-export const NEUTRAL_PALETTE: ProgrammePalette = { primary: "143 152 158", secondary: "77 87 93" };
+export const NEUTRAL_PALETTE: ProgrammePalette = { primary: "163 156 148", secondary: "84 79 74" };
 
 /** Scopes a programme's identity to an element: spread onto its root. */
 export function programmeScope(theme: ProjectTheme | undefined): { style?: CSSProperties; "data-programme"?: ProjectTheme } {

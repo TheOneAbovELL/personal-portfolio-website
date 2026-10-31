@@ -39,7 +39,8 @@ function ActivityTrace({ weeks, active }: { weeks: number[]; active: boolean }) 
               y={15 - Math.max(1.5, (n / max) * 14)}
               width="1.5"
               height={Math.max(1.5, (n / max) * 14)}
-              fill={active ? "var(--color-signal)" : "var(--color-steel)"}
+              rx="0.75"
+              fill={active ? "var(--color-champagne)" : "var(--color-steel)"}
               opacity={0.45 + 0.55 * (i / 51)}
             />
           ) : null,
@@ -72,7 +73,7 @@ export function GarageBoard({ repos }: { repos: GarageRepo[] }) {
         <div
           role="group"
           aria-label="Filter repositories by category"
-          className="-mx-[var(--gutter)] flex gap-6 overflow-x-auto px-[var(--gutter)] [scrollbar-width:none] lg:mx-0 lg:px-0 [&::-webkit-scrollbar]:hidden"
+          className="-mx-[var(--gutter)] flex gap-1.5 overflow-x-auto px-[var(--gutter)] [scrollbar-width:none] lg:mx-0 lg:flex-wrap lg:px-0 [&::-webkit-scrollbar]:hidden"
         >
           {categories.map((category) => {
             const active = category === filter;
@@ -83,25 +84,21 @@ export function GarageBoard({ repos }: { repos: GarageRepo[] }) {
                 type="button"
                 aria-pressed={active}
                 onClick={() => setFilter(category)}
-                className={`label relative flex min-h-11 shrink-0 items-center gap-2 whitespace-nowrap transition-colors duration-[var(--dur-base)] ${
-                  active ? "text-bone" : "text-faint hover:text-steel"
+                className={`relative flex min-h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-pill border px-4 text-[0.875rem] font-medium tracking-[-0.01em] transition-[background-color,border-color,color] duration-300 ease-[var(--ease-soft)] ${
+                  active
+                    ? "border-bone/[0.14] bg-bone/[0.1] text-bone"
+                    : "border-bone/[0.06] text-steel hover:border-bone/[0.14] hover:text-bone"
                 }`}
               >
                 {category}
-                <span className={`readout text-[0.625rem] ${active ? "text-signal" : "text-faint"}`}>{String(count).padStart(2, "0")}</span>
-                <span
-                  aria-hidden="true"
-                  className={`absolute inset-x-0 bottom-2 h-px origin-left bg-signal transition-transform duration-[420ms] ease-[var(--ease-out)] ${
-                    active ? "scale-x-100" : "scale-x-0"
-                  }`}
-                />
+                <span className={`readout text-[0.6875rem] ${active ? "text-rosso-bright" : "text-faint"}`}>{String(count).padStart(2, "0")}</span>
               </button>
             );
           })}
         </div>
       )}
 
-      <div className={`label mt-6 hidden gap-x-6 border-b border-rule pb-3 text-faint lg:grid ${COLUMNS}`}>
+      <div className={`label mt-8 hidden gap-x-6 border-b border-rule pb-3 text-faint lg:grid ${COLUMNS}`}>
         <span>No.</span>
         <span>Repository</span>
         <span>Category</span>
@@ -116,16 +113,16 @@ export function GarageBoard({ repos }: { repos: GarageRepo[] }) {
           return (
             <li
               key={repo.name}
-              className={`swap-in group relative grid grid-cols-[minmax(0,1fr)_auto] gap-x-6 gap-y-2 border-b border-rule/60 py-4 transition-colors duration-[var(--dur-base)] last:border-b-0 lg:items-center lg:px-0 ${COLUMNS}`}
+              className={`swap-in group relative isolate grid grid-cols-[minmax(0,1fr)_auto] gap-x-6 gap-y-2 border-b border-rule/60 py-4 transition-colors duration-[var(--dur-base)] last:border-b-0 lg:items-center lg:px-0 ${COLUMNS}`}
               style={{ "--i": Math.min(index, 12) } as React.CSSProperties}
             >
-              {/* Leading edge lights up on hover, like a selected row on a timing screen. */}
+              {/* The row lifts on hover: a soft rounded fill, like a selected row on a timing screen. */}
               <span
                 aria-hidden="true"
-                className="absolute inset-y-3 -left-4 w-px origin-top scale-y-0 bg-signal transition-transform duration-[320ms] ease-[var(--ease-out)] group-hover:scale-y-100"
+                className="absolute -inset-x-3 inset-y-1 -z-10 rounded-md bg-bone/[0.04] opacity-0 transition-opacity duration-300 ease-[var(--ease-soft)] group-hover:opacity-100 lg:-inset-x-4"
               />
 
-              <span className="readout hidden text-[0.75rem] text-faint transition-colors duration-[var(--dur-fast)] group-hover:text-signal lg:block">
+              <span className="readout hidden text-[0.75rem] text-faint transition-colors duration-[var(--dur-fast)] group-hover:text-rosso-bright lg:block">
                 G.{String(number).padStart(3, "0")}
               </span>
 
@@ -135,7 +132,7 @@ export function GarageBoard({ repos }: { repos: GarageRepo[] }) {
                     href={repo.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="transition-colors duration-[var(--dur-fast)] after:absolute after:inset-0 group-hover:text-signal"
+                    className="transition-colors duration-[var(--dur-fast)] after:absolute after:inset-0 group-hover:text-champagne-bright"
                   >
                     {repo.title}
                   </a>
@@ -158,7 +155,7 @@ export function GarageBoard({ repos }: { repos: GarageRepo[] }) {
                   <span>{repo.category}</span>
                   {repo.activity && <ActivityTrace weeks={repo.activity} active={repo.active} />}
                   <span className="flex items-center gap-1.5">
-                    <span aria-hidden="true" className={`size-1.5 rounded-full ${repo.active ? "bg-signal" : "border border-metal-3"}`} />
+                    <span aria-hidden="true" className={`size-1.5 rounded-full ${repo.active ? "bg-champagne" : "border border-metal-3"}`} />
                     {monthOf(repo.pushedAt)}
                   </span>
                 </div>
@@ -174,7 +171,7 @@ export function GarageBoard({ repos }: { repos: GarageRepo[] }) {
               </span>
               <span className="label hidden items-center gap-2 text-steel lg:flex">
                 {/* Workshop status light: lit when the repository has been worked on recently. */}
-                <span aria-hidden="true" className={`size-1.5 rounded-full ${repo.active ? "bg-signal" : "border border-metal-3"}`} />
+                <span aria-hidden="true" className={`size-1.5 rounded-full ${repo.active ? "bg-champagne" : "border border-metal-3"}`} />
                 {monthOf(repo.pushedAt)}
                 {repo.active && <span className="sr-only"> — recently active</span>}
               </span>
@@ -182,7 +179,7 @@ export function GarageBoard({ repos }: { repos: GarageRepo[] }) {
               <Icon
                 name="arrow-up-right"
                 size={15}
-                className="mt-1 text-faint transition-[transform,color] duration-[260ms] ease-[var(--ease-out)] group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-signal lg:mt-0"
+                className="mt-1 text-faint transition-[transform,color] duration-[260ms] ease-[var(--ease-out)] group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-champagne-bright lg:mt-0"
               />
             </li>
           );

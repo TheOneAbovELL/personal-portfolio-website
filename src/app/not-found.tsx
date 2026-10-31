@@ -10,7 +10,7 @@ export default function NotFound() {
         </span>
         Off the line
       </p>
-      <h1 className="display mt-5 text-[clamp(2.75rem,9vw,8rem)] uppercase">Page not found.</h1>
+      <h1 className="display mt-5 text-[clamp(2.5rem,7vw,6rem)]">Page not found.</h1>
       <p className="prose-body mt-6 max-w-[32rem] text-steel">
         That address doesn&rsquo;t lead anywhere. The work and the way back are below.
       </p>

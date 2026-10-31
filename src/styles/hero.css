@@ -7,9 +7,9 @@
    so the race environment behind the page takes over.
    ------------------------------------------------------------------------------------------ */
 .hero-stage {
-  --car-cx: 0.5;
-  --car-cy: 0.845;
-  --car-span: 0.94;
+  --car-cx: 0.53;
+  --car-cy: 0.43;
+  --car-span: 1.24;
   --hero-fade: 0;
 
   position: absolute;
@@ -17,13 +17,31 @@
   overflow: hidden;
   pointer-events: none;
   opacity: calc(1 - var(--hero-fade));
+  contain: strict;
 }
 
 @media (min-width: 48rem) {
   .hero-stage {
-    --car-cx: 0.57;
+    --car-cx: 0.6;
     --car-cy: 0.55;
-    --car-span: 0.64;
+    --car-span: 0.86;
+  }
+}
+
+/* Desktop: the car owns the right of the frame and runs off its edge. */
+@media (min-width: 64rem) {
+  .hero-stage {
+    --car-cx: 0.635;
+    --car-cy: 0.555;
+    --car-span: 0.78;
+  }
+}
+
+/* Wide screens: the type column stays inside the shell, so the car keeps its distance. */
+@media (min-width: 100rem) {
+  .hero-stage {
+    --car-cx: 0.655;
+    --car-span: 0.74;
   }
 }
 
@@ -40,17 +58,27 @@
   visibility: hidden;
 }
 
-/* Studio depth, far to near: deep navy air, a cool teal edge from one side, red warmth low on
-   the other, a pool of light on the floor, and a vignette that closes the room. */
+/* Studio depth, far to near: warm carbon air, a warm rim glow high behind the car, a soft
+   pool of key light on the floor beneath it, and the room closing into the dark. */
 .hero-atmos {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(46% 40% at calc(var(--car-cx) * 100% - 26%) calc(var(--car-cy) * 100% - 8%), rgb(60 207 192 / 0.085), transparent 72%),
-    radial-gradient(40% 34% at calc(var(--car-cx) * 100% + 30%) calc(var(--car-cy) * 100% + 10%), rgb(215 38 47 / 0.075), transparent 72%),
-    radial-gradient(58% 30% at calc(var(--car-cx) * 100%) calc(var(--car-cy) * 100% + 9%), rgb(233 231 225 / 0.06), transparent 70%),
-    radial-gradient(120% 90% at 50% 42%, transparent 52%, rgb(0 0 0 / 0.6) 100%),
-    linear-gradient(180deg, var(--color-navy) 0%, #0b1118 46%, var(--color-graphite) 72%, var(--color-carbon) 100%);
+    radial-gradient(42% 36% at calc(var(--car-cx) * 100% - 14%) calc(var(--car-cy) * 100% - 20%), rgb(255 201 149 / 0.055), transparent 72%),
+    radial-gradient(36% 30% at calc(var(--car-cx) * 100% + 6%) calc(var(--car-cy) * 100% + 4%), rgb(200 16 46 / 0.07), transparent 70%),
+    radial-gradient(60% 26% at calc(var(--car-cx) * 100%) calc(var(--car-cy) * 100% + 11%), rgb(246 243 238 / 0.05), transparent 70%),
+    linear-gradient(180deg, #100e0e 0%, #0e0c0c 48%, var(--color-graphite) 74%, var(--color-carbon) 100%);
+}
+
+/* Over the car: the room's corners close, and the left of the frame — where the type sits —
+   is held a touch darker so the copy never has to fight the bodywork. */
+.hero-vignette {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(130% 100% at 62% 48%, transparent 58%, rgb(6 5 5 / 0.55) 100%),
+    linear-gradient(90deg, rgb(11 10 10 / 0.5) 0%, rgb(11 10 10 / 0.18) 28%, transparent 46%),
+    linear-gradient(0deg, rgb(11 10 10 / 0.7) 0%, transparent 22%);
 }
 
 .hero-poster {
@@ -86,44 +114,278 @@
   transition: none;
 }
 
-/* ------------------------------------------------------------------------------------------
-   Start sequence hand-off (components/loader, styles/loader.css).
-   ------------------------------------------------------------------------------------------ */
-/* Under the curtain the hero's drawing is already complete: the curtain lifts onto a finished
-   drawing that matches the one which just landed on it. */
+/* Under the loader the drawing is already complete (and usually already replaced by the
+   car, which boots behind the loader — see HeroStage). */
 html:has(#intro) .hero-poster {
   --draw-base: -10s;
 }
 
-/* The drawing → object cross-fade waits until the curtain is up, so the hand-off always lands
-   on the drawing; the WebGL car then arrives exactly as it does without the intro. */
-html:has(#intro:not([data-state="done"])) .hero-stage .hero-poster {
-  opacity: 1;
-}
-
-html:has(#intro:not([data-state="done"])) .hero-stage .hero-canvas {
-  opacity: 0;
-}
-
 /* ------------------------------------------------------------------------------------------
-   Hero type. The name is set like a title on a cover — in the display face, in title case,
-   at a size that sits beside the car rather than over it — and the statement is a quiet lede.
+   Hero type. The name is set like a title on a cover: Geist at display weight, tight, large
+   enough to hold its own beside the car. The statement is a quiet lede; the base line is
+   instrumentation.
    ------------------------------------------------------------------------------------------ */
+.hero-frame {
+  display: grid;
+  grid-template-rows: auto minmax(clamp(13rem, 34svh, 19rem), 1fr) auto auto;
+}
+
+@media (min-width: 48rem) {
+  .hero-frame {
+    grid-template-rows: auto minmax(2rem, 1fr) auto auto;
+  }
+}
+
+/* Pointer parallax (desktop): the type sits a layer in front of the car. --px/--py are
+   written by HeroStage; `translate` composes with the entrance transforms. */
+.hero-copy {
+  translate: calc(var(--px, 0) * -7px) calc(var(--py, 0) * -4px);
+}
+
 .hero-name {
-  font-size: clamp(2.5rem, 11.5vw, 3.125rem);
-  font-weight: 560;
-  letter-spacing: -0.025em;
-  line-height: 0.98;
+  font-size: clamp(3.25rem, 15vw, 4.25rem);
+  font-weight: 600;
+  letter-spacing: -0.048em;
+  line-height: 0.9;
+  /* Optical alignment: the O's curve sits proud of the left edge otherwise. */
+  margin-left: -0.045em;
 }
 
 @media (min-width: 48rem) {
   .hero-name {
-    font-size: clamp(3rem, 5.2vw, 5.25rem);
+    font-size: clamp(4.5rem, 7.4vw, 8.25rem);
   }
 }
 
+.hero-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 2rem;
+  padding: 0 0.875rem 0 0.75rem;
+  border: 1px solid rgb(239 235 228 / 0.1);
+  border-radius: var(--radius-pill);
+  background: rgb(239 235 228 / 0.035);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: var(--color-steel);
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.hero-lede {
+  max-width: 27rem;
+}
+
 .hero-statement {
-  font-size: clamp(1rem, 0.35vw + 0.92rem, 1.125rem);
-  line-height: 1.62;
+  font-size: clamp(1.0625rem, 0.3vw + 0.98rem, 1.1875rem);
+  line-height: 1.55;
+  letter-spacing: -0.012em;
   text-wrap: pretty;
+}
+
+/* Base line: now building · counts · elsewhere, over one hairline. */
+.hero-base {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 2.5rem;
+  margin-top: clamp(1.75rem, 5vh, 3rem);
+  padding-top: 1rem;
+  border-top: 1px solid rgb(239 235 228 / 0.08);
+}
+
+.hero-instruments {
+  display: flex;
+  gap: 1.75rem;
+}
+
+@media (min-width: 64rem) {
+  .hero-instruments {
+    gap: 2.25rem;
+    margin-left: auto;
+  }
+}
+
+.hero-count {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 1.0625rem;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: var(--color-bone);
+}
+
+.hero-socials {
+  display: flex;
+  gap: 0.375rem;
+}
+
+.hero-social {
+  display: inline-grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border: 1px solid rgb(239 235 228 / 0.09);
+  border-radius: var(--radius-pill);
+  background: rgb(239 235 228 / 0.025);
+  color: var(--color-steel);
+  transition:
+    color var(--dur-fast) linear,
+    border-color 300ms var(--ease-soft),
+    background-color 300ms var(--ease-soft),
+    transform 300ms var(--ease-soft);
+}
+
+.hero-social:hover {
+  color: var(--color-bone);
+  border-color: rgb(239 235 228 / 0.22);
+  background: rgb(239 235 228 / 0.07);
+  transform: translateY(-1px);
+}
+
+/* "Now building": the programmes in progress take turns on one line. */
+.hero-now {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-height: 2.75rem;
+  min-width: 0;
+}
+
+.hero-now-label {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.55rem;
+  color: var(--color-faint);
+}
+
+.hero-now-dot {
+  position: relative;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-rosso-bright);
+}
+
+.hero-now-dot::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 1px solid var(--color-rosso-bright);
+  opacity: 0;
+  animation: hero-ping 2.6s var(--ease-out) infinite;
+}
+
+.hero-now-items {
+  display: grid;
+  min-width: 0;
+}
+
+.hero-now-item {
+  grid-area: 1 / 1;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  min-width: 0;
+  white-space: nowrap;
+  animation: hero-turn 9s var(--ease-in-out) infinite both;
+  animation-delay: calc(var(--i, 0) * 4.5s);
+}
+
+.hero-now:hover .hero-now-item,
+.hero-now:focus-within .hero-now-item {
+  animation-play-state: paused;
+}
+
+.hero-now-title {
+  color: var(--color-bone);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  transition: color var(--dur-fast) linear;
+}
+
+.hero-now-item:hover .hero-now-title {
+  color: var(--color-rosso-bright);
+}
+
+.hero-now-note {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--color-faint);
+  font-size: 0.875rem;
+}
+
+@media (max-width: 47.99rem) {
+  .hero-now-note {
+    display: none;
+  }
+}
+
+@keyframes hero-turn {
+  0% {
+    opacity: 0;
+    visibility: hidden;
+    transform: translate3d(0, 0.5rem, 0);
+  }
+  6%,
+  44% {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+  }
+  50% {
+    opacity: 0;
+    transform: translate3d(0, -0.5rem, 0);
+    visibility: visible;
+  }
+  50.01%,
+  100% {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+@keyframes hero-ping {
+  0% {
+    opacity: 0.7;
+    transform: scale(0.6);
+  }
+  70%,
+  100% {
+    opacity: 0;
+    transform: scale(1.5);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-copy {
+    translate: none;
+  }
+
+  .hero-now-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 1rem;
+  }
+
+  .hero-now-item {
+    grid-area: auto;
+    animation: none;
+  }
+
+  .hero-now-note {
+    display: none;
+  }
+
+  .hero-now-dot::after {
+    animation: none;
+  }
 }

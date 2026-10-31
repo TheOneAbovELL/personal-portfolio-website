@@ -1,22 +1,24 @@
 /* ------------------------------------------------------------------------------------------
-   Intro — components/loader/Intro.tsx, timeline in components/loader/boot.ts
+   Intro: the qualifying lap — components/loader/Intro.tsx, timeline in components/loader/boot.ts
 
-   One typographic moment: the name rises into its masks, a performance-red hairline traces
-   real readiness beneath it, and the name becomes the hero heading (a measured shared-element
-   hand-off) while the backdrop fades. Classes boot.ts sets on <html>:
+   A thin ivory circuit on warm graphite, a red light lapping it at the pace of the real page
+   load, three sectors lit with their real splits, and a lap time. Then the circuit zooms away,
+   the curtain lifts outward from the car, and the name becomes the hero heading.
+   Classes boot.ts sets on <html>:
 
      intro-active   the intro owns the name: #hero-title is hidden until the hand-off lands
-     intro-hold     page entrances wait, paused, and resume as the glide begins
+     intro-hold     page entrances wait, paused, and resume as the exit begins
      intro-done     the heading was handed over: it must not play its own unmask
 
-   Without script none of these exist: the name still rises, and the curtain fades by ~3 s.
+   Only transform, opacity and stroke-dashoffset move. Without script none of the classes exist:
+   the circuit still draws itself on, and the curtain lifts by ~4 s.
    ------------------------------------------------------------------------------------------ */
-:root {
-  /* The name at rest: quiet, a fraction of the heading it becomes. */
-  --intro-rest: clamp(1.75rem, 1rem + 2.4vw, 2.875rem);
-}
-
 .intro {
+  --intro-w: min(calc(100vw - 2rem), clamp(20rem, 44vw, 48rem));
+  --intro-line: rgb(239 235 228 / 0.44);
+  --intro-dim: rgb(239 235 228 / 0.1);
+  --intro-light: #ff4a55;
+
   position: fixed;
   inset: 0;
   z-index: 1000;
@@ -24,13 +26,14 @@
   cursor: default;
   user-select: none;
   -webkit-user-select: none;
+  color: var(--color-bone);
   /* Failsafe: lifts the curtain even if the timeline never runs. */
-  animation: intro-failsafe 500ms var(--ease-out) 2500ms both;
+  animation: intro-failsafe 600ms var(--ease-out) 3400ms both;
 }
 
-/* The timeline is running: it ends the intro itself (by 4.8 s at worst), so the failsafe waits. */
+/* The timeline is running: it ends the intro itself (by 9 s at worst), so the failsafe waits. */
 html.intro-active .intro {
-  animation-delay: 5200ms;
+  animation-delay: 9600ms;
 }
 
 .intro[data-state="done"] {
@@ -38,64 +41,363 @@ html.intro-active .intro {
   pointer-events: none !important;
 }
 
+/* The curtain: warm graphite with a quiet lift behind the circuit. */
 .intro-backdrop {
   position: absolute;
   inset: 0;
-  background: var(--color-carbon);
+  background:
+    radial-gradient(60% 55% at 50% 42%, rgb(30 27 27 / 0.9), transparent 75%),
+    var(--color-graphite);
+  will-change: opacity;
 }
 
-/* Optically centred: a touch above the middle, the hairline below balancing it. */
+/* Under the curtain: dark everywhere but where the car is. As the curtain fades it opens there
+   first, and then grows and fades outward — a soft radial wipe from the car (boot.ts sets the
+   centre). Twice the viewport, so it still covers the edges as it scales. */
+.intro-vignette {
+  position: absolute;
+  inset: -50%;
+  background: radial-gradient(
+    circle at var(--cx, 50%) var(--cy, 50%),
+    rgb(11 10 10 / 0) 0,
+    rgb(11 10 10 / 0.3) 14vmax,
+    rgb(11 10 10 / 0.88) 42vmax,
+    var(--color-carbon) 70vmax
+  );
+  will-change: transform, opacity;
+}
+
 .intro-stage {
   position: absolute;
-  left: 50%;
-  top: 48%;
-  width: max-content;
-  translate: -50% -50%;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(1.75rem, 5.5vh, 3.25rem);
+  padding: 1rem;
+  /* Optically centred: a touch above the middle. */
+  padding-bottom: 4vh;
+}
+
+.intro-circuit {
+  width: var(--intro-w);
+  will-change: transform, opacity;
+}
+
+.intro-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+/* The circuit ------------------------------------------------------------------------------- */
+.intro-svg path {
+  fill: none;
+  stroke-linejoin: round;
+}
+
+/* A faint tarmac band, so the line reads as a road rather than a drawing. */
+.ic-bed {
+  stroke: rgb(239 235 228 / 0.035);
+  stroke-width: 10;
+  stroke-linecap: round;
+  animation: intro-appear 900ms var(--ease-out) 160ms both;
+}
+
+.ic-track {
+  stroke: var(--intro-line);
+  stroke-width: 1.15;
+  stroke-dasharray: 1000 1000;
+  stroke-dashoffset: 0;
+  animation: intro-draw 620ms cubic-bezier(0.65, 0, 0.25, 1) 40ms both;
+}
+
+.ic-sector {
+  stroke: var(--color-champagne);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  opacity: 0;
+  transition: stroke 600ms var(--ease-out);
+}
+
+.ic-sector.is-lit {
+  opacity: 1;
+}
+
+.ic-sector.is-best {
+  stroke: var(--intro-light);
+}
+
+.ic-marks {
+  animation: intro-appear 700ms var(--ease-out) 380ms both;
+}
+
+.ic-tick {
+  stroke: rgb(239 235 228 / 0.55);
+  stroke-width: 1.2;
+  stroke-linecap: round;
+  transition: stroke 500ms var(--ease-out);
+}
+
+.ic-tick.is-lit {
+  stroke: var(--color-champagne);
+}
+
+.ic-chequer {
+  fill: rgb(239 235 228 / 0.85);
+}
+
+.ic-label {
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  fill: rgb(239 235 228 / 0.36);
+  text-anchor: middle;
+  dominant-baseline: central;
+  transition: fill 500ms var(--ease-out);
+}
+
+.ic-label.is-lit {
+  fill: var(--color-champagne);
+}
+
+/* The light: a bright head, a soft halo, and a tail of stacked dashes that fade with distance. */
+.ic-light {
+  animation: intro-appear 420ms var(--ease-out) 200ms both;
+}
+
+html:not(.js) .ic-light {
+  display: none;
+}
+
+.ic-tail {
+  stroke: var(--intro-light);
+  stroke-width: 1.9;
+  stroke-linecap: butt;
+  opacity: 0.2;
+}
+
+.ic-head,
+.ic-halo {
+  stroke-linecap: round;
+  stroke-dasharray: 0.001 4000;
+}
+
+.ic-head {
+  stroke: #ff7a80;
+  stroke-width: 4.8;
+}
+
+.ic-halo {
+  stroke: var(--intro-light);
+  stroke-width: 13;
+  opacity: 0.2;
+}
+
+/* Waiting at a closed line: the light breathes. */
+.intro.is-holding .ic-halo {
+  animation: intro-breathe 1500ms var(--ease-in-out) infinite alternate;
+}
+
+/* The card ----------------------------------------------------------------------------------- */
+.intro-card {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  row-gap: 1.25rem;
+  column-gap: 1.5rem;
+  width: var(--intro-w);
+}
+
+.intro-card > * {
+  animation: intro-rise 760ms var(--ease-out) both;
+}
+
+.intro-card > :nth-child(1) {
+  animation-delay: 90ms;
+}
+
+.intro-card > :nth-child(2) {
+  animation-delay: 170ms;
+}
+
+.intro-card > :nth-child(3) {
+  animation-delay: 250ms;
 }
 
 .intro .intro-name {
   margin: 0;
   width: max-content;
-  font-size: var(--intro-rest);
+  font-size: clamp(1.25rem, 1rem + 0.75vw, 1.625rem);
+  font-weight: 600;
+  line-height: 1.02;
   white-space: nowrap;
   text-wrap: nowrap;
   color: var(--color-bone);
 }
 
-/* Each word rises through its own mask; only the bottom edge clips (just below the line, so
-   descenders survive). */
-.intro-mask {
-  display: inline-block;
-  clip-path: inset(-0.5em -0.3em -0.14em -0.3em);
+.intro-status,
+.intro-lap-label,
+.intro-sector-tag {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-faint);
 }
 
-.intro-mask > span {
-  display: inline-block;
-  animation: intro-rise 820ms var(--ease-out) calc(70ms + var(--i, 0) * 65ms) both;
+.intro-status {
+  margin: 0.625rem 0 0;
 }
 
-/* The hairline: a faint track, and the red reading on it. */
-.intro-rule {
-  position: absolute;
-  inset-inline: 0;
-  top: calc(100% + max(1rem, var(--intro-rest) * 0.5));
-  height: 1px;
+.intro-stage-text {
+  color: var(--color-steel);
+}
+
+.intro-lap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.375rem;
+  margin: 0;
+}
+
+.intro-lap-time {
+  font-family: var(--font-mono);
+  font-size: clamp(1.25rem, 1rem + 0.7vw, 1.5rem);
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  color: var(--color-metal-3);
+  transition: color 500ms var(--ease-out);
+}
+
+.intro.is-complete .intro-lap-time {
+  color: var(--color-bone);
+}
+
+.intro-sectors {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.intro-sector {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: baseline;
+  row-gap: 0.625rem;
+}
+
+.intro-sector-bar {
+  grid-column: 1 / -1;
+  position: relative;
+  height: 2px;
   overflow: hidden;
-  background: rgb(233 231 225 / 0.09);
-  animation: intro-appear 700ms var(--ease-out) 260ms both;
+  border-radius: var(--radius-pill);
+  background: var(--intro-dim);
 }
 
-.intro-rule-fill {
+.intro-sector-fill {
   position: absolute;
   inset: 0;
-  background: var(--color-perf);
+  border-radius: inherit;
+  background: rgb(239 235 228 / 0.55);
   transform: scaleX(0);
   transform-origin: 0 50%;
+  transition: background-color 500ms var(--ease-out);
 }
 
-/* No script, no reading to show. */
-html:not(.js) .intro-rule {
-  display: none;
+.intro-sector.is-lit .intro-sector-fill {
+  background: var(--color-champagne);
+}
+
+.intro-sector.is-best .intro-sector-fill {
+  background: var(--intro-light);
+}
+
+.intro-sector-time {
+  justify-self: end;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-metal-3);
+  transition: color 500ms var(--ease-out);
+}
+
+.intro-sector-tag {
+  transition: color 500ms var(--ease-out);
+}
+
+.intro-sector.is-lit :is(.intro-sector-time, .intro-sector-tag) {
+  color: var(--color-champagne);
+}
+
+.intro-sector.is-best :is(.intro-sector-time, .intro-sector-tag) {
+  color: var(--intro-light);
+}
+
+/* The name at the heading's own size, for the hand-off (boot.ts). */
+.intro .intro-ghost {
+  position: fixed;
+  left: 0;
+  top: 0;
+  margin: 0;
+  width: max-content;
+  white-space: nowrap;
+  text-wrap: nowrap;
+  color: var(--color-bone);
+  transform-origin: 0 0;
+  visibility: hidden;
+  will-change: transform;
+}
+
+.intro .intro-ghost[data-on] {
+  visibility: visible;
+}
+
+/* Phones: the circuit is drawn smaller, so its lines are drawn heavier. */
+@media (max-width: 40rem) {
+  .ic-track {
+    stroke-width: 1.7;
+  }
+
+  .ic-sector {
+    stroke-width: 2.4;
+  }
+
+  .ic-tick {
+    stroke-width: 1.8;
+  }
+
+  .ic-label {
+    font-size: 12px;
+  }
+
+  .ic-tail {
+    stroke-width: 2.8;
+  }
+
+  .ic-head {
+    stroke-width: 6.4;
+  }
+
+  .ic-halo {
+    stroke-width: 18;
+  }
+
+  .intro-sectors {
+    gap: 0.625rem;
+  }
 }
 
 /* Hand-off coordination with the hero (components/sections/Hero.tsx) ---------------------- */
@@ -112,15 +414,28 @@ html.intro-done #hero-title {
   animation: none;
 }
 
+@keyframes intro-draw {
+  from {
+    stroke-dashoffset: 1000;
+  }
+}
+
 @keyframes intro-rise {
   from {
-    transform: translate3d(0, 135%, 0);
+    opacity: 0;
+    transform: translate3d(0, 0.5rem, 0);
   }
 }
 
 @keyframes intro-appear {
   from {
     opacity: 0;
+  }
+}
+
+@keyframes intro-breathe {
+  to {
+    opacity: 0.42;
   }
 }
 
@@ -132,18 +447,18 @@ html.intro-done #hero-title {
   }
 }
 
-/* Reduced motion: the name is simply there, then a short fade (boot.ts). These beat the global
-   reduced-motion rule in globals.css on specificity; both are !important. */
+/* Reduced motion: a still circuit whose sectors fill in, then a short fade (boot.ts). These
+   beat the global reduced-motion rule in globals.css on specificity; both are !important. */
 @media (prefers-reduced-motion: reduce) {
   html .intro {
-    animation: intro-failsafe 300ms linear 2500ms both !important;
+    animation: intro-failsafe 300ms linear 3400ms both !important;
   }
 
   html.intro-active .intro {
-    animation-delay: 5200ms !important;
+    animation-delay: 9600ms !important;
   }
 
-  .intro-rule {
+  .ic-light {
     display: none;
   }
 }
@@ -151,10 +466,9 @@ html.intro-done #hero-title {
 /* ------------------------------------------------------------------------------------------
    Page-to-page — components/loader/RouteWipe.tsx (client navigation only)
 
-   Quiet on purpose: a carbon veil settles off the new page while a single red hairline runs
-   under the header, like the intro's reading completing. Rendered beside the page (never
-   around it), so fixed layers inside the page stay fixed; under the header, which is the
-   constant between pages.
+   Soft on purpose: a graphite veil eases off the new page while a small rounded light glides
+   under the header, the lap light passing once. Rendered beside the page (never around it),
+   so fixed layers inside the page stay fixed; under the header, the constant between pages.
    ------------------------------------------------------------------------------------------ */
 .route-wipe {
   position: fixed;
@@ -167,23 +481,25 @@ html.intro-done #hero-title {
 .route-wipe-panel {
   position: absolute;
   inset: 0;
-  background: var(--color-carbon);
-  animation: route-veil 620ms cubic-bezier(0.33, 0, 0.2, 1) both;
+  background: var(--color-graphite);
+  animation: route-veil 760ms cubic-bezier(0.32, 0.72, 0, 1) both;
 }
 
 .route-wipe-line {
   position: absolute;
-  inset-inline: 0;
-  top: var(--header-h);
-  height: 1px;
-  background: var(--color-perf);
-  transform-origin: 0 50%;
-  animation: route-line 760ms cubic-bezier(0.7, 0, 0.2, 1) both;
+  left: 0;
+  top: calc(var(--header-h) - 1px);
+  width: min(16rem, 40vw);
+  height: 2px;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(90deg, rgb(255 74 85 / 0), var(--color-rosso-bright) 82%, #ff8a90);
+  box-shadow: 0 0 12px rgb(255 74 85 / 0.45);
+  animation: route-line 900ms cubic-bezier(0.45, 0, 0.15, 1) both;
 }
 
 @keyframes route-veil {
   from {
-    opacity: 0.8;
+    opacity: 0.86;
   }
   to {
     opacity: 0;
@@ -193,15 +509,17 @@ html.intro-done #hero-title {
 
 @keyframes route-line {
   0% {
-    transform: scaleX(0);
+    transform: translate3d(-100%, 0, 0);
+    opacity: 0;
+  }
+  18% {
     opacity: 1;
   }
-  62% {
-    transform: scaleX(1);
+  78% {
     opacity: 1;
   }
   100% {
-    transform: scaleX(1);
+    transform: translate3d(100vw, 0, 0);
     opacity: 0;
     visibility: hidden;
   }

@@ -60,8 +60,9 @@ const TOW = 0.008;
  * Warp and weft catch the light differently because their fibres run at right angles, so the
  * weave is carried mostly by the normal and roughness maps and only faintly by colour: it
  * shows where a highlight grazes the surface and disappears where the part is face-on.
+ * `shade` darkens the albedo: lacquered panels read deeper than bare satin ones.
  */
-export function createCarbonMaps(anisotropy: number): SurfaceMaps {
+export function createCarbonMaps(anisotropy: number, shade = 1): SurfaceMaps {
   const size = 128;
   const tows = 4;
   const height = new Float32Array(size * size);
@@ -85,7 +86,7 @@ export function createCarbonMaps(anisotropy: number): SurfaceMaps {
       height[index] = crown * (0.55 + 0.45 * arch);
 
       const edge = 1 - crown;
-      const tone = (warp ? 21 : 12) - edge * 7;
+      const tone = ((warp ? 21 : 12) - edge * 7) * shade;
       const roughness = (warp ? 0.4 : 0.56) + edge * 0.3;
       const i = index * 4;
       albedo.image.data[i] = tone;

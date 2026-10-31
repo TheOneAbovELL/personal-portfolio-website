@@ -254,7 +254,7 @@ export function educationSentence(item: (typeof education)[number], subject: str
 }
 
 export function codeforcesSentence(codeforces: CodeforcesData): string {
-  return `On Codeforces, Omjee (handle ${codeforces.handle}) holds the rank of ${codeforces.rank} with a rating of ${codeforces.rating} and a peak rating of ${codeforces.maxRating}.`;
+  return `On Codeforces, Omjee (handle ${codeforces.handle}) holds the rank of ${codeforces.rank} with a current rating of ${codeforces.rating}.`;
 }
 
 function recognitionDocs(codeforces: CodeforcesData): KnowledgeDoc[] {
@@ -278,10 +278,7 @@ function recognitionDocs(codeforces: CodeforcesData): KnowledgeDoc[] {
       href: "/#experience",
       importance: 1,
       tags: ["codeforces", "competitive programming", "rating", "contests", "problem solving", codeforces.rank],
-      text: [
-        codeforcesSentence(codeforces),
-        `He has taken part in ${codeforces.history.length} rated contests.`,
-      ].join("\n"),
+      text: codeforcesSentence(codeforces),
     },
   ];
 }

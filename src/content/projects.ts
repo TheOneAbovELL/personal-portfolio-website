@@ -411,7 +411,7 @@ export const projects: Project[] = [
     order: 3,
     year: "2026",
     role: "Design and implementation",
-    context: "Research project",
+    context: "Personal project",
     stack: [
       "Python",
       "FastAPI",

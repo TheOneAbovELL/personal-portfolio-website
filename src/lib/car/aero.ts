@@ -6,7 +6,8 @@ import type { MaterialId, Part, Solid, Stroke, Vec2, Vec3 } from "./types";
 /**
  * Aerodynamic surfaces: front and rear wings, the floor and its diffuser. Wing elements are
  * real sections with thickness and camber, stacked with slot gaps between them; everything
- * flat is a panel of real thickness. All of it is bare carbon except the rear endplates.
+ * flat is a panel of real thickness. All of it is bare carbon except the livery's red: every
+ * endplate and the rear wing's main plane.
  */
 
 interface WingSection {
@@ -49,6 +50,7 @@ function wingElement(
   steps: number,
   section: (t: number) => WingSection,
   drawTrailing: boolean,
+  material: MaterialId = "carbon",
 ): Part {
   const mesh = new MeshBuilder();
   const loops: Vec3[][] = [];
@@ -76,7 +78,7 @@ function wingElement(
 
   const strokes: Stroke[] = [{ points: loops.map((loop) => loop[LEADING]), role: "edge" }];
   if (drawTrailing) strokes.push({ points: loops.map((loop) => loop[0]), role: "edge" });
-  return { id, strokes, solids: [mesh.build("carbon")] };
+  return { id, strokes, solids: [mesh.build(material)] };
 }
 
 /** An endplate, pylon or strake: a panel standing along the car, drawn as its outline. Carbon unless painted. */
@@ -135,8 +137,9 @@ export function frontWing(): Part[] {
     [2.72, 0.19],
   ];
   const z = halfSpan + 0.004;
-  parts.push(panel("front-endplate-r", outline, z, 0.008, LAYER.frontWing));
-  parts.push(panel("front-endplate-l", outline, -z, 0.008));
+  // Red endplates frame the carbon wing from the front, as the rear ones do from behind.
+  parts.push(panel("front-endplate-r", outline, z, 0.008, LAYER.frontWing, "livery"));
+  parts.push(panel("front-endplate-l", outline, -z, 0.008, undefined, "livery"));
   return parts;
 }
 
@@ -158,7 +161,7 @@ export function rearWing(): Part[] {
     [-2.0, 0.66],
   ];
   const thickness = 0.01;
-  // The rear endplates carry the livery's red: the last thing a following car sees.
+  // The rear endplates and main plane carry the livery's red: the last thing a following car sees.
   const right = panel("rear-endplate-r", outline, halfSpan + thickness / 2, thickness, LAYER.rearWing, "livery");
   const left = panel("rear-endplate-l", outline, -(halfSpan + thickness / 2), thickness, undefined, "livery");
 
@@ -206,7 +209,7 @@ export function rearWing(): Part[] {
   return [
     pylon,
     rainLight,
-    wingElement("rear-wing-main", halfSpan, 16, main, true),
+    wingElement("rear-wing-main", halfSpan, 16, main, true, "livery"),
     wingElement("rear-wing-flap", halfSpan, 2, flap, true),
     wingElement("beam-wing", halfSpan, 2, beam, true),
     right,

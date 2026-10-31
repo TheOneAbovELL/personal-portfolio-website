@@ -324,7 +324,7 @@ function composeRepo(name: string, kb: KnowledgeBase): Composed | null {
     ),
     sourceIds: [`repo:${repo.name}`, "garage"],
     cards: [repoCard(repo)],
-    followUps: ["What other projects has he built?", ...generalFollowUps()],
+    followUps: ["What else has Omjee built?", ...generalFollowUps()],
     related: relatedFrom([repo.category, ...(repo.language ? [repo.language] : [])]),
     actions: [ACTIONS.garage, { label: "View repository", href: repo.url }, ...(repo.homepage ? [{ label: "Open live demo", href: repo.homepage }] : [])],
   };
@@ -654,7 +654,7 @@ function composeProjects(kb: KnowledgeBase): Composed {
     cards: featured.slice(0, MAX_CARDS).map(projectCard),
     followUps: [
       ...featured.slice(0, 2).map((project, index) => (index === 0 ? `Explain ${project.title}` : `What is ${project.title}?`)),
-      "What other projects has he built?",
+      "What else has Omjee built?",
     ],
     stats: [stat(featured.length, "Primary systems"), ...(total > 0 ? [stat(total, "Other builds")] : [])],
     actions: [ACTIONS.work, ACTIONS.garage],
@@ -900,8 +900,7 @@ function composeAchievements(kb: KnowledgeBase): Composed {
     // Fetched from Codeforces with the rest of the page data (or its committed snapshot).
     stats: [
       { value: String(codeforces.rating), label: "Codeforces rating" },
-      { value: String(codeforces.maxRating), label: "Peak rating" },
-      stat(codeforces.history.length, "Rated contests"),
+      { value: codeforces.rank.replace(/\b\w/g, (c) => c.toUpperCase()), label: "Rank" },
     ],
     actions: [
       ACTIONS.experience,

@@ -144,6 +144,9 @@ const VH = 330;
 const FX = 46;
 const FY = VH / 2;
 const WAVES = { 1: { rx: 150, ry: 124 }, 2: { rx: 300, ry: 152 } } as const;
+
+/** The engine drawing's frame, for the programme's signature (work/signatures/RippleField). */
+export const RIPPLE_GEOMETRY = { width: VW, height: VH, fx: FX, fy: FY, waves: WAVES } as const;
 const r1 = (v: number) => Math.round(v * 10) / 10;
 
 function at(belief: Belief): [number, number] {
@@ -171,13 +174,26 @@ export function RippleFigure({ wide = false }: { wide?: boolean }) {
   const reduced = useReducedMotion();
   const [step, setStep] = useState(0);
   const [selected, setSelected] = useState("elig-beta");
+  /** On the homepage the programme's signature drives the steps from scroll; Replay hands them back to the clock. */
+  const [scrubbed, setScrubbed] = useState(false);
   const shown = reduced ? LAST : step;
 
   useEffect(() => {
-    if (!onScreen || step >= LAST) return;
+    const host = rootRef.current?.closest<HTMLElement>("[data-programme]");
+    if (!host) return;
+    const follow = (event: Event) => {
+      setScrubbed(true);
+      setStep((event as CustomEvent<number>).detail);
+    };
+    host.addEventListener("ripple:step", follow);
+    return () => host.removeEventListener("ripple:step", follow);
+  }, []);
+
+  useEffect(() => {
+    if (!onScreen || step >= LAST || scrubbed) return;
     const timer = window.setTimeout(() => setStep((s) => s + 1), step === 0 ? 700 : STEP_MS);
     return () => window.clearTimeout(timer);
-  }, [onScreen, step]);
+  }, [onScreen, step, scrubbed]);
 
   const belief = BELIEFS.find((b) => b.id === selected)!;
   const resolved = shown >= resolvedAt(belief);
@@ -196,9 +212,12 @@ export function RippleFigure({ wide = false }: { wide?: boolean }) {
           </p>
           <button
             type="button"
-            onClick={() => setStep(0)}
+            onClick={() => {
+              setScrubbed(false);
+              setStep(0);
+            }}
             disabled={reduced}
-            className="label min-h-9 border border-rule-strong px-3 text-steel transition-colors duration-[var(--dur-fast)] hover:border-[rgb(var(--prog))] hover:text-bone disabled:opacity-40"
+            className="label min-h-9 rounded-full border border-rule-strong px-3.5 text-steel transition-colors duration-[var(--dur-fast)] hover:border-[rgb(var(--prog))] hover:text-bone disabled:opacity-40"
           >
             Replay
           </button>
@@ -217,6 +236,7 @@ export function RippleFigure({ wide = false }: { wide?: boolean }) {
           <svg
             viewBox={`0 0 ${VW} ${VH}`}
             className="mt-2 block h-auto w-full"
+            data-ripple-engine=""
             role="img"
             aria-label="The changed CGPA fact on the left; wave 1 reaches four beliefs derived from it, wave 2 reaches three beliefs derived from those."
           >

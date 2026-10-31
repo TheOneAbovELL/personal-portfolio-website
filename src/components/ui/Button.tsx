@@ -5,11 +5,12 @@ import { Icon, type IconName } from "./Icon";
 type Variant = "primary" | "secondary" | "ghost";
 
 const BASE =
-  "group/btn inline-flex min-h-11 items-center justify-center gap-2.5 whitespace-nowrap px-5 label text-[0.75rem] transition-colors duration-[var(--dur-fast)] ease-[var(--ease-snap)]";
+  "group/btn inline-flex min-h-11 items-center justify-center gap-2 whitespace-nowrap rounded-pill px-5.5 text-[0.9375rem] font-medium tracking-[-0.01em] transition-[background-color,border-color,color,transform] duration-300 ease-[var(--ease-soft)] active:scale-[0.98]";
 
 const VARIANT: Record<Variant, string> = {
-  primary: "bg-bone text-carbon hover:bg-signal",
-  secondary: "border border-rule-strong text-bone hover:border-bone",
+  primary: "bg-bone text-carbon hover:bg-white",
+  secondary:
+    "border border-[rgb(239_235_228/0.12)] bg-[rgb(239_235_228/0.04)] text-bone hover:border-[rgb(239_235_228/0.24)] hover:bg-[rgb(239_235_228/0.08)]",
   ghost: "px-0 text-steel hover:text-bone",
 };
 

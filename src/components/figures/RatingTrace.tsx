@@ -39,7 +39,7 @@ export function RatingTrace({ history }: { history: { date: string; rating: numb
       viewBox={`0 0 ${W} ${H}`}
       className="block h-auto w-full"
       role="img"
-      aria-label={`Codeforces rating over ${history.length} rated contests, from ${history[0].rating} in ${monthLabel(history[0].date)} to ${history[last].rating} in ${monthLabel(history[last].date)}.`}
+      aria-label={`Codeforces rating history, from ${history[0].rating} in ${monthLabel(history[0].date)} to ${history[last].rating} in ${monthLabel(history[last].date)}.`}
     >
       {lines.map((threshold) => (
         <g key={threshold.rating}>
@@ -51,6 +51,7 @@ export function RatingTrace({ history }: { history: { date: string; rating: numb
             stroke="var(--color-rule-strong)"
             strokeWidth={1}
             strokeDasharray="2 5"
+            strokeLinecap="round"
             vectorEffect="non-scaling-stroke"
           />
           <text x={W} y={y(threshold.rating) + 3} textAnchor="end" fontSize={9} className="label" fill="var(--color-faint)">
@@ -63,13 +64,17 @@ export function RatingTrace({ history }: { history: { date: string; rating: numb
         d={path}
         fill="none"
         stroke="var(--color-bone)"
-        strokeWidth={1.25}
+        strokeWidth={1.5}
         strokeLinejoin="round"
+        strokeLinecap="round"
         vectorEffect="non-scaling-stroke"
       />
       {history.map((point, i) =>
         i === last ? (
-          <circle key={i} cx={x(times[i])} cy={y(point.rating)} r={4} fill="var(--color-signal)" />
+          <g key={i}>
+            <circle cx={x(times[i])} cy={y(point.rating)} r={9} fill="var(--color-rosso)" opacity={0.18} />
+            <circle cx={x(times[i])} cy={y(point.rating)} r={4} fill="var(--color-rosso-bright)" />
+          </g>
         ) : (
           <circle
             key={i}

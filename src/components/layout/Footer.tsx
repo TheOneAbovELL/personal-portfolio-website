@@ -15,7 +15,7 @@ export function Footer() {
       <div className="scale-ticks opacity-60" aria-hidden="true" />
       <div className="shell grid gap-x-10 gap-y-10 py-12 md:grid-cols-12">
         <div className="md:col-span-5">
-          <p className="display text-[1.5rem] uppercase">{profile.name}</p>
+          <p className="display text-[1.75rem]">{profile.name}</p>
           <p className="label mt-3 text-steel">{profile.roles.join(" · ")}</p>
         </div>
 
@@ -27,7 +27,7 @@ export function Footer() {
                 <a
                   href={link.href}
                   {...(link.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-                  className="inline-flex min-h-10 items-center text-[0.9375rem] text-steel transition-colors duration-[var(--dur-fast)] hover:text-signal"
+                  className="inline-flex min-h-10 items-center text-[0.9375rem] text-steel transition-colors duration-[var(--dur-fast)] hover:text-bone"
                 >
                   {link.label}
                 </a>
@@ -40,12 +40,12 @@ export function Footer() {
           <p className="label text-faint">Site</p>
           <ul className="mt-3">
             <li>
-              <Link href="/work" className="inline-flex min-h-10 items-center text-[0.9375rem] text-steel transition-colors duration-[var(--dur-fast)] hover:text-signal">
+              <Link href="/work" className="inline-flex min-h-10 items-center text-[0.9375rem] text-steel transition-colors duration-[var(--dur-fast)] hover:text-bone">
                 All case studies
               </Link>
             </li>
             <li>
-              <Link href="/#ask" className="inline-flex min-h-10 items-center text-[0.9375rem] text-steel transition-colors duration-[var(--dur-fast)] hover:text-signal">
+              <Link href="/#ask" className="inline-flex min-h-10 items-center text-[0.9375rem] text-steel transition-colors duration-[var(--dur-fast)] hover:text-bone">
                 Ask Omjee
               </Link>
             </li>
@@ -62,7 +62,7 @@ export function Footer() {
             {profile.loop.join(" → ")}
           </p>
           <p className="label flex items-center gap-2 text-faint">
-            <span aria-hidden="true" className="size-1.5 rounded-full bg-data" />
+            <span aria-hidden="true" className="size-1.5 rounded-full bg-champagne" />
             Content updated {formatMonth(now.updated)}
           </p>
         </div>

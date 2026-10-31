@@ -23,17 +23,26 @@ export const site = {
   locale: "en",
 
   /**
-   * Homepage sections, in order. `id` is the anchor; `nav` lists it in the navigator; `note`
-   * is the one line the navigator shows beside it.
+   * Homepage sections, in order. `id` is the anchor; `nav` lists it in the navigator; `pill`
+   * gives it a toggle in the header's sector pill; `note` is the one line the navigator shows
+   * beside it.
    */
   sections: [
-    { id: "about", label: "About", nav: true, note: "Who he is and how he works" },
-    { id: "capabilities", label: "Capabilities", nav: true, note: "What he works with, and the evidence" },
-    { id: "ask", label: "Ask", nav: true, note: "Question the portfolio directly" },
-    { id: "work", label: "Work", nav: true, note: "The homepage programmes" },
-    { id: "experience", label: "Experience", nav: true, note: "Research, open source, education" },
-    { id: "garage", label: "Garage", nav: true, note: "Every public repository, synced from GitHub" },
-    { id: "contact", label: "Contact", nav: true, note: "Email and profiles" },
+    { id: "about", label: "About", nav: true, pill: true, note: "Background, and how the work gets done" },
+    { id: "capabilities", label: "Capabilities", nav: true, pill: true, note: "Tools and methods, with the evidence" },
+    { id: "ask", label: "Ask", nav: true, pill: false, note: "Question the portfolio directly" },
+    { id: "work", label: "Work", nav: true, pill: true, note: "The homepage programmes" },
+    { id: "experience", label: "Experience", nav: true, pill: true, note: "Research, open source, education" },
+    { id: "garage", label: "Garage", nav: true, pill: true, note: "Every public repository, synced from GitHub" },
+    { id: "contact", label: "Contact", nav: true, pill: true, note: "Email and profiles" },
+  ],
+
+  /** The header pill away from the homepage: the pages, and the way back. */
+  headerPages: [
+    { href: "/", label: "Home" },
+    { href: "/projects", label: "Projects" },
+    { href: "/work", label: "Work" },
+    { href: "/#garage", label: "Garage" },
   ],
 
   /**

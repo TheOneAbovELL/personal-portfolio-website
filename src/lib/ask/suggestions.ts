@@ -31,7 +31,7 @@ export function getSuggestions(): string[] {
     second && `What is ${second.title}?`,
     `What is ${profile.firstName} researching?`,
     "What technologies does he work with?",
-    "What other projects has he built?",
+    "What else has Omjee built?",
     profile.availability.open && "What roles is he looking for?",
     `How can I contact ${profile.firstName}?`,
   ]);
@@ -65,7 +65,7 @@ export function getSuggestionGroups(): SuggestionGroup[] {
       questions: compact([
         `What has ${profile.firstName} built?`,
         ...featured.map((project) => `What is ${project.title}?`),
-        "What other projects has he built?",
+        "What else has Omjee built?",
       ]),
     },
     {
@@ -137,6 +137,6 @@ export function generalFollowUps(): string[] {
     second && `What is ${second.title}?`,
     "What technologies does he work with?",
     `What is ${profile.firstName} researching?`,
-    "What other projects has he built?",
+    "What else has Omjee built?",
   ]);
 }

@@ -1,9 +1,9 @@
 import { statusLabel, type ProjectStatus } from "@/content";
 
-/** A technology or concept. Plain text with a hairline box — not a coloured pill. */
+/** A technology or concept. Quiet text on a soft chip — never a coloured pill. */
 export function Tag({ children }: { children: React.ReactNode }) {
   return (
-    <li className="label border border-rule bg-graphite px-2 py-1 text-[0.6875rem] tracking-[0.08em] text-steel">
+    <li className="label rounded-xs border border-[rgb(239_235_228/0.06)] bg-[rgb(239_235_228/0.04)] px-2 py-1 text-[0.6875rem] tracking-[0.08em] text-steel">
       {children}
     </li>
   );
@@ -37,7 +37,7 @@ export function StatusBadge({ status }: { status: ProjectStatus }) {
     <span className="label inline-flex items-center gap-2 text-bone">
       <span
         aria-hidden="true"
-        className={`size-1.5 rounded-full ${live ? "bg-signal" : "border border-steel"}`}
+        className={`size-1.5 rounded-full ${live ? "bg-rosso-bright" : "border border-steel"}`}
       />
       {statusLabel[status]}
     </span>

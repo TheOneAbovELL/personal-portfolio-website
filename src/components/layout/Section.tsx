@@ -1,8 +1,8 @@
 import { site, type SectionId } from "@/content/site";
 
 /**
- * The accent that leads a section. Maps to the palette's meanings:
- * yellow = active/navigation, teal = intelligence/data, red = performance.
+ * The accent that leads a section. Names are historical; they map to the Ferrari-led palette:
+ * yellow = champagne (detail), teal = silver (cool neutral), red = rosso (signature).
  */
 export type Tone = "yellow" | "teal" | "red";
 
@@ -43,7 +43,7 @@ export function SectorLabel({ id, label, readout }: { id: SectionId; label: stri
   return (
     <div className="mt-4 flex items-baseline justify-between gap-6">
       <p className="label text-steel" data-reveal="snap">
-        <span className="text-signal">{sectorNumber(id)}</span>
+        <span className="text-champagne">{sectorNumber(id)}</span>
         <span aria-hidden="true" className="mx-2 text-metal-3">
           /
         </span>

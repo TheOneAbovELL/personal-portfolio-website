@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 let lastPath: string | null = null;
 
 /**
- * The quiet veil and red hairline between pages (client-side navigation only; a full load has the intro
+ * The soft veil and gliding red light between pages (client-side navigation only; a full load has the intro
  * instead). Rendered by app/template.tsx beside — never around — the page, so nothing
  * here transforms an ancestor of the page's fixed layers.
  *

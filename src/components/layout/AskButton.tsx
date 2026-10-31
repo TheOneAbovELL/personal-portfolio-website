@@ -4,10 +4,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ASK_EVENT } from "@/components/nav/events";
-import { prefersReducedMotion } from "@/lib/motion";
+import { scrollToSection } from "@/components/nav/scroll";
+import "@/components/nav/navigator.css";
 
 /**
- * Persistent entry point to Ask Omjee, drawn like the header's Menu control. It appears once
+ * Persistent entry point to Ask Omjee: a floating capsule of the same material as the header. It appears once
  * the hero has been scrolled past and steps aside while the Ask section or the contact area
  * is on screen. On the homepage it glides to the console and hands it focus, ready to type;
  * elsewhere it is an ordinary link to /#ask. The navigator offers the same thing from its
@@ -40,15 +41,14 @@ export function AskButton() {
         const target = document.getElementById("ask");
         if (pathname !== "/" || !target || event.metaKey || event.ctrlKey || event.shiftKey) return;
         event.preventDefault();
-        target.scrollIntoView({ behavior: prefersReducedMotion() ? "auto" : "smooth", block: "start" });
+        scrollToSection("ask");
         window.history.replaceState(window.history.state, "", "/#ask");
         window.dispatchEvent(new CustomEvent(ASK_EVENT, { detail: {} }));
       }}
-      className={`label group fixed bottom-4 right-4 z-40 inline-flex h-10 items-center gap-2.5 border border-rule-strong bg-carbon/80 pl-3.5 pr-4 text-bone backdrop-blur-md transition-[opacity,translate,border-color] duration-[320ms] ease-[var(--ease-out)] hover:border-metal-3 sm:bottom-6 sm:right-6 ${
-        visible ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-3 opacity-0"
-      }`}
+      data-hidden={visible ? undefined : ""}
+      className="ask-fab"
     >
-      <span aria-hidden="true" className="readout text-[0.9375rem] leading-none text-data transition-transform duration-[var(--dur-fast)] ease-[var(--ease-snap)] group-hover:translate-x-0.5">
+      <span aria-hidden="true" className="ask-fab-mark">
         ›
       </span>
       Ask Omjee

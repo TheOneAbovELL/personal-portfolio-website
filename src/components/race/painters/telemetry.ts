@@ -6,7 +6,7 @@ import { strokeAlong } from "./racingLine";
  * Telemetry sweep (RACE-SYSTEM §8): while the interface reports activity — Ask Omjee
  * retrieving — pulses of light run down the visible racing line. Pulses sit at fixed
  * intervals of arc length and move at constant speed, so scrolling during a sweep never
- * makes one jump. In signal yellow: this is the interface working, not the zone's light.
+ * makes one jump. In champagne: this is the interface working, not the zone's light.
  */
 
 /** Pulse speed and spacing, in viewport heights (per second, and between pulses). */
@@ -25,7 +25,7 @@ export function paintTelemetry(frame: Frame, line: RaceLine): void {
 
   ctx.save();
   ctx.translate(0, -scrollY);
-  ctx.strokeStyle = INK.yellow;
+  ctx.strokeStyle = INK.champagne;
   ctx.lineWidth = 1.5;
   for (let head = Math.floor(from / spacing) * spacing + phase; head - trail < to; head += spacing) {
     if (head < from) continue;

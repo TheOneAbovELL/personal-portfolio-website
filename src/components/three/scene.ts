@@ -1,11 +1,11 @@
 import {
-  ACESFilmicToneMapping,
   Group,
   HalfFloatType,
   LinearFilter,
   LinearMipmapLinearFilter,
   LineSegments,
   Mesh,
+  NeutralToneMapping,
   PerspectiveCamera,
   PlaneGeometry,
   Scene,
@@ -15,16 +15,16 @@ import {
 } from "three";
 import { footprint } from "@/lib/car/footprint";
 import { buildCar } from "@/lib/car/model";
-import { clamp01, duration, easeInOutCubic, lerp, smoothstep } from "@/lib/motion";
+import { clamp01, easeInOutCubic, lerp, smoothstep } from "@/lib/motion";
 import { applyPose, mixPose, POSES, TARGET, type Framing } from "./camera";
-import { buildLineGeometry, buildSolidGeometries, buildStreakGeometry } from "./geometry";
+import { buildSolidGeometries, buildStreakGeometry } from "./geometry";
 import {
   createFloorMaterial,
-  createLineMaterial,
   createStreakMaterial,
   createSurfaceMaterials,
   disposeMaterials,
   lightSurfaces,
+  sweep,
 } from "./materials";
 import { createStudioEnvironment, createStudioLights } from "./studio";
 import { createShadowMap } from "./textures";
@@ -35,9 +35,8 @@ export interface HeroSceneOptions {
   stage: HTMLElement;
   /** 0 at the top of the page → 1 once the hero has scrolled away. */
   getProgress: () => number;
-  /** Play the drawing → object move. Skipped if the visitor has already scrolled. */
-  intro: boolean;
-  onFirstFrame: () => void;
+  /** Idle life: drift, pointer parallax, the recurring light sweep. Off for reduced motion. */
+  motion: boolean;
   onContextLost: () => void;
 }
 
@@ -48,23 +47,55 @@ export interface HeroScene {
    * so the first frame never stalls the page.
    */
   ready: Promise<void>;
+  /** Draw one settled frame now (after `ready`): the frame the page is revealed on. */
+  renderNow: () => void;
   start: () => void;
   stop: () => void;
+  /**
+   * Frames per second while the page is still covered (the loader): the car keeps rendering
+   * so it is warm when revealed, without taking frames from the loader's own animation.
+   * 0 renders every frame.
+   */
+  setCadence: (fps: number) => void;
+  /** Play the arrival: a short camera settle and the first light sweep. */
+  reveal: () => void;
   dispose: () => void;
   /** Render a single settled frame at a given scroll progress. Used for testing and stills. */
-  renderStill: (progress: number) => void;
+  renderStill: (progress: number, sweepAt?: number) => void;
 }
 
 /** Pixel-ratio ceilings. Phones get less: their screens are dense enough that 1.5x plus MSAA is clean. */
 const MAX_PIXEL_RATIO = 2;
 const MAX_PIXEL_RATIO_COARSE = 1.5;
+/** Most pixels the canvas may have: keeps 4K and dense laptop panels inside the frame budget. */
+const MAX_PIXELS = 4.2e6;
 const MAX_ANISOTROPY = 8;
-const ENVIRONMENT_INTENSITY = 0.9;
-const EXPOSURE = 1.0;
+const ENVIRONMENT_INTENSITY = 1;
+/** Neutral tone mapping (Khronos PBR Neutral) keeps the rosso's hue: ACES pushes it to orange. */
+const EXPOSURE = 1.05;
 /** The reflection is blurred before it is seen, so it is rendered at a fraction of the canvas. */
 const REFLECTION_SCALE = 0.5;
 /** Idle drift of the resting camera, in degrees and radians per second. Barely perceptible by design. */
-const DRIFT = { azimuth: 0.55, elevation: 0.2, rate: 0.13 };
+const DRIFT = { azimuth: 0.6, elevation: 0.22, rate: 0.13 };
+/** How quickly the exit follows the scroll position (per second). Lenis already smooths the wheel. */
+const FOLLOW_RATE = 9;
+/**
+ * The arrival: as the page is revealed the camera settles the last few degrees into place,
+ * and a light passes over the bodywork. Then the light comes round again, slowly, now and then.
+ */
+const ARRIVAL = { ms: 1900, from: { azimuth: 40, elevation: 8.5, fov: 27 }, pullBack: 0.93 };
+const SWEEP = {
+  /** First pass begins this long into the arrival. */
+  delay: 350,
+  /** One pass, in ms. */
+  ms: 2600,
+  /** Then once every… */
+  every: 11000,
+  /** Reflection-ring angles it travels between (radians about the vertical). */
+  from: -0.35,
+  to: Math.PI + 0.35,
+  level: 0.6,
+};
 /**
  * The exit. As the hero scrolls away the car pulls away: it accelerates forward out of frame,
  * trailing speed streaks drawn from its own lines, while the camera swings lower and wider and
@@ -95,15 +126,15 @@ function readFraming(stage: HTMLElement): Framing {
   };
 }
 
+/** Sweep level over one pass: eases in and out so the light never pops on or off. */
+const passLevel = (t: number) => Math.max(0, Math.sin(Math.PI * clamp01(t))) ** 1.5;
+
 /**
- * The hero scene has two moves, driven by one number each:
- *
- *   intro  drawing → object: the flat side elevation in construction lines (matching the
- *          server-rendered SVG) gains perspective and light, and becomes the car in a studio
- *   exit   object → gone: scrolling, the car accelerates out of frame (see EXIT)
+ * The hero scene: the car on a satin studio floor, lit like a photograph. Scroll drives the
+ * exit (see EXIT); time drives only the idle life — drift, parallax, the light sweep.
  */
 export function createHeroScene(options: HeroSceneOptions): HeroScene {
-  const { canvas, stage, getProgress } = options;
+  const { canvas, stage, getProgress, motion } = options;
 
   const renderer = new WebGLRenderer({
     canvas,
@@ -112,7 +143,7 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
     powerPreference: "high-performance",
   });
   renderer.setClearColor(0x000000, 0);
-  renderer.toneMapping = ACESFilmicToneMapping;
+  renderer.toneMapping = NeutralToneMapping;
   renderer.toneMappingExposure = EXPOSURE;
 
   const scene = new Scene();
@@ -120,19 +151,17 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
 
   const environment = createStudioEnvironment(renderer);
   scene.environment = environment.texture;
-  scene.environmentIntensity = 0;
+  scene.environmentIntensity = ENVIRONMENT_INTENSITY;
   const lights = createStudioLights(scene);
+  lights.setLevel(1);
 
   const model = buildCar();
   const anisotropy = Math.min(MAX_ANISOTROPY, renderer.capabilities.getMaxAnisotropy());
   const surfaceMaterials = createSurfaceMaterials(anisotropy);
+  lightSurfaces(surfaceMaterials, 1);
   const surfaces = new Group();
   const solidGeometries = buildSolidGeometries(model);
   for (const [id, geometry] of solidGeometries) surfaces.add(new Mesh(geometry, surfaceMaterials[id]));
-
-  const lineMaterial = createLineMaterial();
-  const lines = new LineSegments(buildLineGeometry(model), lineMaterial);
-  lines.renderOrder = 2;
 
   const streakMaterial = createStreakMaterial();
   const streaks = new LineSegments(buildStreakGeometry(model), streakMaterial);
@@ -142,7 +171,7 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
 
   // Everything that belongs to the car moves together on the exit.
   const car = new Group();
-  car.add(surfaces, lines, streaks);
+  car.add(surfaces, streaks);
 
   // The floor reflects a mirrored copy of the car. That copy is never drawn to the screen:
   // it is rendered on its own into a small mipmapped target, which the floor then reads
@@ -160,6 +189,7 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
   const shadowMap = createShadowMap(footprint());
   const floorGeometry = new PlaneGeometry(22, 16);
   const floorMaterial = createFloorMaterial(reflectionTarget.texture, shadowMap, TARGET.x);
+  floorMaterial.uniforms.uLit.value = 1;
   const floor = new Mesh(floorGeometry, floorMaterial);
   floor.rotation.x = -Math.PI / 2;
   floor.position.set(TARGET.x, 0, 0);
@@ -172,19 +202,22 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
   let framing = readFraming(stage);
   let running = false;
   let progress = getProgress();
-  let lastDraw: { now: number; intro: number; drift: boolean } | null = null;
+  let lastDrawAt = -1;
 
   const resize = () => {
     width = Math.max(1, stage.clientWidth);
     height = Math.max(1, stage.clientHeight);
     framing = readFraming(stage);
     const coarse = width < 768 || window.matchMedia("(pointer: coarse)").matches;
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, coarse ? MAX_PIXEL_RATIO_COARSE : MAX_PIXEL_RATIO));
+    const budget = Math.sqrt(MAX_PIXELS / (width * height));
+    renderer.setPixelRatio(
+      Math.min(window.devicePixelRatio || 1, coarse ? MAX_PIXEL_RATIO_COARSE : MAX_PIXEL_RATIO, Math.max(1, budget)),
+    );
     renderer.setSize(width, height, false);
     reflectionTarget.setSize(Math.ceil(width * REFLECTION_SCALE), Math.ceil(height * REFLECTION_SCALE));
     renderer.getDrawingBufferSize(floorMaterial.uniforms.uResolution.value as Vector2);
     // Resizing clears the canvas; repaint if the loop is paused.
-    if (!running && lastDraw) draw(lastDraw.now, lastDraw.intro, lastDraw.drift);
+    if (!running && lastDrawAt >= 0) draw(lastDrawAt);
   };
   const resizeObserver = new ResizeObserver(resize);
   resizeObserver.observe(stage);
@@ -195,6 +228,8 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
   // The reflection pass renders into a linear target without tone mapping, which needs its
   // own variant of every surface program, so it is compiled separately against that target.
   applyPose(camera, POSES.hero, framing, width, height);
+  // compileAsync only visits visible objects: the streaks (hidden at rest) must be included,
+  // or their program links mid-scroll, on the first frame of the exit.
   streaks.visible = true;
   renderer.setRenderTarget(reflectionTarget);
   reflection.visible = true;
@@ -207,7 +242,7 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
 
   // Pointer parallax — a few degrees, fine pointers only.
   const pointer = { x: 0, y: 0, tx: 0, ty: 0 };
-  const finePointer = window.matchMedia("(pointer: fine)").matches;
+  const finePointer = motion && window.matchMedia("(pointer: fine)").matches;
   const onPointerMove = (event: PointerEvent) => {
     pointer.tx = (event.clientX / window.innerWidth) * 2 - 1;
     pointer.ty = (event.clientY / window.innerHeight) * 2 - 1;
@@ -223,8 +258,9 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
 
   let raf = 0;
   let last = 0;
-  let introStart = -1;
-  let firstFrame = true;
+  let minInterval = 0;
+  /** When the arrival started; -1 until revealed (the covered page shows the settled view). */
+  let arrivedAt = -1;
 
   /** Render the mirrored car, lit by a mirrored rig, into the reflection target. */
   function renderReflection() {
@@ -246,13 +282,28 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
   }
 
   const framed: Framing = { cx: 0, cy: 0, span: 0 };
+  let warmed = false;
 
-  function draw(now: number, intro: number, drift: boolean) {
-    lastDraw = { now, intro, drift };
+  /** Sweep position and level at `now`, from the arrival's clock. */
+  function sweepAt(now: number) {
+    if (arrivedAt < 0) return { angle: 0, level: 0 };
+    let t = now - arrivedAt - SWEEP.delay;
+    if (t < 0) return { angle: 0, level: 0 };
+    if (t > SWEEP.ms) {
+      if (!motion) return { angle: 0, level: 0 };
+      t = (t - SWEEP.ms) % SWEEP.every;
+      // Later passes are slower and softer than the first.
+      const ms = SWEEP.ms * 1.4;
+      if (t > ms) return { angle: 0, level: 0 };
+      const k = t / ms;
+      return { angle: lerp(SWEEP.from, SWEEP.to, easeInOutCubic(k)), level: SWEEP.level * 0.6 * passLevel(k) };
+    }
+    const k = t / SWEEP.ms;
+    return { angle: lerp(SWEEP.from, SWEEP.to, easeInOutCubic(k)), level: SWEEP.level * passLevel(k) };
+  }
 
-    const depth = intro;
-    // Surfaces light up through the middle of the move, not at its edges.
-    const lit = smoothstep(0.12, 0.9, depth);
+  function draw(now: number, still = false) {
+    lastDrawAt = now;
 
     // Exit: the camera starts to move at once, the car a beat later, and it keeps
     // accelerating: distance grows with the square of time, as it would from a standing start.
@@ -261,70 +312,85 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
     const travel = EXIT.distance * launch * launch;
     const speed = smoothstep(0.1, 0.75, progress);
 
-    const pose = mixPose(mixPose(POSES.drawing, POSES.hero, depth), EXIT.pose, swing * depth);
-    const settled = depth * (1 - swing);
-    pose.azimuth += pointer.x * 4 * settled;
-    pose.elevation -= pointer.y * 2 * settled;
-    if (drift) {
-      // The resting view breathes: two slow, unrelated sways, scaled away as the car flattens.
-      const t = (now / 1000) * DRIFT.rate;
-      pose.azimuth += Math.sin(t) * DRIFT.azimuth * settled;
-      pose.elevation += Math.sin(t * 0.71 + 1.3) * DRIFT.elevation * settled;
+    // Arrival: 0 → 1 over ARRIVAL.ms after the reveal; settled (1) before it and on stills.
+    const arrival = still || arrivedAt < 0 || !motion ? 1 : easeInOutCubic(clamp01((now - arrivedAt) / ARRIVAL.ms));
+
+    const pose = mixPose(mixPose(ARRIVAL.from, POSES.hero, arrival), EXIT.pose, swing);
+    const settled = 1 - swing;
+    if (!still) {
+      pose.azimuth += pointer.x * 4 * settled;
+      pose.elevation -= pointer.y * 2 * settled;
+      if (motion) {
+        // The resting view breathes: two slow, unrelated sways.
+        const t = (now / 1000) * DRIFT.rate;
+        pose.azimuth += Math.sin(t) * DRIFT.azimuth * settled;
+        pose.elevation += Math.sin(t * 0.71 + 1.3) * DRIFT.elevation * settled;
+      }
     }
     framed.cx = framing.cx;
     framed.cy = framing.cy;
-    framed.span = framing.span * lerp(1, EXIT.pullBack, swing);
+    framed.span = framing.span * lerp(ARRIVAL.pullBack, 1, arrival) * lerp(1, EXIT.pullBack, swing);
     applyPose(camera, pose, framed, width, height, travel * EXIT.follow);
 
     car.position.x = travel;
     reflection.position.x = travel;
     (floorMaterial.uniforms.uCar.value as Vector2).x = TARGET.x + travel;
 
-    scene.environmentIntensity = ENVIRONMENT_INTENSITY * lit;
-    lights.setLevel(lit);
-    lightSurfaces(surfaceMaterials, lit);
-    floorMaterial.uniforms.uLit.value = lit;
+    const light = sweepAt(now);
+    sweep.uSweepAngle.value = light.angle;
+    sweep.uSweepLevel.value = light.level * settled;
 
-    const grounded = lit > 0.001;
-    if (grounded) renderReflection();
-    floor.visible = grounded;
+    renderReflection();
 
-    lineMaterial.uniforms.uLit.value = lit;
-    lineMaterial.uniforms.uTime.value = now / 1000;
-    // The air band belongs to the resting car; at speed the streaks take over from it.
-    lineMaterial.uniforms.uPulse.value = intro * (1 - speed);
     streakMaterial.uniforms.uStretch.value = speed;
-    streakMaterial.uniforms.uOpacity.value = lit * smoothstep(0.02, 0.25, progress);
-    streaks.visible = speed > 0.001;
+    streakMaterial.uniforms.uOpacity.value = smoothstep(0.02, 0.25, progress);
+    // Drawn (invisibly) on the first frame too, so the program's first use — which blocks on
+    // the driver — happens under the loader, not on the first frame of a scroll.
+    streaks.visible = speed > 0.001 || !warmed;
+    warmed = true;
 
     renderer.render(scene, camera);
   }
 
+  let lastRender = 0;
   const frame = (now: number) => {
     raf = requestAnimationFrame(frame);
     const dt = Math.min(0.05, (now - last) / 1000 || 0.016);
     last = now;
 
-    if (introStart < 0) introStart = now;
-    const intro = options.intro ? easeInOutCubic(clamp01((now - introStart) / duration.cinematic)) : 1;
-
-    // Frame-rate independent smoothing of scroll and pointer.
-    // Quick enough to track the wheel, slow enough that a notched wheel never reads as steps.
-    progress = lerp(progress, getProgress(), 1 - Math.exp(-dt * 5));
+    // Frame-rate independent smoothing of scroll and pointer. Lenis has already smoothed the
+    // wheel, so this only rounds off what is left (touch flicks, keyboard jumps).
+    progress = lerp(progress, getProgress(), 1 - Math.exp(-dt * FOLLOW_RATE));
     pointer.x = lerp(pointer.x, pointer.tx, 1 - Math.exp(-dt * 3));
     pointer.y = lerp(pointer.y, pointer.ty, 1 - Math.exp(-dt * 3));
 
-    draw(now, intro, true);
-
-    if (firstFrame) {
-      firstFrame = false;
-      options.onFirstFrame();
-    }
+    if (minInterval && now - lastRender < minInterval) return;
+    lastRender = now;
+    draw(now);
   };
 
-  function renderStill(value: number) {
+  function renderNow() {
+    progress = getProgress();
+    draw(performance.now());
+  }
+
+  function renderStill(value: number, sweepPhase?: number) {
     progress = clamp01(value);
-    draw(0, 1, false);
+    const now = performance.now();
+    if (sweepPhase !== undefined) {
+      // A still of the sweep: place the arrival clock so the first pass is at `sweepPhase`.
+      arrivedAt = now - SWEEP.delay - SWEEP.ms * clamp01(sweepPhase);
+    }
+    draw(now, true);
+  }
+
+  function setCadence(fps: number) {
+    minInterval = fps > 0 ? 1000 / fps - 2 : 0;
+  }
+
+  function reveal() {
+    if (arrivedAt >= 0) return;
+    arrivedAt = performance.now();
   }
 
   function start() {
@@ -344,16 +410,15 @@ export function createHeroScene(options: HeroSceneOptions): HeroScene {
     resizeObserver.disconnect();
     window.removeEventListener("pointermove", onPointerMove);
     canvas.removeEventListener("webglcontextlost", onContextLost);
-    lines.geometry.dispose();
     streaks.geometry.dispose();
     floorGeometry.dispose();
     for (const geometry of solidGeometries.values()) geometry.dispose();
-    disposeMaterials([lineMaterial, streakMaterial, floorMaterial, ...Object.values(surfaceMaterials)]);
+    disposeMaterials([streakMaterial, floorMaterial, ...Object.values(surfaceMaterials)]);
     shadowMap.dispose();
     reflectionTarget.dispose();
     environment.dispose();
     renderer.dispose();
   }
 
-  return { ready, start, stop, dispose, renderStill };
+  return { ready, renderNow, start, stop, setCadence, reveal, dispose, renderStill };
 }

@@ -184,8 +184,8 @@ export function RecEngineFigure({ wide = false }: { wide?: boolean }) {
   const rankOf = new Map(kept.map((r, i) => [r.c.name, i]));
 
   const control = (on: boolean) =>
-    `label min-h-9 border-b px-2.5 transition-colors duration-[var(--dur-fast)] ${
-      on ? "border-[rgb(var(--prog))] text-bone" : "border-transparent text-steel hover:text-bone"
+    `label min-h-9 rounded-full border px-3.5 transition-colors duration-[var(--dur-fast)] ${
+      on ? "border-[rgb(var(--prog)/0.55)] bg-[rgb(var(--prog)/0.1)] text-bone" : "border-transparent text-steel hover:bg-[rgb(239_235_228/0.04)] hover:text-bone"
     }`;
 
   return (

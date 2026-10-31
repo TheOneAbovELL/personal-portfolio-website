@@ -3,26 +3,17 @@ import { Fragment } from "react";
 import { Section } from "@/components/layout/Section";
 import { Icon } from "@/components/ui/Icon";
 import { Morph } from "@/components/work/Morph";
-import type { MorphKind } from "@/components/work/morph-shapes";
 import { Programme } from "@/components/work/Programme";
 import { NEUTRAL_PALETTE, PROGRAMME_PALETTE, programmeNumber } from "@/components/work/theme";
-import { featuredProjects, type ProgrammeTheme } from "@/content";
+import { featuredProjects } from "@/content";
 import { ResearchDirection } from "./Research";
 
 /**
- * What a programme's material turns into as the page leaves it (DATA_MORPH): documents become
- * signal; the waveforms become a dependency graph and its waves; the waves straighten into a
- * satellite swath and a raster tile; the tile's rows read out into a market series; and the
- * series flattens into the grid that the research block is drawn on.
+ * v7: one band remains — Legal Lens's documents become qEEG's signal (DATA_MORPH), the
+ * hand-over the owner approved. Every later programme carries its own signature entrance
+ * instead (components/work/signatures), so each reads as its own chapter, and the sequence
+ * ends calmly into research.
  */
-const TRANSITION_OUT: Record<ProgrammeTheme, MorphKind> = {
-  evidence: "information-signal",
-  signal: "waveform-belief",
-  ripple: "ripple-raster",
-  orbital: "raster-series",
-  market: "chart-grid",
-};
-
 /**
  * The Work sector: the featured programmes in sequence, each handed to the next by its own
  * transition, then research and direction, then the way to everything smaller.
@@ -41,7 +32,7 @@ export function SelectedWork() {
       aside={
         <Link
           href="/work"
-          className="label group inline-flex min-h-11 items-center gap-2 text-steel transition-colors duration-[var(--dur-fast)] hover:text-signal"
+          className="label group inline-flex min-h-11 items-center gap-2 text-steel transition-colors duration-[var(--dur-fast)] hover:text-rosso-bright"
         >
           All case studies
           <Icon
@@ -57,10 +48,10 @@ export function SelectedWork() {
         return (
           <Fragment key={project.slug}>
             <Programme project={project} index={index} total={featured.length} />
-            {project.theme && (
+            {project.theme === "evidence" && (
               <Morph
-                kind={TRANSITION_OUT[project.theme]}
-                from={PROGRAMME_PALETTE[project.theme]}
+                kind="information-signal"
+                from={PROGRAMME_PALETTE.evidence}
                 to={next?.theme ? PROGRAMME_PALETTE[next.theme] : NEUTRAL_PALETTE}
               />
             )}
@@ -68,13 +59,15 @@ export function SelectedWork() {
         );
       })}
 
-      <ResearchDirection />
+      <div className="mt-[clamp(4rem,9vw,8rem)]">
+        <ResearchDirection />
+      </div>
 
       <p className="mt-12 flex flex-wrap items-baseline gap-x-3 gap-y-1 border-t border-rule pt-6 text-[0.9375rem] text-steel">
         Everything smaller — experiments, tools, hackathon builds — lives in the
         <Link
           href="#garage"
-          className="label group inline-flex min-h-11 items-center gap-2 text-bone transition-colors duration-[var(--dur-fast)] hover:text-signal"
+          className="label group inline-flex min-h-11 items-center gap-2 text-bone transition-colors duration-[var(--dur-fast)] hover:text-rosso-bright"
         >
           Garage
           <Icon

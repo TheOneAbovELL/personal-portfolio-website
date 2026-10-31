@@ -23,7 +23,7 @@ export function ProjectRow({ project }: { project: Project }) {
       <div className="lg:col-span-6">
         <h3 className="display text-[1.625rem]">
           {hasCaseStudy ? (
-            <Link href={`/work/${project.slug}`} className="transition-colors duration-[var(--dur-fast)] hover:text-signal">
+            <Link href={`/work/${project.slug}`} className="transition-colors duration-[var(--dur-fast)] hover:text-rosso-bright">
               {project.title}
             </Link>
           ) : (
@@ -42,7 +42,7 @@ export function ProjectRow({ project }: { project: Project }) {
             <li>
               <Link
                 href={`/work/${project.slug}`}
-                className="label inline-flex min-h-11 items-center gap-2 text-bone transition-colors duration-[var(--dur-fast)] hover:text-signal"
+                className="label inline-flex min-h-11 items-center gap-2 text-bone transition-colors duration-[var(--dur-fast)] hover:text-rosso-bright"
                 aria-label={`Read the ${project.title} case study`}
               >
                 Case study
@@ -56,7 +56,7 @@ export function ProjectRow({ project }: { project: Project }) {
                 href={project.links.repo}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="label inline-flex min-h-11 items-center gap-2 text-steel transition-colors duration-[var(--dur-fast)] hover:text-signal"
+                className="label inline-flex min-h-11 items-center gap-2 text-steel transition-colors duration-[var(--dur-fast)] hover:text-rosso-bright"
                 aria-label={`${project.title} repository on GitHub`}
               >
                 Repository
@@ -70,7 +70,7 @@ export function ProjectRow({ project }: { project: Project }) {
                 href={project.links.demo}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="label inline-flex min-h-11 items-center gap-2 text-steel transition-colors duration-[var(--dur-fast)] hover:text-signal"
+                className="label inline-flex min-h-11 items-center gap-2 text-steel transition-colors duration-[var(--dur-fast)] hover:text-rosso-bright"
                 aria-label={`${project.title} live demo`}
               >
                 Live

@@ -1,5 +1,5 @@
 import type { Rgb } from "../layout";
-import { BONE, RED, STEEL, YELLOW } from "../palettes";
+import { BONE, CHAMPAGNE, ROSSO, STEEL } from "../palettes";
 
 /**
  * Everything a painter may read for one frame. Painters only draw: they never measure the
@@ -37,6 +37,6 @@ export const toCss = (rgb: Rgb) => `rgb(${Math.round(rgb[0])}, ${Math.round(rgb[
 export const INK = {
   steel: toCss(STEEL),
   bone: toCss(BONE),
-  red: toCss(RED),
-  yellow: toCss(YELLOW),
+  red: toCss(ROSSO),
+  champagne: toCss(CHAMPAGNE),
 } as const;

@@ -1,13 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Fragment } from "react";
 import { SectorLine } from "@/components/layout/Section";
 import { Icon } from "@/components/ui/Icon";
-import { Morph } from "@/components/work/Morph";
-import type { MorphKind } from "@/components/work/morph-shapes";
 import { Programme } from "@/components/work/Programme";
-import { NEUTRAL_PALETTE, PROGRAMME_PALETTE, programmeNumber } from "@/components/work/theme";
-import { featuredProjects, showcaseProjects, type ShowcaseTheme } from "@/content";
+import { programmeNumber } from "@/components/work/theme";
+import { featuredProjects, showcaseProjects } from "@/content";
 
 export const metadata: Metadata = {
   title: "Projects",
@@ -16,33 +13,15 @@ export const metadata: Metadata = {
   alternates: { canonical: "/projects" },
 };
 
-/**
- * What each programme's material turns into as the page leaves it (DATA_MORPH, as on the
- * homepage): a trace resolves into score bars, bars break into tokens, the window into
- * attention arcs, layers into a matrix, cost curves into a board, the board into a track,
- * the track straightens into an embedding neighbourhood, and the shortlist levels out into the
- * grid the page is drawn on.
- */
-const TRANSITION_OUT: Record<ShowcaseTheme, MorphKind> = {
-  trace: "trace-bars",
-  bench: "bars-context",
-  context: "context-attention",
-  circuit: "circuit-matrix",
-  attention: "curves-board",
-  chess: "board-track",
-  telemetry: "track-neighbours",
-  recommend: "neighbours-grid",
-};
-
 const linkClass =
-  "label group inline-flex min-h-11 items-center gap-2 text-bone transition-colors duration-[var(--dur-fast)] hover:text-signal";
+  "label group inline-flex min-h-11 items-center gap-2 text-bone transition-colors duration-[var(--dur-fast)] hover:text-rosso-bright";
 const arrowClass =
   "transition-transform duration-[var(--dur-fast)] ease-[var(--ease-snap)] group-hover:translate-x-1";
 
 /**
  * Programmes 06–13. The homepage carries 01–05; this page continues the same sequence with the
- * same parts — Programme, its figure, and a transition handing each one to the next — so the
- * whole body of work reads as one run.
+ * same parts. There are no bands chaining one programme to the next (v7): each programme keeps
+ * its own figure and enters in its own way (styles/work.css → "Programme entrances").
  */
 export default function ProjectsPage() {
   const offset = featuredProjects().length;
@@ -61,7 +40,7 @@ export default function ProjectsPage() {
           </span>
           Programmes {first}–{last}
         </p>
-        <h1 className="display enter-mask mt-5 text-[clamp(2.375rem,6vw,5.25rem)] uppercase">Projects</h1>
+        <h1 className="display enter-mask mt-5 text-[clamp(2.375rem,6vw,5.25rem)]">Projects</h1>
         <p
           className="prose-body enter mt-6 max-w-[40rem] text-steel"
           style={{ "--enter-index": 1 } as React.CSSProperties}
@@ -90,22 +69,10 @@ export default function ProjectsPage() {
           </div>
         </div>
 
-        <div className="mt-[clamp(2.5rem,5vw,4.5rem)]">
-          {programmes.map((project, index) => {
-            const next = programmes[index + 1];
-            return (
-              <Fragment key={project.slug}>
-                <Programme project={project} index={offset + index} total={total} />
-                {project.theme && (
-                  <Morph
-                    kind={TRANSITION_OUT[project.theme]}
-                    from={PROGRAMME_PALETTE[project.theme]}
-                    to={next?.theme ? PROGRAMME_PALETTE[next.theme] : NEUTRAL_PALETTE}
-                  />
-                )}
-              </Fragment>
-            );
-          })}
+        <div className="programme-run mt-[clamp(2.5rem,5vw,4.5rem)]">
+          {programmes.map((project, index) => (
+            <Programme key={project.slug} project={project} index={offset + index} total={total} />
+          ))}
         </div>
 
         <nav

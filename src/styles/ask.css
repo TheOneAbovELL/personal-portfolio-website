@@ -2,7 +2,7 @@
    Ask Omjee — the briefing console (components/sections/Ask*).
 
    Only what utilities cannot express lives here: the console's surface and its four motions.
-   Teal is the working colour; racing yellow appears only on what is selected or hovered.
+   Ivory on warm graphite; champagne for detail, rosso only for what is live or selected.
    ------------------------------------------------------------------------------------------ */
 
 /* The machined panel, cooled toward navy: this sector is the data room. The light falls on the
@@ -17,27 +17,40 @@
     );
 }
 
-/* A surface, not a box: no side walls and no drop shadow. A lit hairline above the command
-   line and a quiet one below hold it; the field fades out instead of ending at an edge. */
+/* A soft, rounded surface: one low-alpha hairline, a lifted warm fill and a gentle shadow.
+   The light falls on the command line and calms toward the brief. */
 .ask-console.panel {
-  border-inline-color: transparent;
-  border-bottom-color: var(--color-rule);
-  border-top-color: rgb(60 207 192 / 0.35);
-  box-shadow: inset 0 1px 0 rgb(233 231 225 / 0.05);
+  --panel-radius: var(--radius-xl);
+  overflow: hidden;
+  border-color: rgb(239 235 228 / 0.09);
+  box-shadow:
+    inset 0 1px 0 rgb(239 235 228 / 0.06),
+    0 40px 90px -50px rgb(0 0 0 / 0.9);
   background:
-    linear-gradient(180deg, rgb(233 231 225 / 0.035), transparent 6rem),
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--color-navy-2) 55%, transparent),
-      color-mix(in srgb, var(--color-navy) 30%, transparent) 22rem
-    );
+    linear-gradient(180deg, rgb(239 235 228 / 0.04), transparent 7rem),
+    linear-gradient(180deg, rgb(28 26 26 / 0.94), rgb(18 17 18 / 0.9) 22rem);
 }
 
-/* Hairlines are re-tuned for the navy surface; the graphite ones disappear on it. Utilities
-   resolve through these variables, so every rule inside the console follows. */
+@media (max-width: 47.99rem) {
+  .ask-console.panel {
+    --panel-radius: var(--radius-lg);
+  }
+}
+
+/* Hairlines inside the console, re-tuned for its surface. Utilities resolve through these
+   variables, so every rule inside the console follows. */
 .ask-console {
-  --color-rule: #1a2733;
-  --color-rule-strong: #2a3947;
+  --color-rule: rgb(239 235 228 / 0.07);
+  --color-rule-strong: rgb(239 235 228 / 0.12);
+}
+
+/* The command field draws its own soft ring on focus, inside the pill. */
+.ask-console .ask-field:focus-visible {
+  outline: none;
+}
+
+.ask-console form div:has(> .ask-field:focus-visible) {
+  box-shadow: 0 0 0 2px var(--color-rosso-bright);
 }
 
 /* Focus. The site's ring sits outside its element; controls that run flush to the console's
@@ -120,7 +133,7 @@
   position: absolute;
   inset: 0 auto 0 0;
   width: 28%;
-  background: linear-gradient(90deg, transparent, var(--color-data), transparent);
+  background: linear-gradient(90deg, transparent, var(--color-rosso-bright), transparent);
   transform: translateX(-100%);
 }
 
@@ -144,6 +157,6 @@
   inset: 0 auto auto 0;
   width: 24%;
   height: 1px;
-  background: linear-gradient(90deg, transparent, var(--color-data), transparent);
+  background: linear-gradient(90deg, transparent, var(--color-champagne), transparent);
   animation: flow 1400ms var(--ease-in-out) infinite;
 }

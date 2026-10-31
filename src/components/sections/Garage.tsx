@@ -28,7 +28,7 @@ export async function Garage() {
             href={github.href}
             target="_blank"
             rel="noopener noreferrer"
-            className="label group inline-flex min-h-11 items-center gap-2 text-steel transition-colors duration-[var(--dur-fast)] hover:text-signal"
+            className="group inline-flex min-h-11 items-center gap-2 rounded-pill border border-bone/[0.1] bg-bone/[0.03] px-4 text-[0.875rem] font-medium text-steel transition-colors duration-300 hover:border-bone/[0.22] hover:text-bone"
           >
             {github.handle} on GitHub
             <Icon
@@ -49,7 +49,7 @@ export async function Garage() {
       </div>
       <p className="label mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 text-faint">
         <span className="flex items-center gap-2">
-          <span aria-hidden="true" className="size-1.5 rounded-full bg-signal" />
+          <span aria-hidden="true" className="size-1.5 rounded-full bg-champagne" />
           Worked on in the last 90 days
         </span>
         {repos.some((repo) => repo.activity) && <span>Bars: commits per week, from GitHub</span>}

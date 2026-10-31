@@ -6,6 +6,9 @@ import { ProgrammeBrief } from "./ProgrammeBrief";
 import { ProgrammeStatus } from "./ProgrammeStatus";
 import { ProjectFigure } from "./ProjectFigure";
 import { SignalChain } from "./SignalChain";
+import { MarketTape } from "./signatures/MarketTape";
+import { RippleField } from "./signatures/RippleField";
+import { SatPass } from "./signatures/SatPass";
 import { PROGRAMME_PALETTE, programmeNumber, programmeScope } from "./theme";
 
 /**
@@ -13,6 +16,17 @@ import { PROGRAMME_PALETTE, programmeNumber, programmeScope } from "./theme";
  * The sequence cycles through them so consecutive programmes never share a layout.
  */
 const COMPOSITIONS = ["lead", "mirror", "bleed"] as const;
+
+/**
+ * Each programme enters in its own way (v7) rather than through a chain of shared bands:
+ *   evidence, signal   their v5 reveals, and Legal Lens hands over to qEEG (SelectedWork)
+ *   ripple             RippleField — damped waves leave the changed fact and cross the section
+ *   orbital            SatPass — a satellite swath reads the figure in as a resolving mosaic
+ *   market             MarketTape — the series drawn in across the full width, with a ticker
+ *   /projects themes   a light scroll-linked entrance of their own (styles/work.css)
+ * Figures with a scroll-linked entrance skip the time-based reveal, so only one thing moves them.
+ */
+const TIMED_FIGURE = new Set(["evidence", "signal", "market"]);
 
 interface ProgrammeProps {
   project: Project;
@@ -40,6 +54,7 @@ export function Programme({ project, index, total }: ProgrammeProps) {
       data-race-light={project.theme ? PROGRAMME_PALETTE[project.theme].primary : undefined}
       {...programmeScope(project.theme)}
     >
+      {project.theme === "market" && <MarketTape />}
       <div className="prog-rule" aria-hidden="true" data-reveal="trace" />
       <div className="mt-4 flex flex-wrap items-baseline justify-between gap-x-8 gap-y-2" {...reveal("snap")}>
         <p className="label text-steel">
@@ -62,9 +77,9 @@ export function Programme({ project, index, total }: ProgrammeProps) {
           <p className="prog-numeral display" aria-hidden="true" {...reveal("settle")}>
             {number}
           </p>
-          <h3 id={titleId} className="prog-title display uppercase" {...reveal("mask")}>
+          <h3 id={titleId} className="prog-title display" {...reveal("mask")}>
             <span className="mask">
-              <Link href={href} className="transition-colors duration-[var(--dur-fast)] hover:text-signal">
+              <Link href={href} className="transition-colors duration-[var(--dur-fast)] hover:text-rosso-bright">
                 {project.title}
               </Link>
             </span>
@@ -78,8 +93,10 @@ export function Programme({ project, index, total }: ProgrammeProps) {
         {project.slug === research.project && <SignalChain />}
 
         {project.figure && (
-          <div className="prog-figure" {...reveal("settle", 1)}>
+          <div className="prog-figure" {...(!project.theme || TIMED_FIGURE.has(project.theme) ? reveal("settle", 1) : {})}>
             <ProjectFigure figure={project.figure} wide={composition === "bleed"} />
+            {project.theme === "ripple" && <RippleField />}
+            {project.theme === "orbital" && <SatPass />}
           </div>
         )}
 

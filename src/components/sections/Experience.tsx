@@ -79,11 +79,11 @@ export async function Experience() {
                   aria-hidden="true"
                   className={`absolute -left-[4px] top-1.5 size-[7px] rounded-full ${
                     ongoing
-                      ? "bg-signal shadow-[0_0_0_4px_rgb(242_194_48/0.12)]"
+                      ? "bg-rosso-bright shadow-[0_0_0_4px_rgb(200_16_46/0.22)]"
                       : "border border-steel bg-carbon"
                   }`}
                 />
-                <h3 className="display text-[clamp(1.1875rem,1rem+0.6vw,1.4375rem)]">
+                <h3 className="display text-[clamp(1.375rem,1.1rem+0.8vw,1.75rem)] tracking-[-0.03em]">
                   {entry.role}
                 </h3>
                 <p className="mt-1.5 text-[1rem] text-bone/90">
@@ -104,7 +104,7 @@ export async function Experience() {
                     >
                       <span
                         aria-hidden="true"
-                        className="mt-[0.7em] h-px w-2 bg-signal"
+                        className="mt-[0.7em] h-px w-2 rounded-pill bg-champagne/80"
                       />
                       <span>
                         {highlight.text}
@@ -115,7 +115,7 @@ export async function Experience() {
                             target="_blank"
                             rel="noopener noreferrer"
                             aria-label={`Pull request ${link.label} on GitHub`}
-                            className="label ml-2 inline-block text-data underline decoration-data/30 underline-offset-4 transition-colors duration-[var(--dur-fast)] hover:text-bone hover:decoration-bone"
+                            className="label ml-2 inline-block rounded-xs bg-bone/[0.05] px-1.5 py-0.5 text-champagne transition-colors duration-300 hover:bg-bone/[0.1] hover:text-bone"
                           >
                             {link.label}
                           </a>
@@ -135,7 +135,7 @@ export async function Experience() {
                     <Link
                       key={project.slug}
                       href={projectHref(project)}
-                      className="label link-underline text-bone hover:text-signal"
+                      className="label link-underline text-bone hover:text-champagne-bright"
                     >
                       {project.title} case study →
                     </Link>
@@ -183,7 +183,7 @@ export async function Experience() {
                   href={achievement.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="label group mt-3 inline-flex min-h-11 items-center gap-2 text-bone transition-colors duration-[var(--dur-fast)] hover:text-signal"
+                  className="group mt-3 inline-flex min-h-11 items-center gap-2 text-[0.9375rem] font-medium text-bone transition-colors duration-300 hover:text-champagne-bright"
                 >
                   {achievement.linkLabel ?? "Learn more"}
                   <Icon
@@ -197,32 +197,20 @@ export async function Experience() {
           ))}
         </div>
 
-        {/* Competitive programming — real, self-updating telemetry. A figure on the sheet, not a box. */}
-        <article className="self-start lg:col-span-5" {...reveal("settle", 1)}>
+        {/* Competitive programming — real, self-updating telemetry, on a soft card. */}
+        <article className="surface self-start rounded-lg p-5 sm:p-7 lg:col-span-5" {...reveal("settle", 1)}>
           <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-4 border-b border-rule pb-5">
             <div>
               <p className="label text-faint">Codeforces</p>
-              <h3 className="display mt-2 text-[clamp(1.25rem,1rem+0.8vw,1.625rem)]">
+              <h3 className="display mt-2 text-[clamp(1.5rem,1.1rem+1vw,2rem)] tracking-[-0.035em]">
                 {titleCase(codeforces.rank)}
               </h3>
             </div>
             <dl className="flex gap-8">
               <div>
                 <dt className="label text-faint">Rating</dt>
-                <dd className="readout mt-1 text-[1.375rem] text-signal">
+                <dd className="readout mt-1 text-[1.75rem] leading-none text-bone">
                   {codeforces.rating}
-                </dd>
-              </div>
-              <div>
-                <dt className="label text-faint">Max</dt>
-                <dd className="readout mt-1 text-[1.375rem] text-bone">
-                  {codeforces.maxRating}
-                </dd>
-              </div>
-              <div>
-                <dt className="label text-faint">Rated contests</dt>
-                <dd className="readout mt-1 text-[1.375rem] text-bone">
-                  {codeforces.history.length}
                 </dd>
               </div>
             </dl>
@@ -232,8 +220,8 @@ export async function Experience() {
           </div>
           <p className="label mt-2 flex flex-wrap items-center justify-between gap-3 text-faint">
             <span>
-              <span className="text-steel">Fig. 05</span> — Rating after each
-              rated contest.{" "}
+              <span className="text-steel">Fig. 05</span> — Rating over
+              time.{" "}
               {codeforces.live ? "Refreshed daily." : "Snapshot."}
             </span>
             {codeforcesUrl && (
@@ -241,7 +229,7 @@ export async function Experience() {
                 href={codeforcesUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex min-h-11 items-center gap-1.5 text-steel transition-colors duration-[var(--dur-fast)] hover:text-signal"
+                className="inline-flex min-h-11 items-center gap-1.5 text-steel transition-colors duration-[var(--dur-fast)] hover:text-champagne-bright"
               >
                 {codeforces.handle}
                 <Icon name="arrow-up-right" size={12} />

@@ -7,14 +7,14 @@
    here are the resting state — the hero's studio — and what a visitor without JavaScript sees.
    ------------------------------------------------------------------------------------------ */
 .race-env {
-  --env-base: rgb(8 11 15);
-  --env-deep: rgb(10 24 38);
-  --env-glow-a: 60 207 192;
-  --env-glow-a-alpha: 0.07;
+  --env-base: rgb(11 10 10);
+  --env-deep: rgb(21 18 17);
+  --env-glow-a: 201 169 110;
+  --env-glow-a-alpha: 0.05;
   --env-glow-a-x: 12%;
   --env-glow-a-y: 30%;
-  --env-glow-b: 215 38 47;
-  --env-glow-b-alpha: 0.045;
+  --env-glow-b: 200 16 46;
+  --env-glow-b-alpha: 0.06;
   --env-glow-b-x: 88%;
   --env-glow-b-y: 74%;
 

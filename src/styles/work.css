@@ -8,19 +8,19 @@
    fallbacks below are the neutral page, so a figure rendered outside a programme still works.
    ------------------------------------------------------------------------------------------ */
 .prog-ink {
-  color: rgb(var(--prog, 233 231 225));
+  color: rgb(var(--prog, 239 235 228));
 }
 
 .prog-ink-2 {
-  color: rgb(var(--prog-2, 143 152 158));
+  color: rgb(var(--prog-2, 163 156 148));
 }
 
 .prog-bg {
-  background-color: rgb(var(--prog, 233 231 225));
+  background-color: rgb(var(--prog, 239 235 228));
 }
 
 .prog-bg-2 {
-  background-color: rgb(var(--prog-2, 143 152 158));
+  background-color: rgb(var(--prog-2, 163 156 148));
 }
 
 /* The line that opens a programme: its colour arriving as a lit stretch, then plain structure. */
@@ -48,9 +48,10 @@
   user-select: none;
 }
 
+/* v7: title case in the display face — calmer than the v6 capitals. */
 .prog-title {
   font-size: clamp(2.125rem, 4.6vw, 4.25rem);
-  line-height: 0.94;
+  line-height: 0.98;
 }
 
 /* ------------------------------------------------------------------------------------------
@@ -165,29 +166,284 @@
 }
 
 /* ------------------------------------------------------------------------------------------
-   The open figure plate: a figure set straight on the page between two hairlines — the
-   programme's colour arriving on the top one — with its caption under the lower one. Used by
-   every figure except Legal Lens's and qEEG's, which keep their machined panels.
+   The figure plate (v7): a soft, rounded surface — barely lifted from the page, a low-alpha
+   hairline, the programme's colour arriving along its top edge — with the caption under a
+   rule inside it. Used by every figure except Legal Lens's and qEEG's, which keep their panels.
    ------------------------------------------------------------------------------------------ */
 .fig-plate {
   position: relative;
+  border: 1px solid rgb(239 235 228 / 0.07);
+  border-radius: var(--radius-lg, 24px);
+  background:
+    linear-gradient(180deg, rgb(239 235 228 / 0.035), rgb(239 235 228 / 0.012) 40%),
+    rgb(18 17 18 / 0.55);
+  box-shadow: inset 0 1px 0 rgb(239 235 228 / 0.04);
+  padding: clamp(1rem, 2.2vw, 1.75rem) clamp(1rem, 2.2vw, 1.75rem) 0;
 }
 
 .fig-plate::before {
   content: "";
-  display: block;
+  position: absolute;
+  top: -1px;
+  left: var(--radius-lg, 24px);
+  right: 35%;
   height: 1px;
-  background: linear-gradient(90deg, rgb(var(--prog, 233 231 225) / 0.6), var(--color-rule-strong) 30%, var(--color-rule) 100%);
+  background: linear-gradient(90deg, rgb(var(--prog, 239 235 228) / 0.75), transparent);
 }
 
 .fig-plate-body {
-  padding-block: clamp(1rem, 2vw, 1.5rem) clamp(1rem, 2vw, 1.375rem);
+  padding-bottom: clamp(1rem, 2vw, 1.375rem);
 }
 
 .fig-plate-caption {
-  padding-top: 0.75rem;
-  border-top: 1px solid var(--color-rule);
+  padding-block: 0.875rem 1rem;
+  border-top: 1px solid rgb(239 235 228 / 0.07);
   line-height: 1.6;
+}
+
+/* ------------------------------------------------------------------------------------------
+   Programme signatures (components/work/signatures). Each homepage programme after qEEG enters
+   with its own scroll-scrubbed drawing instead of a band shared with its neighbours. The
+   layers run across the full viewport (their left and width are set from script) and fade at
+   every edge, so they read as part of the page rather than a box. Without JavaScript there is
+   nothing to draw and they are not shown.
+   ------------------------------------------------------------------------------------------ */
+.prog-figure {
+  position: relative;
+}
+
+.sig-layer {
+  display: none;
+  position: absolute;
+  left: 0;
+  width: 100%;
+  pointer-events: none;
+  -webkit-mask-image:
+    linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent),
+    linear-gradient(180deg, transparent, #000 16%, #000 84%, transparent);
+  -webkit-mask-composite: source-in;
+  mask-image:
+    linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent),
+    linear-gradient(180deg, transparent, #000 16%, #000 84%, transparent);
+  mask-composite: intersect;
+}
+
+html.js .sig-layer {
+  display: block;
+}
+
+/* Ripple: the waves cross the figure and well beyond it, above and below. */
+.sig-ripple {
+  top: -32%;
+  height: 164%;
+  z-index: 1;
+}
+
+/* SatQuery AI: the swath and the mosaic lie over the figure they read in. */
+.sig-sat {
+  top: -16%;
+  height: 132%;
+  z-index: 1;
+}
+
+/* ARGUS: the tape opens the programme, full-bleed. */
+.sig-tape {
+  display: none;
+  margin-inline: calc(50% - 50vw);
+  margin-bottom: clamp(1.5rem, 3.5vw, 3rem);
+}
+
+html.js .sig-tape {
+  display: block;
+}
+
+.sig-tape-canvas {
+  display: block;
+  width: 100%;
+  height: clamp(10rem, 30vh, 17rem);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);
+}
+
+.sig-tape-caption {
+  display: flex;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin-top: 0.5rem;
+}
+
+/* ------------------------------------------------------------------------------------------
+   Programme entrances (/projects, 06–13). No chained bands: each figure arrives in a way that
+   speaks its own subject, scrubbed by its own view timeline (so it reverses with the page and
+   costs one clip per frame). Browsers without view timelines, and reduced motion, show the
+   figure as it is.
+   ------------------------------------------------------------------------------------------ */
+.programme-run {
+  display: grid;
+  row-gap: clamp(2.5rem, 6vw, 5.5rem);
+}
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    html.js .programme-run .prog-figure > .fig-plate {
+      animation: 1ms linear both enter-window;
+      animation-timeline: view();
+      animation-range: entry 2% cover 30%;
+    }
+
+    /* TraceGrade — the trace is written top to bottom, a step at a time. */
+    html.js [data-programme="trace"] .prog-figure > .fig-plate {
+      animation-name: enter-trace;
+      animation-timing-function: steps(9, end);
+    }
+
+    /* RAG Workbench — two runs, opened side by side from the line between them. */
+    html.js [data-programme="bench"] .prog-figure > .fig-plate {
+      animation-name: enter-compare;
+      animation-timing-function: cubic-bezier(0.3, 0, 0.2, 1);
+    }
+
+    /* The Context Illusion — the window grows, left to right, as context does. */
+    html.js [data-programme="context"] .prog-figure > .fig-plate {
+      animation-name: enter-window;
+    }
+
+    /* Inside the Transformers — the residual stream opens out from its middle. */
+    html.js [data-programme="circuit"] .prog-figure > .fig-plate {
+      animation-name: enter-stream;
+      animation-timing-function: cubic-bezier(0.3, 0, 0.2, 1);
+    }
+
+    /* Beyond Quadratic Attention — a causal mask: the lower triangle first, then the rest. */
+    html.js [data-programme="attention"] .prog-figure > .fig-plate {
+      animation-name: enter-causal;
+    }
+
+    /* ChessLab — the board is set down on the table, tipping flat from its far edge. */
+    html.js [data-programme="chess"] .prog-figure > .fig-plate {
+      animation-name: enter-board;
+      animation-timing-function: cubic-bezier(0.2, 0.7, 0.2, 1);
+      transform-origin: 50% 100%;
+    }
+
+    /* F1 Replay — the figure arrives along the straight, a racing line drawn under it. */
+    html.js [data-programme="telemetry"] .prog-figure > .fig-plate {
+      animation-name: enter-straight;
+      animation-timing-function: cubic-bezier(0.2, 0.7, 0.2, 1);
+    }
+
+    html.js [data-programme="telemetry"] .prog-figure > .fig-plate::after {
+      content: "";
+      position: absolute;
+      left: var(--radius-lg, 24px);
+      right: var(--radius-lg, 24px);
+      bottom: -1px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgb(var(--prog)) 60%, rgb(var(--prog-2)));
+      transform-origin: left;
+      animation: enter-line 1ms linear both;
+      animation-timeline: view();
+      animation-range: entry 10% cover 34%;
+    }
+
+    /* Semantic Recommender — the neighbourhood of a query, widening from its centre. */
+    html.js [data-programme="recommend"] .prog-figure > .fig-plate {
+      animation-name: enter-neighbourhood;
+      animation-timing-function: cubic-bezier(0.3, 0, 0.2, 1);
+    }
+  }
+}
+
+@keyframes enter-trace {
+  from {
+    clip-path: inset(-2px -2px 100% -2px round var(--radius-lg, 24px));
+  }
+  to {
+    clip-path: inset(-2px -2px -2px -2px round var(--radius-lg, 24px));
+  }
+}
+
+@keyframes enter-compare {
+  from {
+    clip-path: inset(-2px 50% -2px 50% round var(--radius-lg, 24px));
+  }
+  to {
+    clip-path: inset(-2px -2px -2px -2px round var(--radius-lg, 24px));
+  }
+}
+
+@keyframes enter-window {
+  from {
+    clip-path: inset(-2px 100% -2px -2px round var(--radius-lg, 24px));
+    translate: -1.5rem 0;
+  }
+  to {
+    clip-path: inset(-2px -2px -2px -2px round var(--radius-lg, 24px));
+    translate: 0 0;
+  }
+}
+
+@keyframes enter-stream {
+  from {
+    clip-path: inset(50% -2px 50% -2px round var(--radius-lg, 24px));
+  }
+  to {
+    clip-path: inset(-2px -2px -2px -2px round var(--radius-lg, 24px));
+  }
+}
+
+@keyframes enter-causal {
+  from {
+    clip-path: polygon(0 0, 0 0, 0 0, 0 0);
+  }
+  55% {
+    clip-path: polygon(0 0, 0 0, 100% 100%, 0 100%);
+  }
+  to {
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+  }
+}
+
+@keyframes enter-board {
+  from {
+    opacity: 0.15;
+    transform: perspective(1600px) rotateX(16deg) translateY(2.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes enter-straight {
+  from {
+    opacity: 0;
+    translate: 9vw 0;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+@keyframes enter-line {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes enter-neighbourhood {
+  from {
+    clip-path: circle(0% at 50% 22%);
+    opacity: 0.4;
+  }
+  to {
+    clip-path: circle(110% at 50% 22%);
+    opacity: 1;
+  }
 }
 
 /* ------------------------------------------------------------------------------------------
@@ -350,8 +606,8 @@
 }
 
 /* ------------------------------------------------------------------------------------------
-   DATA_MORPH — the band between programmes (components/work/Morph). Full-bleed: the lines
-   pass through the page rather than sitting in a box. Without JavaScript there is nothing to
+   DATA_MORPH — the band from Legal Lens to qEEG (components/work/Morph), the one hand-over kept
+   in v7. Full-bleed: the lines pass through the page rather than sitting in a box. Without JavaScript there is nothing to
    draw, so the band collapses to plain spacing.
    ------------------------------------------------------------------------------------------ */
 .morph {

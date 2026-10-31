@@ -47,6 +47,10 @@ const AIRBOX: Station[] = [
   { x: -0.92, w: 0.03, yb: 0.72, yt: 0.8, n: 2 },
 ];
 
+/** Where the red nose tip begins, and where the red engine cover begins (just behind the roll hoop). */
+const NOSE_TIP = 2.34;
+const ENGINE_COVER = -0.26;
+
 const BODY_FACETS = 84;
 const POD_FACETS = 64;
 /** Facets below the waist at which paint gives way to bare carbon. */
@@ -69,6 +73,12 @@ export function monocoque(): Part {
     layer: LAYER.body,
     signalTop: true,
     lower: { material: "carbon", drop: BODY_WATERLINE },
+    // The red panels: the nose tip, and the engine cover from the roll hoop back. Between
+    // them the tub stays lacquered carbon, so the red reads as chosen panels, not a dipped car.
+    accents: [
+      { from: NOSE_TIP, to: Infinity, material: "livery" },
+      { from: -Infinity, to: ENGINE_COVER, material: "livery" },
+    ],
   });
   // Panel gaps where the nose cone and the engine cover come off. Hairlines, but they are
   // what tells the eye the body is assembled from panels rather than cast in one piece.
@@ -86,7 +96,7 @@ export function airbox(): Part {
     lines: 8,
     facets: 32,
     samples: 14,
-    material: "paint",
+    material: "livery",
     layer: LAYER.spine,
     signalTop: true,
     ends: { nose: { material: "void", lip: 0.13, recess: 0.05 } },
@@ -98,7 +108,7 @@ export function sidepods(): Part[] {
     lines: 16,
     facets: POD_FACETS,
     samples: 56,
-    material: "paint",
+    material: "livery",
     layer: LAYER.sidepod,
     lower: { material: "carbon", drop: POD_WATERLINE },
     ends: { nose: { material: "void", lip: 0.1, recess: 0.07 } },
@@ -109,7 +119,7 @@ export function sidepods(): Part[] {
   return [false, true].map((mirror) => {
     const pod = loft(SIDEPOD, { id: mirror ? "sidepod-l" : "sidepod-r", ...options, mirror });
     // The pinstripe sits on the joint between paint and carbon, as it would on a real car.
-    pod.solids?.push(ribbon(skin(SIDEPOD, mirror), stripe, 0.011, "data"));
+    pod.solids?.push(ribbon(skin(SIDEPOD, mirror), stripe, 0.007, "pinstripe"));
     return pod;
   });
 }
@@ -143,7 +153,7 @@ export function fin(): Part {
   };
 }
 
-/** The onboard camera pod on top of the airbox, in racing yellow. */
+/** The onboard camera pod on top of the airbox, gloss black against the red. */
 export function camera(): Part {
   const pod = { x: -0.4, y: 0.987, length: 0.085, height: 0.026, width: 0.2 };
   const outline: Vec2[] = [
@@ -160,7 +170,7 @@ export function camera(): Part {
       closed: true,
     })),
     solids: [
-      box([pod.x, pod.y, 0], [pod.length, pod.height, pod.width], "signal"),
+      box([pod.x, pod.y, 0], [pod.length, pod.height, pod.width], "paint"),
       box([pod.x, pod.y - 0.024, 0], [0.05, 0.03, 0.02], "carbon"),
     ],
     elevation: {

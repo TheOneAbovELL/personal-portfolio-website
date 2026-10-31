@@ -20,17 +20,18 @@ export interface Stroke {
 /**
  * Surface finishes. The renderer maps each to a physically based material.
  *
- *   paint    metallic graphite under clearcoat — upper bodywork
- *   livery   racing red under clearcoat — a few accents only: fin, rear endplates
- *   carbon   bare twill-weave carbon fibre — wings, floor, lower bodywork, suspension
- *   rubber   tyre compound
- *   rim      dark anodised wheel cover, turned on a lathe
- *   silver   machined bright metal — rim edges, wheel nuts, the helmet shell
- *   glass    dark gloss — visor, mirror glass
- *   void     an opening: cockpit, intakes. Absorbs light.
- *   signal   racing yellow — T-camera, tyre compound band
- *   data     technical teal — the pinstripe
- *   lamp     the red rain light
+ *   paint      lacquered carbon: gloss black over the weave — the monocoque and nose
+ *   livery     deep metallic rosso under clearcoat — the defined red panels: nose tip, engine
+ *              cover and airbox, fin, sidepod tops, rear wing main plane, every endplate
+ *   carbon     bare satin twill-weave carbon fibre — wings, floor, lower bodywork, suspension
+ *   rubber     tyre compound
+ *   rim        dark graphite wheel cover, turned on a lathe
+ *   silver     machined titanium — rim edges, wheel nuts, the helmet shell
+ *   glass      dark gloss — visor, mirror glass
+ *   void       an opening: cockpit, intakes. Absorbs light.
+ *   marking    soft-compound red — the tyre sidewall band
+ *   pinstripe  champagne gold leaf — the one pinstripe, where red paint meets bare carbon
+ *   lamp       the red rain light
  */
 export type MaterialId =
   | "paint"
@@ -41,8 +42,8 @@ export type MaterialId =
   | "silver"
   | "glass"
   | "void"
-  | "signal"
-  | "data"
+  | "marking"
+  | "pinstripe"
   | "lamp";
 
 export interface Solid {

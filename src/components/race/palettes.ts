@@ -10,14 +10,15 @@ import type { ZoneId } from "./store";
  * properties on `.race-env` (styles/race.css paints them).
  */
 
-/* Accents as numbers: canvas and gradients cannot read the tokens in globals.css directly. */
-export const TEAL: Rgb = [60, 207, 192];
-export const YELLOW: Rgb = [242, 194, 48];
-export const RED: Rgb = [215, 38, 47];
-/** Red at hairline widths needs the brighter tone to stay visible, exactly as it does for text. */
-export const RED_BRIGHT: Rgb = [240, 82, 90];
-export const STEEL: Rgb = [143, 152, 158];
-export const BONE: Rgb = [233, 231, 225];
+/* Accents as numbers: canvas and gradients cannot read the tokens in globals.css directly.
+   Ferrari-led: rosso is the signature light, champagne the detail, silver the cool neutral. */
+export const ROSSO: Rgb = [200, 16, 46];
+/** Rosso at hairline widths needs the brighter tone to stay visible, exactly as it does for text. */
+export const ROSSO_BRIGHT: Rgb = [255, 74, 85];
+export const CHAMPAGNE: Rgb = [201, 169, 110];
+export const SILVER: Rgb = [207, 211, 214];
+export const STEEL: Rgb = [163, 156, 148];
+export const BONE: Rgb = [239, 235, 228];
 
 interface Light {
   rgb: Rgb;
@@ -68,71 +69,72 @@ const pack = (p: Palette): Atmosphere =>
     ...p.accent,
   );
 
-/** RACE-SYSTEM §5. Lights change side from room to room, so a boundary reads as light moving. */
+/** RACE-SYSTEM §5. Lights change side from room to room, so a boundary reads as light moving.
+ *  Every room is warm graphite; colour is rationed — rosso where it matters, champagne for detail. */
 const PALETTES: Record<ZoneId, Atmosphere> = {
   // Automotive studio — matches the resting values in race.css.
   hero: pack({
-    base: [8, 11, 15],
-    deep: [10, 24, 38],
-    a: { rgb: TEAL, alpha: 0.07, x: 12, y: 30 },
-    b: { rgb: RED, alpha: 0.045, x: 88, y: 74 },
-    accent: TEAL,
+    base: [11, 10, 10],
+    deep: [21, 18, 17],
+    a: { rgb: CHAMPAGNE, alpha: 0.05, x: 12, y: 30 },
+    b: { rgb: ROSSO, alpha: 0.06, x: 88, y: 74 },
+    accent: ROSSO_BRIGHT,
   }),
-  // Cool engineering room.
+  // Quiet studio.
   about: pack({
-    base: [9, 12, 15],
-    deep: [15, 20, 25],
-    a: { rgb: TEAL, alpha: 0.085, x: 8, y: 34 },
-    b: { rgb: STEEL, alpha: 0.06, x: 92, y: 70 },
-    accent: TEAL,
+    base: [11, 10, 10],
+    deep: [19, 17, 16],
+    a: { rgb: SILVER, alpha: 0.045, x: 8, y: 34 },
+    b: { rgb: CHAMPAGNE, alpha: 0.04, x: 92, y: 70 },
+    accent: CHAMPAGNE,
   }),
   // Control room.
   capabilities: pack({
-    base: [8, 12, 18],
-    deep: [11, 26, 42],
-    a: { rgb: TEAL, alpha: 0.085, x: 86, y: 24 },
-    b: { rgb: YELLOW, alpha: 0.05, x: 10, y: 80 },
-    accent: TEAL,
+    base: [10, 9, 9],
+    deep: [20, 17, 16],
+    a: { rgb: CHAMPAGNE, alpha: 0.055, x: 86, y: 24 },
+    b: { rgb: ROSSO, alpha: 0.035, x: 10, y: 80 },
+    accent: CHAMPAGNE,
   }),
-  // Data room: the one zone that is navy all the way down.
+  // Briefing room: a cool key light and a low red fill.
   ask: pack({
-    base: [9, 21, 35],
-    deep: [15, 36, 58],
-    a: { rgb: TEAL, alpha: 0.11, x: 14, y: 36 },
-    b: { rgb: YELLOW, alpha: 0.035, x: 90, y: 78 },
-    accent: TEAL,
+    base: [12, 10, 10],
+    deep: [23, 19, 18],
+    a: { rgb: SILVER, alpha: 0.05, x: 14, y: 36 },
+    b: { rgb: ROSSO, alpha: 0.045, x: 90, y: 78 },
+    accent: SILVER,
   }),
   // Engineering lab. Light A is re-tinted programme by programme (see `data-race-light`).
   work: pack({
-    base: [9, 12, 16],
-    deep: [16, 21, 26],
-    a: { rgb: TEAL, alpha: 0.085, x: 88, y: 26 },
-    b: { rgb: RED, alpha: 0.04, x: 8, y: 80 },
-    accent: TEAL,
+    base: [11, 10, 10],
+    deep: [19, 17, 16],
+    a: { rgb: SILVER, alpha: 0.06, x: 88, y: 26 },
+    b: { rgb: ROSSO, alpha: 0.035, x: 8, y: 80 },
+    accent: SILVER,
   }),
-  // Behind the paper. Neutral, so the rooms either side fade down toward it and back up.
+  // Behind the document sheet. Neutral, so the rooms either side fade down toward it and back up.
   experience: pack({
-    base: [9, 12, 15],
-    deep: [14, 18, 22],
-    a: { rgb: STEEL, alpha: 0.035, x: 50, y: 28 },
-    b: { rgb: STEEL, alpha: 0.025, x: 50, y: 76 },
+    base: [11, 10, 10],
+    deep: [17, 15, 15],
+    a: { rgb: STEEL, alpha: 0.03, x: 50, y: 28 },
+    b: { rgb: STEEL, alpha: 0.022, x: 50, y: 76 },
     accent: STEEL,
   }),
-  // Workshop: gunmetal walls, a work-light overhead.
+  // Workshop: warm graphite walls, a champagne work-light overhead.
   garage: pack({
-    base: [18, 23, 27],
-    deep: [31, 40, 46],
-    a: { rgb: YELLOW, alpha: 0.085, x: 22, y: 14 },
-    b: { rgb: STEEL, alpha: 0.075, x: 86, y: 68 },
-    accent: YELLOW,
+    base: [19, 17, 16],
+    deep: [33, 29, 27],
+    a: { rgb: CHAMPAGNE, alpha: 0.075, x: 22, y: 14 },
+    b: { rgb: STEEL, alpha: 0.055, x: 86, y: 68 },
+    accent: CHAMPAGNE,
   }),
-  // Night pit lane: warm dark, red low on the horizon.
+  // Night pit lane: warm dark, rosso low on the horizon.
   contact: pack({
-    base: [13, 10, 10],
-    deep: [25, 16, 14],
-    a: { rgb: RED, alpha: 0.13, x: 72, y: 84 },
-    b: { rgb: YELLOW, alpha: 0.055, x: 12, y: 18 },
-    accent: RED_BRIGHT,
+    base: [14, 10, 10],
+    deep: [28, 15, 15],
+    a: { rgb: ROSSO, alpha: 0.14, x: 72, y: 84 },
+    b: { rgb: CHAMPAGNE, alpha: 0.05, x: 12, y: 18 },
+    accent: ROSSO_BRIGHT,
   }),
 };
 

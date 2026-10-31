@@ -77,12 +77,12 @@ function wheel(id: string, x: number, tyre: { z: number; width: number }, side: 
     ),
   );
 
-  // Compound marking: a broken yellow band on both sidewalls (medium, by convention).
+  // Compound marking: a broken red band on both sidewalls (soft, by convention).
   const marking: Solid[] = [];
   for (const face of [outer + side * (BAND.proud + 0.0008), inner - side * (BAND.proud + 0.0008)]) {
     for (let arc = 0; arc < 4; arc++) {
       marking.push(
-        lathe(x, y, [[BAND.inner + 0.001, face], [BAND.outer - 0.001, face]], "signal", {
+        lathe(x, y, [[BAND.inner + 0.001, face], [BAND.outer - 0.001, face]], "marking", {
           segments: 10,
           start: (Math.PI / 2) * arc + 0.3,
           sweep: Math.PI / 2 - 0.36,

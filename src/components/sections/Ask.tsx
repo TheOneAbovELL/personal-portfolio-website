@@ -37,7 +37,7 @@ export async function Ask() {
       title={
         <>
           Ask Omjee.
-          <span className="mt-4 block max-w-[34rem] text-[clamp(1.125rem,1.5vw,1.375rem)] font-normal leading-snug tracking-normal text-steel [font-stretch:100%] [font-variation-settings:'wdth'_100]">
+          <span className="mt-4 block max-w-[34rem] text-[clamp(1.125rem,1.5vw,1.375rem)] font-normal leading-snug tracking-[-0.012em] text-steel">
             Explore the engineer behind the work.
           </span>
         </>
@@ -49,10 +49,10 @@ export async function Ask() {
       <div className="grid gap-x-10 gap-y-8 lg:grid-cols-12">
         {/* Sticky on wide screens: the ground rules stay beside a brief however long it runs. */}
         <div className="lg:sticky lg:top-[calc(var(--header-h)+2rem)] lg:col-span-3 lg:self-start" {...reveal("rise")}>
-          <p className="label text-data">Ground rules</p>
-          <ul className="mt-4 border-t border-rule">
+          <p className="label text-champagne">Ground rules</p>
+          <ul className="surface mt-4 px-4 py-1">
             {GROUND_RULES.map((rule, index) => (
-              <li key={rule} className="grid grid-cols-[2rem_1fr] border-b border-rule py-3 text-[0.9375rem] leading-snug text-steel">
+              <li key={rule} className="grid grid-cols-[2rem_1fr] border-b border-rule py-3 text-[0.9375rem] leading-snug text-steel last:border-b-0">
                 <span aria-hidden="true" className="readout pt-px text-[0.6875rem] text-faint">
                   {String(index + 1).padStart(2, "0")}
                 </span>

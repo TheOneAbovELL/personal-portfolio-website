@@ -111,7 +111,7 @@ export default async function CaseStudyPage({ params }: { params: Promise<{ slug
       <div className="shell pb-[clamp(4rem,8vw,7rem)] pt-[calc(var(--header-h)+clamp(2rem,5vw,4rem))]">
       <Link
         href="/work"
-        className="label inline-flex min-h-11 items-center gap-2 text-steel transition-colors duration-[var(--dur-fast)] hover:text-signal"
+        className="label inline-flex min-h-11 items-center gap-2 text-steel transition-colors duration-[var(--dur-fast)] hover:text-rosso-bright"
       >
         <Icon name="arrow-left" size={14} />
         All work
@@ -123,7 +123,7 @@ export default async function CaseStudyPage({ params }: { params: Promise<{ slug
           <p className="label text-faint">{project.discipline ?? "Case study"}</p>
         </div>
         <h1
-          className="display enter-mask mt-5 text-[clamp(2.375rem,6vw,5.25rem)] uppercase"
+          className="display enter-mask mt-5 text-[clamp(2.375rem,6vw,5.25rem)]"
           style={{ "--enter-index": 1 } as React.CSSProperties}
         >
           {project.title}
@@ -192,9 +192,9 @@ export default async function CaseStudyPage({ params }: { params: Promise<{ slug
           <p className="label text-faint">Next case study</p>
           <Link
             href={`/work/${next.slug}`}
-            className="group mt-3 inline-flex items-center gap-4 transition-colors duration-[var(--dur-fast)] hover:text-signal"
+            className="group mt-3 inline-flex items-center gap-4 transition-colors duration-[var(--dur-fast)] hover:text-rosso-bright"
           >
-            <span className="display text-[clamp(1.75rem,4vw,3.25rem)] uppercase">{next.title}</span>
+            <span className="display text-[clamp(1.75rem,4vw,3.25rem)]">{next.title}</span>
             <Icon
               name="arrow-right"
               size={32}

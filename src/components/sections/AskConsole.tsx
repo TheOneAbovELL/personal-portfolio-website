@@ -58,18 +58,18 @@ function SmartLink({ href, className, children }: { href: string; className?: st
   );
 }
 
-/** A destination: the arrow moves and the link turns yellow, as navigation does across the site. */
+/** A destination: the arrow moves and the link warms to champagne, as navigation does across the site. */
 function ArrowLink({ href, children }: { href: string; children: ReactNode }) {
   return (
     <SmartLink
       href={href}
-      className="label group inline-flex min-h-11 items-center gap-2.5 text-[0.75rem] text-bone transition-colors duration-[var(--dur-fast)] hover:text-signal"
+      className="group inline-flex min-h-11 items-center gap-2 text-[0.9375rem] font-medium tracking-[-0.01em] text-bone transition-colors duration-300 hover:text-champagne-bright"
     >
       {children}
       <Icon
         name={isExternal(href) ? "arrow-up-right" : "arrow-right"}
         size={14}
-        className="text-data transition-[transform,color] duration-[var(--dur-fast)] ease-[var(--ease-snap)] group-hover:translate-x-1 group-hover:text-signal"
+        className="text-champagne transition-[transform,color] duration-300 ease-[var(--ease-soft)] group-hover:translate-x-1 group-hover:text-champagne-bright"
       />
     </SmartLink>
   );
@@ -81,7 +81,7 @@ const LINKABLE = /(https:\/\/[^\s"”)]*[^\s"”).,;:]|[\w.+-]+@[\w-]+(?:\.[\w-]
 function linked(text: string): ReactNode[] {
   return text.split(LINKABLE).map((part, index) =>
     index % 2 === 1 ? (
-      <SmartLink key={index} href={part.includes("://") ? part : `mailto:${part}`} className="link-underline break-words text-bone hover:text-signal">
+      <SmartLink key={index} href={part.includes("://") ? part : `mailto:${part}`} className="link-underline break-words text-bone hover:text-champagne-bright">
         {part}
       </SmartLink>
     ) : (
@@ -114,7 +114,7 @@ function Row({ label, order, children }: { label: string; order: number; childre
   );
 }
 
-/** A question that can be asked with one press. The marker grows and turns yellow under the pointer. */
+/** A question that can be asked with one press. The marker grows and turns rosso under the pointer. */
 function QuestionButton({ question, onAsk, order }: { question: string; onAsk: (question: string) => void; order: number }) {
   return (
     <button
@@ -125,7 +125,7 @@ function QuestionButton({ question, onAsk, order }: { question: string; onAsk: (
     >
       <span
         aria-hidden="true"
-        className="h-px w-3 shrink-0 bg-metal-3 transition-[width,background-color] duration-[260ms] ease-[var(--ease-snap)] group-hover:w-6 group-hover:bg-signal group-focus-visible:w-6 group-focus-visible:bg-signal"
+        className="h-px w-3 shrink-0 rounded-pill bg-metal-3 transition-[width,background-color] duration-[360ms] ease-[var(--ease-soft)] group-hover:w-6 group-hover:bg-rosso-bright group-focus-visible:w-6 group-focus-visible:bg-rosso-bright"
       />
       {question}
     </button>
@@ -135,13 +135,13 @@ function QuestionButton({ question, onAsk, order }: { question: string; onAsk: (
 /** Evidence as a ledger: one numbered row per case study, repository, role or capability. */
 function EvidenceRow({ card, number }: { card: AskCard; number: number }) {
   return (
-    <li className="group relative grid grid-cols-[2.5rem_minmax(0,1fr)_1rem] items-baseline gap-x-3 border-b border-rule py-3.5 last:border-b-0 sm:grid-cols-[3rem_minmax(0,1fr)_1rem]">
-      {/* Leading edge lights up on hover, like a selected row on a timing screen. */}
+    <li className="group relative isolate grid grid-cols-[2.5rem_minmax(0,1fr)_1rem] items-baseline gap-x-3 border-b border-rule py-3.5 last:border-b-0 sm:grid-cols-[3rem_minmax(0,1fr)_1rem]">
+      {/* The row lifts on hover: a soft rounded fill, like a selected row on a timing screen. */}
       <span
         aria-hidden="true"
-        className="absolute inset-y-0 -left-5 w-px origin-top scale-y-0 bg-signal transition-transform duration-[220ms] ease-[var(--ease-snap)] group-hover:scale-y-100 md:-left-6"
+        className="absolute -inset-x-3 inset-y-1 -z-10 rounded-md bg-bone/[0.045] opacity-0 transition-opacity duration-300 ease-[var(--ease-soft)] group-hover:opacity-100"
       />
-      <span aria-hidden="true" className="readout text-[0.75rem] text-faint transition-colors duration-[var(--dur-fast)] group-hover:text-signal">
+      <span aria-hidden="true" className="readout text-[0.75rem] text-faint transition-colors duration-[var(--dur-fast)] group-hover:text-rosso-bright">
         E.{pad(number)}
       </span>
       <div className="min-w-0">
@@ -157,7 +157,7 @@ function EvidenceRow({ card, number }: { card: AskCard; number: number }) {
           )}
         </p>
         <h4 className="mt-1 text-[1.0625rem] font-medium leading-snug text-bone">
-          <SmartLink href={card.href} className="transition-colors duration-[var(--dur-fast)] after:absolute after:inset-0 group-hover:text-signal">
+          <SmartLink href={card.href} className="transition-colors duration-[var(--dur-fast)] after:absolute after:inset-0 group-hover:text-champagne-bright">
             {card.title}
           </SmartLink>
         </h4>
@@ -167,7 +167,7 @@ function EvidenceRow({ card, number }: { card: AskCard; number: number }) {
       <Icon
         name={isExternal(card.href) ? "arrow-up-right" : "arrow-right"}
         size={14}
-        className="self-center text-faint transition-[transform,color] duration-[220ms] ease-[var(--ease-snap)] group-hover:translate-x-0.5 group-hover:text-signal"
+        className="self-center text-faint transition-[transform,color] duration-[220ms] ease-[var(--ease-snap)] group-hover:translate-x-0.5 group-hover:text-champagne-bright"
       />
     </li>
   );
@@ -219,7 +219,7 @@ function AnsweredRows({ response, onAsk }: { response: AskResponse; onAsk: (ques
       content: (
         <ul className="flex flex-wrap gap-1.5">
           {related.map((item) => (
-            <li key={item} className="label border border-rule-strong bg-carbon/40 px-2 py-1 tracking-[0.08em] text-steel">
+            <li key={item} className="label rounded-xs border border-bone/[0.07] bg-bone/[0.04] px-2 py-1 tracking-[0.08em] text-steel">
               {item}
             </li>
           ))}
@@ -246,7 +246,7 @@ function AnsweredRows({ response, onAsk }: { response: AskResponse; onAsk: (ques
               <ul className="flex flex-wrap items-baseline gap-x-5 gap-y-1.5">
                 {sources.map((source) => (
                   <li key={`${source.href}-${source.label}`}>
-                    <SmartLink href={source.href} className="label link-underline text-data hover:text-bone">
+                    <SmartLink href={source.href} className="label link-underline text-champagne hover:text-bone">
                       {source.label}
                     </SmartLink>
                   </li>
@@ -305,7 +305,7 @@ function Retry({ exchange, onAsk }: { exchange: Extract<Exchange, { state: "fail
         type="button"
         disabled={seconds > 0}
         onClick={() => onAsk(exchange.question)}
-        className="label inline-flex min-h-11 items-center border border-rule-strong px-4 text-[0.75rem] text-bone transition-colors duration-[var(--dur-fast)] enabled:hover:border-signal enabled:hover:text-signal disabled:text-faint"
+        className="inline-flex min-h-11 items-center rounded-pill border border-bone/[0.14] bg-bone/[0.04] px-5 text-[0.9375rem] font-medium text-bone transition-colors duration-300 enabled:hover:border-bone/[0.3] enabled:hover:bg-bone/[0.08] disabled:text-faint"
       >
         Ask again
       </button>
@@ -333,13 +333,13 @@ function Brief({ exchange, number, headingRef, onAsk }: BriefProps) {
 
   return (
     <article aria-labelledby={headingId} aria-busy={state === "pending"} className="scroll-mt-28 border-t border-rule-strong">
-      <header className="weave flex items-center justify-between gap-4 px-5 py-2.5 md:px-6">
+      <header className="flex items-center justify-between gap-4 bg-bone/[0.025] px-5 py-3 md:px-6">
         <p className="label text-steel">
-          <span className="text-data">Brief</span>
+          <span className="text-champagne">Brief</span>
           <span className="readout ml-2">{pad(number)}</span>
         </p>
         <p className="label flex items-center gap-2 text-right text-steel">
-          <span aria-hidden="true" className={`size-1.5 shrink-0 ${state === "failed" ? "border border-steel" : "bg-data"}`} />
+          <span aria-hidden="true" className={`size-1.5 shrink-0 rounded-pill ${state === "failed" ? "border border-steel" : state === "pending" ? "pulse-dot bg-rosso-bright" : "bg-champagne"}`} />
           {statusOf(exchange)}
         </p>
       </header>
@@ -494,11 +494,11 @@ export function AskConsole({ groups }: { groups: SuggestionGroup[] }) {
           setValue("");
         }}
       >
-        <label htmlFor={`${baseId}-input`} className="label hidden items-center border-r border-rule px-6 text-data md:flex">
+        <label htmlFor={`${baseId}-input`} className="label hidden items-center border-r border-rule px-6 text-champagne md:flex">
           Ask
         </label>
-        <div className="flex min-w-0 items-stretch">
-          <span aria-hidden="true" className="readout flex items-center pl-5 text-[1.125rem] text-data md:pl-6">
+        <div className="m-3 flex min-w-0 items-stretch rounded-pill border border-bone/[0.1] bg-carbon/45 shadow-[inset_0_1px_2px_rgb(0_0_0/0.35)] transition-[border-color,background-color] duration-300 focus-within:border-bone/[0.26] focus-within:bg-carbon/60 md:m-4">
+          <span aria-hidden="true" className="readout flex items-center pl-5 text-[1.125rem] text-rosso-bright">
             ›
           </span>
           <input
@@ -515,12 +515,12 @@ export function AskConsole({ groups }: { groups: SuggestionGroup[] }) {
             aria-label="Ask a question about Omjee's work"
             aria-describedby={`${baseId}-hint`}
             // 17px: at 16px or more, mobile browsers do not zoom the page when the field is focused.
-            className="ask-inset min-h-[3.75rem] min-w-0 flex-1 bg-transparent px-3 text-[1.0625rem] text-bone caret-data placeholder:text-faint"
+            className="ask-field min-h-[3.25rem] min-w-0 flex-1 bg-transparent px-3 text-[1.0625rem] text-bone caret-rosso-bright placeholder:text-faint"
           />
           <button
             type="submit"
             disabled={busy || prepareQuestion(value) === null}
-            className="ask-inset label group inline-flex min-w-[5.5rem] items-center justify-center gap-2.5 border-l border-rule px-5 text-[0.75rem] text-bone transition-colors duration-[var(--dur-fast)] enabled:hover:bg-signal enabled:hover:text-carbon disabled:text-faint"
+            className="group m-1.5 inline-flex min-w-[5.5rem] items-center justify-center gap-2 rounded-pill bg-bone px-5 text-[0.9375rem] font-medium text-carbon transition-[background-color,color,transform] duration-300 ease-[var(--ease-soft)] enabled:hover:bg-white enabled:active:scale-[0.97] disabled:bg-bone/[0.08] disabled:text-faint"
           >
             Run
             <Icon
@@ -551,7 +551,7 @@ export function AskConsole({ groups }: { groups: SuggestionGroup[] }) {
             <div
               role="tablist"
               aria-labelledby={`${baseId}-about`}
-              className="mt-2.5 flex overflow-x-auto border-y border-rule [scrollbar-width:none] md:mt-0 md:border-t-0 [&::-webkit-scrollbar]:hidden"
+              className="flex gap-1 overflow-x-auto px-3 pb-2 pt-1 [scrollbar-width:none] md:px-4 md:py-3 [&::-webkit-scrollbar]:hidden"
             >
               {groups.map((item, index) => {
                 const selected = index === topic;
@@ -566,18 +566,12 @@ export function AskConsole({ groups }: { groups: SuggestionGroup[] }) {
                     tabIndex={selected ? 0 : -1}
                     onClick={() => setTopic(index)}
                     onKeyDown={(event) => onTabKey(event, index)}
-                    className={`ask-inset label relative flex min-h-12 shrink-0 items-center gap-2 whitespace-nowrap px-5 transition-colors duration-[var(--dur-fast)] md:px-6 ${
-                      selected ? "bg-carbon/45 text-signal" : "text-steel hover:text-bone"
+                    className={`relative flex min-h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-pill px-4 text-[0.875rem] font-medium tracking-[-0.01em] transition-[background-color,color] duration-300 ease-[var(--ease-soft)] ${
+                      selected ? "bg-bone/[0.1] text-bone shadow-[inset_0_1px_0_rgb(239_235_228/0.08)]" : "text-steel hover:bg-bone/[0.04] hover:text-bone"
                     }`}
                   >
                     {item.label}
-                    <span className={`readout text-[0.625rem] ${selected ? "text-signal" : "text-faint"}`}>{pad(item.questions.length)}</span>
-                    <span
-                      aria-hidden="true"
-                      className={`absolute inset-x-0 bottom-0 h-px origin-left bg-signal transition-transform duration-[260ms] ease-[var(--ease-snap)] ${
-                        selected ? "scale-x-100" : "scale-x-0"
-                      }`}
-                    />
+                    <span className={`readout text-[0.6875rem] ${selected ? "text-rosso-bright" : "text-faint"}`}>{pad(item.questions.length)}</span>
                   </button>
                 );
               })}
@@ -613,7 +607,7 @@ export function AskConsole({ groups }: { groups: SuggestionGroup[] }) {
                   aria-label={`Reopen brief ${numberOf(exchange)}: ${exchange.question}`}
                   className="group grid min-h-12 w-full grid-cols-[2.75rem_minmax(0,1fr)_auto] items-center gap-x-3 text-left"
                 >
-                  <span className="readout text-[0.75rem] text-faint transition-colors duration-[var(--dur-fast)] group-hover:text-signal">
+                  <span className="readout text-[0.75rem] text-faint transition-colors duration-[var(--dur-fast)] group-hover:text-rosso-bright">
                     Q.{pad(numberOf(exchange))}
                   </span>
                   <span className="truncate text-[0.9375rem] text-steel transition-colors duration-[var(--dur-fast)] group-hover:text-bone">

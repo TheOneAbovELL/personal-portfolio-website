@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Archivo, IBM_Plex_Mono } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
 import { AskButton } from "@/components/layout/AskButton";
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
@@ -11,18 +11,16 @@ import { SmoothScroll } from "@/components/motion/SmoothScroll";
 import { profile, site } from "@/content";
 import "./globals.css";
 
-// One family for display and body: the width axis gives the expanded display voice.
-const archivo = Archivo({
-  variable: "--font-archivo",
+// One neo-grotesk at different weights for display and body; its mono sibling for instrumentation.
+const geist = Geist({
+  variable: "--font-geist",
   subsets: ["latin"],
-  axes: ["wdth"],
   display: "swap",
 });
 
-const plexMono = IBM_Plex_Mono({
-  variable: "--font-plex-mono",
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
   subsets: ["latin"],
-  weight: ["400", "500"],
   display: "swap",
 });
 
@@ -51,7 +49,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#07090b",
+  themeColor: "#0b0a0a",
   colorScheme: "dark",
 };
 
@@ -65,7 +63,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     // suppressHydrationWarning: the inline script below adds a class to <html> before hydration.
     <html
       lang={site.locale}
-      className={`${archivo.variable} ${plexMono.variable} antialiased`}
+      className={`${geist.variable} ${geistMono.variable} antialiased`}
       suppressHydrationWarning
     >
       <head>

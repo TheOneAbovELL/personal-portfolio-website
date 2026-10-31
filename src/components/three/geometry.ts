@@ -1,12 +1,6 @@
 import { BufferGeometry, Float32BufferAttribute } from "three";
-import type { MaterialId, StrokeRole } from "@/lib/car/types";
-import { CAR, type CarModel } from "@/lib/car/model";
-
-const ROLE_ALPHA: Record<StrokeRole, number> = {
-  contour: 0.3,
-  edge: 0.62,
-  detail: 0.34,
-};
+import type { MaterialId } from "@/lib/car/types";
+import type { CarModel } from "@/lib/car/model";
 
 // Small deterministic hash so per-stroke variation is stable between renders.
 const hash = (i: number) => {
@@ -14,38 +8,8 @@ const hash = (i: number) => {
   return s - Math.floor(s);
 };
 
-/** All strokes as one LineSegments geometry (a single draw call). */
-export function buildLineGeometry(model: CarModel): BufferGeometry {
-  const strokes = model.parts.flatMap((part) => part.strokes);
-
-  const position: number[] = [];
-  const along: number[] = [];
-  const alpha: number[] = [];
-  const signal: number[] = [];
-
-  for (const stroke of strokes) {
-    const pts = stroke.points;
-    const count = stroke.closed ? pts.length : pts.length - 1;
-    for (let i = 0; i < count; i++) {
-      for (const p of [pts[i], pts[(i + 1) % pts.length]]) {
-        position.push(p[0], p[1], p[2]);
-        along.push((CAR.noseX - p[0]) / CAR.length);
-        alpha.push(ROLE_ALPHA[stroke.role]);
-        signal.push(stroke.signal ? 1 : 0);
-      }
-    }
-  }
-
-  const geometry = new BufferGeometry();
-  geometry.setAttribute("position", new Float32BufferAttribute(position, 3));
-  geometry.setAttribute("aAlong", new Float32BufferAttribute(along, 1));
-  geometry.setAttribute("aAlpha", new Float32BufferAttribute(alpha, 1));
-  geometry.setAttribute("aSignal", new Float32BufferAttribute(signal, 1));
-  return geometry;
-}
-
 /** Parts painted in the livery red; their streaks are red too. */
-const LIVERY_PARTS = new Set(["fin", "rear-endplate-r", "rear-endplate-l"]);
+const LIVERY_PARTS = new Set(["fin", "airbox", "rear-wing-main", "rear-endplate-r", "rear-endplate-l"]);
 /** How many speed streaks trail the car, at most, and how long the longest is (metres). */
 const STREAKS = 150;
 const STREAK_LENGTH = 7;

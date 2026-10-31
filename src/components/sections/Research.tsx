@@ -16,7 +16,7 @@ export function ResearchDirection() {
       <div className="scale-ticks" aria-hidden="true" data-reveal="trace" />
       <div className="mt-4 flex flex-wrap items-baseline justify-between gap-x-8 gap-y-2">
         <p className="label text-steel" {...reveal("snap")}>
-          <span className="text-data">Research</span>
+          <span className="text-champagne">Research</span>
           <span aria-hidden="true" className="mx-2 text-metal-3">
             /
           </span>
@@ -29,7 +29,7 @@ export function ResearchDirection() {
 
       <div className="mt-[clamp(2rem,4vw,3.25rem)] grid gap-x-10 gap-y-10 lg:grid-cols-12">
         <div className="lg:col-span-4">
-          <h3 className="display text-[clamp(1.5rem,1.1rem+1.4vw,2.125rem)]" {...reveal("mask")}>
+          <h3 className="display text-[clamp(1.75rem,1.2rem+1.8vw,2.75rem)] tracking-[-0.04em]" {...reveal("mask")}>
             <span className="mask">Where the work is heading.</span>
           </h3>
           <p className="mt-5 text-[0.9875rem] leading-relaxed text-steel" {...reveal("rise", 1)}>
@@ -45,7 +45,7 @@ export function ResearchDirection() {
               {...reveal("rise", index)}
             >
               <dt className="label text-bone">
-                <span className="mr-3 text-data">{String(index + 1).padStart(2, "0")}</span>
+                <span className="mr-3 text-champagne">{String(index + 1).padStart(2, "0")}</span>
                 {group.label}
               </dt>
               <dd>
@@ -69,7 +69,7 @@ export function ResearchDirection() {
                         {/* The link stays inline inside the cell, so its underline hugs the text. */}
                         <p className="text-[1rem] font-medium leading-snug text-bone">
                           {item.href ? (
-                            <Link href={item.href} className="link-underline hover:text-signal">
+                            <Link href={item.href} className="link-underline hover:text-champagne-bright">
                               {item.title}
                             </Link>
                           ) : (

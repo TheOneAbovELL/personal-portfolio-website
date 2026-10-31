@@ -1,41 +1,53 @@
+import { PACE } from "./circuit";
+
 /**
- * The intro's whole timeline, inlined in the document head (app/layout.tsx) so it runs before —
- * and without — React. Serialised with Function#toString, so it must stay self-contained:
- * no imports, no module-scope references.
+ * The qualifying lap: the intro's whole timeline, inlined in the document head (app/layout.tsx)
+ * so it runs before — and without — React. Serialised with Function#toString, so it must stay
+ * self-contained: no imports, no module-scope references (the pace table is passed in).
  *
- *   0 ms      the name (components/loader/Intro.tsx) rises into its masks — CSS, so it also plays
- *             without script; a red hairline beneath it starts to trace.
- *   …         the hairline follows real readiness only: DOM parsed, the display face loaded,
- *             window load. No percentages, no invented steps.
- *   ready     at the earliest 800 ms (so it never flashes), at the latest 2.2 s (so it never
- *             becomes the wait): the hairline completes and withdraws, and the name glides and
- *             scales into the hero heading's measured place while the backdrop fades. The page's
- *             entrances (paused under `html.intro-hold`) resume as the glide begins.
- *   +1.05 s   the hero's own h1 (hidden under `html.intro-active`) replaces the name in the same
- *             frame; the intro is hidden. Pages without #hero-title (or with it off screen)
- *             simply fade.
+ *   0 ms      the circuit draws itself on (CSS, so it also plays without script); the name,
+ *             the status line and the timing strip fade up; a red light waits on the line.
+ *   280 ms    the light launches and laps. Its pace comes from an ideal lap (circuit.ts: it brakes
+ *             into corners, drives out of them) scaled by reality: each sector is a real loading
+ *             stage, and the light eases to a stop short of a sector's line until that stage
+ *             is done — it never runs ahead of the page.
+ *                S1  document parsed + the display and mono faces loaded
+ *                S2  the 3D car's module and geometry (`hero:stage`, components/three)
+ *                S3  shaders compiled and the first frame drawn (`hero:ready`)
+ *             Pages without the hero: S2 = window load, S3 = the first frame after it.
+ *             Crossing a line lights its sector with its real split; crossing the finish shows
+ *             the real lap time (time to `hero:ready` since navigation start) and marks the
+ *             fastest sector.
+ *   +280 ms   the exit: the circuit zooms away, the curtain lifts outward from the car, and the
+ *             name glides into the hero heading's measured place (pages without the heading:
+ *             it fades). The page's entrances (paused under `html.intro-hold`) resume.
  *
- * Any click, key, wheel or touch starts the hand-off at once; scrolling is held until it lands,
- * so the measured target cannot move. Reduced motion: a 300 ms fade, nothing moves.
- * A timer ends everything by 4.8 s whatever happens; without script, CSS lifts the curtain.
+ * Typical total 2.6–5 s. Any click or key skips to the exit as soon as `hero:ready` has fired
+ * (waiting at most 1.5 s more); scrolling is held until the name lands. The exit starts by 7 s
+ * whatever happens, a timer ends everything by 9 s, and without script CSS lifts the curtain
+ * by ~4 s. Reduced motion: a still circuit whose sectors fill in, then a short fade.
  *
- * Development only: `?intro=<ms>` freezes the timeline at that moment (readiness simulated at
- * 900 ms, hand-off at 1000 ms) so it can be screenshot frame by frame.
+ * Development only: `?intro=<ms>` freezes the timeline at that moment, with the stages
+ * simulated at fixed times (S1 420 ms, S2 1480 ms, S3 2210 ms), so it can be screenshot.
  */
-function introBoot(dev: boolean) {
+function introBoot(dev: boolean, pace: number[]) {
   const d = document;
   const w = window;
   const root = d.documentElement;
   const t0 = performance.now();
 
-  const MIN = 800;
-  const MAX = 2200;
-  const SETTLE = 220; // the hairline completing, before the name leaves
+  const LAP = 1500; // an unhindered lap, ms
+  const LAUNCH = 280; // the light leaves the line
+  const SLOW = 0.1; // the light starts easing off this far (in laps) before a closed line
+  const SMOOTH = 150; // the light's response time (its mass), ms
+  const BEAT = 280; // the lap time, held before the exit
+  const SKIP_WAIT = 1500;
+  const CEILING = 7000;
+  const BACKSTOP = 9000;
   const GLIDE = 1050;
-  const FADE = 650;
-  const CALM = 300;
-  const STILL_READY = 900;
-  const STILL_LEAVE = 1000;
+  const LIFT = 1150; // the curtain
+  const SIMULATED = [420, 1480, 2210];
+  const STEPS = pace.length - 1;
 
   const match = dev ? /[?&]intro=(\d+)/.exec(location.search) : null;
   const still = match ? Number(match[1]) : -1;
@@ -43,24 +55,43 @@ function introBoot(dev: boolean) {
 
   root.classList.add("intro-active", "intro-hold");
 
-  let phase = 0; // 0 loading · 1 leaving · 2 done
-  let timer = 0;
+  let phase = 0; // 0 lapping · 1 leaving · 2 done
+  let clock = 0; // local ms since boot (simulated when frozen)
+  let raf = 0;
   let intro: HTMLElement | null = null;
+  let circuit: HTMLElement | null = null;
+  let card: HTMLElement | null = null;
   let name: HTMLElement | null = null;
-  let stage: HTMLElement | null = null;
-  let rule: HTMLElement | null = null;
-  let fill: HTMLElement | null = null;
-  let fillAnim: Animation | null = null;
-  const live: Animation[] = [];
-  const weights: Record<string, number> = { dom: 0.35, fonts: 0.3, load: 0.35 };
-  let progress = 0;
+  let ghost: HTMLElement | null = null;
+  let status: HTMLElement | null = null;
+  let lapTime: HTMLElement | null = null;
+  let head: SVGElement | null = null;
+  let halo: SVGElement | null = null;
+  let tails: SVGElement[] = [];
+  let tailLengths: number[] = [];
+  let rows: HTMLElement[] = [];
+  let fills: HTMLElement[] = [];
+  let paths: SVGElement[] = [];
+  let hasHero = false;
+
+  const live: { a: Animation; at: number }[] = [];
+  const stageAt = [-1, -1, -1]; // performance.now() when each stage really completed
+  const lit = [false, false, false];
+  const filled = [-1, -1, -1];
+  let domAt = -1;
+  let fontAt = -1;
+  let tau = 0; // laps of ideal lap time driven
+  let rate = 0; // laps per ms
+  let holding = false;
+  let lapAt = -1;
+  let skipUntil = -1;
   let handing = false;
+  let landed: Promise<void> = Promise.resolve();
 
-  const backstop = still < 0 ? w.setTimeout(() => finish(handing), 4800) : 0;
-  const ceiling = still < 0 ? w.setTimeout(leave, MAX) : 0;
+  const backstop = still < 0 ? w.setTimeout(() => finish(handing), BACKSTOP) : 0;
+  const ceiling = still < 0 ? w.setTimeout(() => leave(), CEILING) : 0;
 
-  // A critically damped spring from rest, normalised to land exactly on 1: quick to leave,
-  // long and soft to settle — the way a real mass arrives.
+  // A critically damped spring from rest, normalised to land exactly on 1.
   function spring() {
     const omega = 8.2;
     const end = 1 - (1 + omega) * Math.exp(-omega);
@@ -73,60 +104,276 @@ function introBoot(dev: boolean) {
   }
   const GLIDE_EASE =
     w.CSS && CSS.supports("transition-timing-function", "linear(0, 1)") ? spring() : "cubic-bezier(0.25, 0.9, 0.3, 1)";
-  const FADE_EASE = "cubic-bezier(0.4, 0, 0.2, 1)";
+  const OUT = "cubic-bezier(0.16, 1, 0.3, 1)";
+  const SOFT = "cubic-bezier(0.4, 0, 0.2, 1)";
 
   function setup() {
     if (intro) return true;
     intro = d.getElementById("intro");
-    if (!intro) return false;
-    name = intro.querySelector<HTMLElement>(".intro-name");
-    stage = intro.querySelector<HTMLElement>(".intro-stage");
-    rule = intro.querySelector<HTMLElement>(".intro-rule");
-    fill = intro.querySelector<HTMLElement>(".intro-rule-fill");
-    const family = name ? getComputedStyle(name).fontFamily : "";
-    const fonts = () => mark("fonts");
-    if (d.fonts && family) Promise.all([d.fonts.load("640 16px " + family), d.fonts.ready]).then(fonts, fonts);
-    else fonts();
-    if (progress) draw(progress);
+    if (!intro || !intro.querySelector(".intro-ghost")) {
+      intro = null;
+      return false;
+    }
+    const q = <T extends Element>(s: string) => intro!.querySelector<T>(s);
+    circuit = q<HTMLElement>(".intro-circuit");
+    card = q<HTMLElement>(".intro-card");
+    name = q<HTMLElement>(".intro-name");
+    ghost = q<HTMLElement>(".intro-ghost");
+    status = q<HTMLElement>(".intro-stage-text");
+    lapTime = q<HTMLElement>(".intro-lap-time");
+    head = q<SVGElement>(".ic-head");
+    halo = q<SVGElement>(".ic-halo");
+    tails = Array.from(intro.querySelectorAll<SVGElement>(".ic-tail"));
+    tailLengths = tails.map((t) => Number(t.getAttribute("data-length")) || 0);
+    rows = Array.from(intro.querySelectorAll<HTMLElement>(".intro-sector"));
+    fills = rows.map((r) => r.querySelector<HTMLElement>(".intro-sector-fill")!);
+    paths = Array.from(intro.querySelectorAll<SVGElement>(".ic-sector"));
+    if (reduce) intro.setAttribute("data-reduced", "");
+    render();
     return true;
   }
 
-  function mark(step: string) {
-    if (!(step in weights)) return;
-    progress += weights[step];
-    delete weights[step];
-    draw(progress);
-    if (!Object.keys(weights).length && still < 0 && !phase) {
-      const at = Math.max(MIN, performance.now() - t0 + SETTLE);
-      w.clearTimeout(timer);
-      timer = w.setTimeout(leave, at - (performance.now() - t0));
+  /* Stages ---------------------------------------------------------------------------------- */
+
+  function complete(k: number, at: number) {
+    if (stageAt[k] >= 0) return;
+    for (let i = 0; i < k; i++) if (stageAt[i] < 0) complete(i, at);
+    stageAt[k] = Math.max(at, k ? stageAt[k - 1] : 0);
+    say();
+  }
+
+  function say() {
+    if (!status || phase) return;
+    const text =
+      lapAt >= 0
+        ? "Lap complete"
+        : stageAt[2] >= 0
+          ? "On the line"
+          : stageAt[1] >= 0
+            ? hasHero
+              ? "Compiling shaders"
+              : "First frame"
+            : stageAt[0] >= 0
+              ? hasHero
+                ? "Loading the car"
+                : "Loading the page"
+              : "Warming up";
+    if (status.textContent !== text) status.textContent = text;
+  }
+
+  function onStage(e: Event) {
+    const detail = (e as CustomEvent<{ stage?: string; t?: number }>).detail || {};
+    const stage = detail.stage || "";
+    if (/geometry|shaders|frame/.test(stage)) complete(1, typeof detail.t === "number" ? detail.t : performance.now());
+  }
+  function onReady() {
+    complete(2, performance.now());
+  }
+  /** Flags W3 leaves on <html>, in case an event fired before this listened. */
+  function poll() {
+    const ds = root.dataset;
+    if (stageAt[1] < 0 && ds.heroStage && /geometry|shaders|frame/.test(ds.heroStage)) complete(1, performance.now());
+    if (stageAt[2] < 0 && ds.hero) complete(2, performance.now());
+  }
+  function s1() {
+    if (domAt >= 0 && fontAt >= 0) complete(0, Math.max(domAt, fontAt));
+  }
+
+  /* The lap ----------------------------------------------------------------------------------- */
+
+  /** Track position (pathLength units; 1000 a lap) after `laps` of ideal lap time. */
+  function pos(laps: number) {
+    const lap = Math.floor(laps);
+    const x = (laps - lap) * STEPS;
+    const i = Math.min(STEPS - 1, Math.floor(x));
+    return lap * 1000 + pace[i] + (pace[i + 1] - pace[i]) * (x - i);
+  }
+
+  function gate() {
+    for (let k = 0; k < 3; k++) if (stageAt[k] < 0) return (k + 1) / 3;
+    return Infinity;
+  }
+
+  function drive(dt: number) {
+    if (clock < LAUNCH) return;
+    const g = gate();
+    let target = 1 / LAP;
+    if (skipUntil >= 0) target *= 1.6;
+    if (phase) target *= 0.55; // the cool-down after the line
+    const room = g === Infinity ? 1 : Math.max(0, Math.min(1, (g - tau) / SLOW));
+    target *= room;
+    rate += (target - rate) * (1 - Math.exp(-dt / SMOOTH));
+    tau = Math.min(tau + rate * dt, g - 0.0015);
+    const hold = room < 0.2;
+    if (hold !== holding && intro) {
+      holding = hold;
+      intro.classList.toggle("is-holding", hold);
+    }
+    if (phase) return;
+    for (let k = 0; k < 3; k++) if (!lit[k] && tau >= (k + 1) / 3 - 1e-9) light(k);
+  }
+
+  /** Writes: stroke-dashoffset on the light, one transform per sector bar. */
+  function render() {
+    if (!intro) return;
+    const p = pos(tau);
+    const off = String(-p);
+    if (head) head.style.strokeDashoffset = off;
+    if (halo) halo.style.strokeDashoffset = off;
+    for (let i = 0; i < tails.length; i++) tails[i].style.strokeDashoffset = String(tailLengths[i] - p);
+    const bounds = [0, pace[Math.round(STEPS / 3)], pace[Math.round((2 * STEPS) / 3)], 1000];
+    for (let k = 0; k < 3; k++) {
+      const value = reduce
+        ? lit[k]
+          ? 1
+          : 0
+        : tau >= 1
+          ? 1
+          : Math.max(0, Math.min(1, (p - bounds[k]) / (bounds[k + 1] - bounds[k])));
+      if (Math.abs(value - filled[k]) < 0.0005 || !fills[k]) continue;
+      filled[k] = value;
+      fills[k].style.transform = "scaleX(" + value.toFixed(4) + ")";
     }
   }
 
-  // The hairline eases from wherever it is to the new reading.
-  function draw(value: number, duration = 650) {
-    if (!fill || phase || still >= 0) return;
-    const from = getComputedStyle(fill).transform;
-    const next = fill.animate(
-      [{ transform: from === "none" ? "scaleX(0)" : from }, { transform: "scaleX(" + Math.min(1, value) + ")" }],
-      { duration, easing: "cubic-bezier(0.22, 1, 0.36, 1)", fill: "forwards" },
-    );
-    if (fillAnim) fillAnim.cancel();
-    fillAnim = next;
+  function play(el: Element | null, frames: Keyframe[], options: KeyframeAnimationOptions) {
+    if (!el) return null;
+    const a = el.animate(frames, { fill: "both", ...options });
+    live.push({ a, at: clock });
+    return a;
   }
+
+  function seconds(ms: number) {
+    return (Math.max(0, ms) / 1000).toFixed(3);
+  }
+
+  function light(k: number) {
+    lit[k] = true;
+    const row = rows[k];
+    const split = stageAt[k] - (k ? stageAt[k - 1] : 0);
+    if (row) {
+      row.classList.add("is-lit");
+      const time = row.querySelector(".intro-sector-time");
+      if (time) time.textContent = seconds(split);
+      play(time, [{ opacity: 0, transform: "translateY(0.35em)" }, { opacity: 1, transform: "none" }], { duration: 520, easing: OUT });
+    }
+    if (paths[k]) {
+      paths[k].classList.add("is-lit");
+      play(paths[k], [{ opacity: 0 }, { opacity: 1 }], { duration: 640, easing: OUT });
+    }
+    const tick = intro && intro.querySelector('[data-tick="' + k + '"]');
+    if (tick) tick.classList.add("is-lit");
+    const label = intro && intro.querySelector('[data-label="' + k + '"]');
+    if (label) label.classList.add("is-lit");
+    if (k === 2) lap();
+  }
+
+  function lap() {
+    lapAt = clock;
+    say();
+    if (lapTime) {
+      lapTime.textContent = seconds(stageAt[2]);
+      play(lapTime, [{ opacity: 0, transform: "translateY(0.3em)" }, { opacity: 1, transform: "none" }], { duration: 560, easing: OUT });
+    }
+    // Fastest sector: the one tasteful flourish.
+    const splits = stageAt.map((t, k) => t - (k ? stageAt[k - 1] : 0));
+    const best = splits.indexOf(Math.min(...splits));
+    if (rows[best]) rows[best].classList.add("is-best");
+    if (paths[best]) paths[best].classList.add("is-best");
+    if (intro) intro.classList.add("is-complete");
+  }
+
+  /* The loop ---------------------------------------------------------------------------------- */
+
+  function step(t: number, dt: number) {
+    clock = t;
+    if (!setup()) return;
+    if (still >= 0) {
+      for (let k = 0; k < 3; k++) if (t >= SIMULATED[k]) complete(k, SIMULATED[k]);
+    } else poll();
+    if (phase === 0) {
+      if (reduce) {
+        for (let k = 0; k < 3; k++) if (!lit[k] && stageAt[k] >= 0 && (!k || lit[k - 1]) && t >= 300 + k * 160) light(k);
+      } else drive(dt);
+      render();
+      if (lapAt >= 0 && t >= lapAt + (reduce ? 420 : BEAT)) leave();
+      else if (skipUntil >= 0 && (stageAt[2] >= 0 || t >= skipUntil)) leave();
+      else if (t >= CEILING) leave();
+    } else if (phase === 1 && !reduce) {
+      drive(dt);
+      render();
+    }
+  }
+
+  function frame() {
+    const t = performance.now() - t0;
+    const dt = Math.min(50, Math.max(0, t - clock));
+    step(t, dt);
+    if (phase < 2) raf = w.requestAnimationFrame(frame);
+  }
+
+  /* The exit ---------------------------------------------------------------------------------- */
 
   function leave() {
     if (phase) return;
-    if (!setup() || !intro || !name || !stage) return finish(false);
+    if (!setup() || !intro) return finish(false);
     phase = 1;
-    w.clearTimeout(timer);
     w.clearTimeout(ceiling);
     try {
-      if (reduce) calm();
-      else if (!glide()) fade();
+      if (reduce) return calm();
+      root.classList.remove("intro-hold");
+      origin();
+      const handed = glide();
+      if (!handed) {
+        root.classList.remove("intro-active");
+        play(name, [{ opacity: 1 }, { opacity: 0, transform: "translateY(-0.2em)" }], { duration: 520, easing: SOFT });
+      }
+      // The circuit zooms past: the scale accelerates away while the line fades early.
+      play(circuit, [
+        { opacity: 1, transform: "scale(1)", easing: "cubic-bezier(0.4, 0, 0.2, 1)" },
+        { opacity: 0.35, transform: "scale(1.07)", offset: 0.4, easing: "cubic-bezier(0.3, 0, 0.2, 1)" },
+        { opacity: 0, transform: "scale(1.24)" },
+      ], { duration: 760 });
+      if (card) {
+        Array.from(card.children).forEach((el, i) => {
+          if (el.querySelector(".intro-name")) {
+            if (el.querySelector(".intro-status")) play(el.querySelector(".intro-status"), [{ opacity: 1 }, { opacity: 0 }], { duration: 360, easing: SOFT });
+            return;
+          }
+          play(el, [{ opacity: 1, transform: "none" }, { opacity: 0, transform: "translateY(-0.4rem)" }], {
+            duration: 420,
+            delay: 40 * i,
+            easing: SOFT,
+          });
+        });
+      }
+      play(intro.querySelector(".intro-backdrop"), [{ opacity: 1 }, { opacity: 0 }], { duration: 760, delay: 140, easing: SOFT });
+      play(intro.querySelector(".intro-vignette"), [
+        { opacity: 1, transform: "scale(1)" },
+        { opacity: 0, transform: "scale(2.4)" },
+      ], { duration: LIFT, delay: 140, easing: "cubic-bezier(0.3, 0, 0.15, 1)" });
+      const end = play(intro, [{ opacity: 1 }, { opacity: 1 }], { duration: LIFT + 160 });
+      // The intro goes when the curtain is up and the name has landed, whichever is later.
+      if (end && still < 0) Promise.all([end.finished, landed]).then(() => finish(handed), () => undefined);
     } catch {
       finish(false);
     }
+  }
+
+  /** The curtain lifts outward from the car (its drawing marks where it sits). */
+  function origin() {
+    const vignette = intro && intro.querySelector<HTMLElement>(".intro-vignette");
+    if (!vignette) return;
+    const poster = d.querySelector(".hero-poster");
+    const r = poster && poster.getBoundingClientRect();
+    const x = r && r.width && r.bottom > 0 && r.top < w.innerHeight ? r.left + r.width / 2 : w.innerWidth / 2;
+    const y = r && r.width && r.bottom > 0 && r.top < w.innerHeight ? r.top + r.height / 2 : w.innerHeight * 0.55;
+    // The vignette is twice the viewport, offset by half of it.
+    const ox = x + w.innerWidth / 2;
+    const oy = y + w.innerHeight / 2;
+    vignette.style.setProperty("--cx", ox + "px");
+    vignette.style.setProperty("--cy", oy + "px");
+    vignette.style.transformOrigin = ox + "px " + oy + "px";
   }
 
   /** Union of the element's text, line by line: [lineCount, width]. */
@@ -151,138 +398,73 @@ function introBoot(dev: boolean) {
     return [tops.length, right - left];
   }
 
-  /** The shared-element hand-off. All reads, then all writes; the transform is computed once. */
+  /**
+   * The shared-element hand-off. The ghost is the name set at the heading's own size: it starts
+   * scaled down exactly over the card's name and glides to scale 1 on the heading — crisp, and
+   * identical to the heading it becomes.
+   */
   function glide() {
     const hero = d.getElementById("hero-title");
-    if (!hero || !intro || !name || !stage) return false;
-    const word = name;
-    const hs = getComputedStyle(hero);
-    const ns = getComputedStyle(name);
+    if (!hero || !name || !ghost) return false;
     const hr = hero.getBoundingClientRect();
+    if (!hr.width || hr.bottom < 0 || hr.top > w.innerHeight) return false;
+    const hs = getComputedStyle(hero);
     const nr = name.getBoundingClientRect();
-    const sr = stage.getBoundingClientRect();
-    const H = parseFloat(hs.fontSize);
-    const R = parseFloat(ns.fontSize);
-    if (!(H > 0 && R > 0) || !hr.width || hr.bottom < 0 || hr.top > w.innerHeight) return false;
-
-    // Same line structure and the same proportions, or the illusion breaks: fade instead.
+    const g = ghost.style;
+    g.fontSize = hs.fontSize;
+    g.lineHeight = hs.lineHeight;
+    g.letterSpacing = hs.letterSpacing;
+    g.fontWeight = hs.fontWeight;
+    g.fontStretch = hs.fontStretch;
+    g.fontVariationSettings = hs.fontVariationSettings;
+    g.fontFamily = hs.fontFamily;
     const [heroLines, heroWidth] = measure(hero);
-    const nameLines = name.querySelectorAll(".intro-mask").length
-      ? new Set(Array.from(name.querySelectorAll(".intro-mask"), (m) => Math.round(m.getBoundingClientRect().top))).size
-      : 0;
-    if (heroLines !== nameLines || Math.abs((nr.width * H) / R - heroWidth) / heroWidth > 0.04) return false;
-
-    const x0 = nr.left - sr.left;
-    const y0 = nr.top - sr.top;
-    const x1 = hr.left + parseFloat(hs.paddingLeft) + parseFloat(hs.borderLeftWidth) - sr.left;
-    const y1 = hr.top + parseFloat(hs.paddingTop) + parseFloat(hs.borderTopWidth) - sr.top;
-
-    // Writes. The name is re-set at the heading's own size and scaled down to where it is, so
-    // the glide ends at scale 1 — crisp, and identical to the heading it becomes.
-    stage.style.width = sr.width + "px";
-    stage.style.height = sr.height + "px";
-    const s = name.style;
-    s.position = "absolute";
-    s.left = "0px";
-    s.top = "0px";
-    s.margin = "0px";
-    s.transformOrigin = "0 0";
-    s.fontSize = H + "px";
-    s.lineHeight = hs.lineHeight;
-    s.letterSpacing = hs.letterSpacing;
-    s.fontWeight = hs.fontWeight;
-    s.fontStretch = hs.fontStretch;
-    s.fontVariationSettings = hs.fontVariationSettings;
-
-    const move = name.animate(
-      [
-        { transform: "translate(" + x0 + "px, " + y0 + "px) scale(" + R / H + ")" },
-        { transform: "translate(" + x1 + "px, " + y1 + "px) scale(1)" },
-      ],
-      { duration: GLIDE, easing: GLIDE_EASE, fill: "both" },
-    );
-    live.push(move);
+    const [ghostLines, ghostWidth] = measure(ghost);
+    const [nameLines] = measure(name);
+    // Same line structure and the same proportions, or the illusion breaks: fade instead.
+    if (!ghostWidth || heroLines !== ghostLines || heroLines !== nameLines || Math.abs(ghostWidth - heroWidth) / heroWidth > 0.04) {
+      return false;
+    }
+    const scale = nr.width / ghost.offsetWidth;
+    const x1 = hr.left + parseFloat(hs.paddingLeft) + parseFloat(hs.borderLeftWidth);
+    const y1 = hr.top + parseFloat(hs.paddingTop) + parseFloat(hs.borderTopWidth);
+    const word = ghost;
+    const move = play(ghost, [
+      { transform: "translate(" + nr.left + "px, " + nr.top + "px) scale(" + scale + ")" },
+      { transform: "translate(" + x1 + "px, " + y1 + "px) scale(1)" },
+    ], { duration: GLIDE, easing: GLIDE_EASE });
+    if (!move) return false;
+    ghost.setAttribute("data-on", "");
+    name.style.visibility = "hidden";
     handing = true;
-    withdraw();
-    lift(GLIDE * 0.72, 90);
-    root.classList.remove("intro-hold");
     // If the page reflowed under the glide (late hydration, a font swap), settle onto where the
     // heading is now rather than swapping onto a stale position.
-    move.finished.then(() => {
-      if (phase === 2) return;
+    landed = move.finished.then(() => {
       const now = hero.getBoundingClientRect();
       const dx = now.left - hr.left;
       const dy = now.top - hr.top;
-      if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) return finish(true);
-      const settle = word.animate(
-        [
-          { transform: "translate(" + x1 + "px, " + y1 + "px)" },
-          { transform: "translate(" + (x1 + dx) + "px, " + (y1 + dy) + "px)" },
-        ],
-        { duration: 240, easing: "cubic-bezier(0.22, 1, 0.36, 1)", fill: "both" },
-      );
-      live.push(settle);
-      settle.finished.then(() => finish(true), () => undefined);
-    }, () => undefined);
+      if (phase === 2 || (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5)) return;
+      const settle = play(word, [
+        { transform: "translate(" + x1 + "px, " + y1 + "px)" },
+        { transform: "translate(" + (x1 + dx) + "px, " + (y1 + dy) + "px)" },
+      ], { duration: 240, easing: OUT });
+      return settle ? settle.finished.then(() => undefined) : undefined;
+    });
     return true;
-  }
-
-  /** The hairline completes, then draws itself away to the right. */
-  function withdraw() {
-    if (fill) {
-      if (fillAnim) fillAnim.cancel();
-      live.push(fill.animate([{ transform: getComputedStyle(fill).transform.replace("none", "scaleX(0)") }, { transform: "scaleX(1)" }], {
-        duration: 260,
-        easing: "cubic-bezier(0.22, 1, 0.36, 1)",
-        fill: "both",
-      }));
-    }
-    if (rule) {
-      rule.style.transformOrigin = "100% 50%";
-      live.push(rule.animate([{ transform: "scaleX(1)", opacity: 1 }, { transform: "scaleX(0)", opacity: 0 }], {
-        duration: 480,
-        easing: "cubic-bezier(0.7, 0, 0.2, 1)",
-        fill: "both",
-      }));
-    }
-  }
-
-  function lift(duration: number, delay: number) {
-    const backdrop = intro && intro.querySelector(".intro-backdrop");
-    if (backdrop) {
-      live.push(backdrop.animate([{ opacity: 1 }, { opacity: 0 }], { duration, delay, easing: FADE_EASE, fill: "both" }));
-    }
-  }
-
-  /** No heading to become: the name lifts away with the curtain. */
-  function fade() {
-    if (!intro || !name) return finish(false);
-    root.classList.remove("intro-hold", "intro-active");
-    withdraw();
-    live.push(name.animate([{ opacity: 1, transform: "none" }, { opacity: 0, transform: "translateY(-0.18em)" }], {
-      duration: FADE * 0.8,
-      easing: FADE_EASE,
-      fill: "both",
-    }));
-    lift(FADE, 120);
-    const out = intro.animate([{ opacity: 1 }, { opacity: 1 }], { duration: FADE + 120, fill: "both" });
-    live.push(out);
-    out.finished.then(() => finish(false), () => undefined);
   }
 
   function calm() {
     if (!intro) return finish(false);
     root.classList.add("intro-done");
     root.classList.remove("intro-hold", "intro-active");
-    const out = intro.animate([{ opacity: 1 }, { opacity: 0 }], { duration: CALM, easing: "linear", fill: "both" });
-    live.push(out);
-    out.finished.then(() => finish(true), () => undefined);
+    const out = play(intro, [{ opacity: 1 }, { opacity: 0 }], { duration: 320, easing: "linear" });
+    if (out && still < 0) out.finished.then(() => finish(true), () => undefined);
   }
 
   function finish(handed: boolean) {
     if (phase === 2) return;
     phase = 2;
-    w.clearTimeout(timer);
+    w.cancelAnimationFrame(raf);
     w.clearTimeout(ceiling);
     w.clearTimeout(backstop);
     // One frame: the intro goes, the heading it became is there.
@@ -290,88 +472,124 @@ function introBoot(dev: boolean) {
     if (handed) root.classList.add("intro-done");
     root.classList.remove("intro-active", "intro-hold");
     unlisten();
-    if (still < 0) {
-      live.forEach((a) => a.cancel());
-      if (fillAnim) fillAnim.cancel();
-    }
+    if (still < 0) live.forEach((x) => x.a.cancel());
     d.dispatchEvent(new Event("intro:done"));
   }
 
-  // Skipping. Scroll input is held (not lost to the page) until the name has landed.
+  /* Skipping ------------------------------------------------------------------------------------ */
+
+  function skip() {
+    if (phase || skipUntil >= 0) return;
+    skipUntil = clock + SKIP_WAIT;
+  }
+  // Scroll input is held (not lost to the page) until the name has landed.
   function hold(e: Event) {
     if (phase === 2) return;
     e.preventDefault();
     e.stopImmediatePropagation();
-    leave();
+    skip();
   }
   function key(e: KeyboardEvent) {
     if (phase === 2) return;
     if (/^(Arrow|Page|Home|End| |Spacebar)/.test(e.key)) e.preventDefault();
-    leave();
+    skip();
   }
   const blocking: AddEventListenerOptions = { capture: true, passive: false };
   function listen() {
     w.addEventListener("wheel", hold, blocking);
     w.addEventListener("touchmove", hold, blocking);
     w.addEventListener("keydown", key, true);
-    w.addEventListener("pointerdown", leave, true);
+    w.addEventListener("pointerdown", skip, true);
+    w.addEventListener("hero:stage", onStage);
+    w.addEventListener("hero:ready", onReady);
   }
   function unlisten() {
     w.removeEventListener("wheel", hold, blocking);
     w.removeEventListener("touchmove", hold, blocking);
     w.removeEventListener("keydown", key, true);
-    w.removeEventListener("pointerdown", leave, true);
+    w.removeEventListener("pointerdown", skip, true);
+    w.removeEventListener("hero:stage", onStage);
+    w.removeEventListener("hero:ready", onReady);
   }
 
   d.addEventListener("intro:abort", () => {
-    live.forEach((a) => a.cancel());
+    live.forEach((x) => x.a.cancel());
     finish(false);
   });
 
-  (function find() {
-    if (!setup() && d.readyState === "loading") w.requestAnimationFrame(find);
-  })();
-  const domReady = () => {
-    setup();
-    mark("dom");
-  };
-  if (d.readyState === "loading") d.addEventListener("DOMContentLoaded", domReady);
-  else domReady();
+  /* Boot ---------------------------------------------------------------------------------------- */
+
   const loaded = new Promise<void>((resolve) => {
     if (d.readyState === "complete") resolve();
     else w.addEventListener("load", () => resolve());
   });
-  loaded.then(() => mark("load"));
+
+  const domReady = () => {
+    setup();
+    hasHero = Boolean(d.getElementById("hero-title"));
+    if (still >= 0) return;
+    domAt = performance.now();
+    const fonts = () => {
+      fontAt = performance.now();
+      s1();
+    };
+    const family = name ? getComputedStyle(name).fontFamily : "";
+    const mono = lapTime ? getComputedStyle(lapTime).fontFamily : "";
+    if (d.fonts && family) {
+      Promise.all([d.fonts.load("600 16px " + family), mono ? d.fonts.load("400 16px " + mono) : 0, d.fonts.ready]).then(fonts, fonts);
+    } else fonts();
+    s1();
+    // Without the hero there is no car to wait for: the page itself is the lap.
+    if (!hasHero) {
+      loaded.then(() => {
+        complete(1, performance.now());
+        w.requestAnimationFrame(() => w.requestAnimationFrame(() => complete(2, performance.now())));
+      });
+    }
+  };
+  if (d.readyState === "loading") d.addEventListener("DOMContentLoaded", domReady);
+  else domReady();
 
   if (still < 0) {
     listen();
+    raf = w.requestAnimationFrame(frame);
     return;
   }
 
-  // Development stills: replay the timeline deterministically at `still` ms.
+  // Development stills: replay the timeline deterministically up to `still` ms, then freeze.
   const fontsReady = d.fonts ? d.fonts.ready : Promise.resolve();
   Promise.all([loaded, fontsReady]).then(() => {
     if (!setup() || !intro) return;
-    const at = (list: Animation[], time: number) =>
-      list.forEach((a) => {
-        a.pause();
-        a.currentTime = Math.max(0, time);
-      });
-    at(intro.getAnimations({ subtree: true }), still);
-    if (fill) at([fill.animate([{ transform: "scaleX(0)" }, { transform: "scaleX(1)" }], { duration: STILL_READY, easing: "cubic-bezier(0.22, 1, 0.36, 1)", fill: "both" })], still);
-    if (still < STILL_LEAVE) return;
-    leave();
-    const local = still - STILL_LEAVE;
-    at(live, local);
-    const entrances = d
-      .getAnimations()
+    hasHero = Boolean(d.getElementById("hero-title"));
+    const css = intro.getAnimations({ subtree: true });
+    const dt = 1000 / 240;
+    let leftAt = -1;
+    for (let t = 0; t <= still && phase < 2; t += dt) {
+      const was = phase;
+      step(t, dt);
+      if (!was && phase) leftAt = t;
+    }
+    css.forEach((a) => {
+      a.pause();
+      a.currentTime = still;
+    });
+    live.forEach((x) => {
+      x.a.pause();
+      x.a.currentTime = Math.max(0, still - x.at);
+    });
+    if (leftAt < 0) return;
+    const local = still - leftAt;
+    d.getAnimations()
       .filter((a) => {
         const target = (a.effect as KeyframeEffect | null)?.target;
         return target instanceof Element && target.matches(".enter, .enter-mask, .enter-fade, .enter-step");
+      })
+      .forEach((a) => {
+        a.pause();
+        a.currentTime = local;
       });
-    at(entrances, local);
-    if (local >= GLIDE + 200) finish(handing);
+    if (local >= GLIDE + 200 && local >= LIFT + 320) finish(handing);
   });
 }
 
-export const INTRO_BOOT = `(${introBoot.toString()})(${process.env.NODE_ENV !== "production"});`;
+export const INTRO_BOOT = `(${introBoot.toString()})(${process.env.NODE_ENV !== "production"}, ${JSON.stringify(PACE)});`;

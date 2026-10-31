@@ -10,6 +10,14 @@ export interface NavSector {
   label: string;
   note: string;
   href: string;
+  /** Has a toggle in the header's sector pill. */
+  pill: boolean;
+}
+
+/** A toggle in the header pill away from the homepage. */
+export interface NavLink {
+  href: string;
+  label: string;
 }
 
 export interface NavPage {
@@ -47,6 +55,7 @@ export interface NavData {
   resumeHref: string;
   sectors: NavSector[];
   pages: NavPage[];
+  headerPages: NavLink[];
   programmes: NavProgramme[];
   socials: NavSocial[];
 }

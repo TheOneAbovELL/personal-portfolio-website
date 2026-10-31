@@ -14,7 +14,7 @@ export function ProgrammeStatus({ status }: { status: ProjectStatus }) {
   const marker = experimental ? "bg-papaya" : LIVE.includes(status) ? "prog-bg" : "border border-steel";
   return (
     <span className={`label inline-flex items-center gap-2.5 ${experimental ? "text-papaya" : "text-bone"}`}>
-      <span aria-hidden="true" className={`size-1.5 ${marker}`} />
+      <span aria-hidden="true" className={`size-1.5 rounded-full ${marker}`} />
       {statusLabel[status]}
     </span>
   );
